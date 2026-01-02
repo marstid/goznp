@@ -1090,6 +1090,13 @@ type DeviceInfo struct {
 	PowerSource      *zcl.PowerSource
 	SWBuildID        *string // Software build ID
 
+	// Extended Device Information
+	ProductCode                *string // Product code (octet string)
+	ProductURL                 *string // Product URL
+	ManufacturerVersionDetails *string // Manufacturer version details
+	SerialNumber               *string // Serial number
+	ProductLabel               *string // Product label
+
 	// Optional Device Information
 	LocationDescription *string // Physical location description (max 16 chars)
 	PhysicalEnvironment *uint8  // Physical environment type (enum8)
@@ -1116,6 +1123,11 @@ func (a *Adapter) ReadDeviceInfo(ctx context.Context, nwkAddr uint16, endpoint u
 		zcl.AttrBasicModelIdentifier,
 		zcl.AttrBasicDateCode,
 		zcl.AttrBasicPowerSource,
+		zcl.AttrBasicProductCode,
+		zcl.AttrBasicProductURL,
+		zcl.AttrBasicManufacturerVersionDetails,
+		zcl.AttrBasicSerialNumber,
+		zcl.AttrBasicProductLabel,
 		zcl.AttrBasicLocationDescription,
 		zcl.AttrBasicPhysicalEnvironment,
 		zcl.AttrBasicDeviceEnabled,
@@ -1199,6 +1211,26 @@ func (a *Adapter) ReadDeviceInfo(ctx context.Context, nwkAddr uint16, endpoint u
 		case zcl.AttrBasicSWBuildID:
 			if v, ok := r.Value.(string); ok {
 				info.SWBuildID = &v
+			}
+		case zcl.AttrBasicProductCode:
+			if v, ok := r.Value.(string); ok {
+				info.ProductCode = &v
+			}
+		case zcl.AttrBasicProductURL:
+			if v, ok := r.Value.(string); ok {
+				info.ProductURL = &v
+			}
+		case zcl.AttrBasicManufacturerVersionDetails:
+			if v, ok := r.Value.(string); ok {
+				info.ManufacturerVersionDetails = &v
+			}
+		case zcl.AttrBasicSerialNumber:
+			if v, ok := r.Value.(string); ok {
+				info.SerialNumber = &v
+			}
+		case zcl.AttrBasicProductLabel:
+			if v, ok := r.Value.(string); ok {
+				info.ProductLabel = &v
 			}
 		case zcl.AttrBasicGenericDeviceClass:
 			if v, ok := r.Value.(uint8); ok {

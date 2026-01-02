@@ -92,10 +92,15 @@ type InterviewResult struct {
 	ManufacturerCode uint16
 
 	// From Basic cluster
-	Manufacturer string
-	Model        string
-	PowerSource  PowerSource
-	SWBuildID    string // Software build ID (optional)
+	Manufacturer               string
+	Model                      string
+	PowerSource                PowerSource
+	SWBuildID                  string // Software build ID (optional)
+	ProductCode                string // Product code (optional, octet string)
+	ProductURL                 string // Product URL (optional)
+	ManufacturerVersionDetails string // Manufacturer version details (optional)
+	SerialNumber               string // Serial number (optional)
+	ProductLabel               string // Product label (optional)
 
 	// All endpoints with their clusters
 	Endpoints []EndpointInfo
@@ -297,6 +302,11 @@ func (a *Adapter) readBasicAttributes(ctx context.Context, nwkAddr uint16, endpo
 		zcl.AttrBasicModelIdentifier,
 		zcl.AttrBasicPowerSource,
 		zcl.AttrBasicSWBuildID,
+		zcl.AttrBasicProductCode,
+		zcl.AttrBasicProductURL,
+		zcl.AttrBasicManufacturerVersionDetails,
+		zcl.AttrBasicSerialNumber,
+		zcl.AttrBasicProductLabel,
 	}
 
 	var readCtx context.Context
@@ -335,6 +345,26 @@ func (a *Adapter) readBasicAttributes(ctx context.Context, nwkAddr uint16, endpo
 		case zcl.AttrBasicSWBuildID:
 			if s, ok := r.Value.(string); ok {
 				result.SWBuildID = s
+			}
+		case zcl.AttrBasicProductCode:
+			if s, ok := r.Value.(string); ok {
+				result.ProductCode = s
+			}
+		case zcl.AttrBasicProductURL:
+			if s, ok := r.Value.(string); ok {
+				result.ProductURL = s
+			}
+		case zcl.AttrBasicManufacturerVersionDetails:
+			if s, ok := r.Value.(string); ok {
+				result.ManufacturerVersionDetails = s
+			}
+		case zcl.AttrBasicSerialNumber:
+			if s, ok := r.Value.(string); ok {
+				result.SerialNumber = s
+			}
+		case zcl.AttrBasicProductLabel:
+			if s, ok := r.Value.(string); ok {
+				result.ProductLabel = s
 			}
 		}
 	}

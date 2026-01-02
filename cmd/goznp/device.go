@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/marstid/goznp/pkg/adapter"
+	devicedb "github.com/marstid/goznp/pkg/devices"
 	"github.com/marstid/goznp/pkg/zcl"
 	"github.com/marstid/goznp/pkg/znp"
 	"github.com/spf13/cobra"
@@ -485,12 +486,46 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 			continue
 		}
 
+		// Helper to show N/A for empty mandatory fields
+		strOrNA := func(s string) string {
+			if s == "" {
+				return "N/A"
+			}
+			return s
+		}
+
+		// Mandatory fields - always shown
 		fmt.Printf("  Type:         %s\n", r.DeviceType)
-		fmt.Printf("  Manufacturer: %s\n", r.Manufacturer)
-		fmt.Printf("  Model:        %s\n", r.Model)
+
+		// Try to look up friendly device name
+		if info := devicedb.Lookup(r.Manufacturer, r.Model); info != nil {
+			fmt.Printf("  Vendor:       %s\n", info.Vendor)
+			fmt.Printf("  Product:      %s\n", info.Model)
+			fmt.Printf("  Description:  %s\n", info.Description)
+			fmt.Printf("  Raw ID:       %s / %s\n", r.Manufacturer, r.Model)
+		} else {
+			fmt.Printf("  Manufacturer: %s\n", strOrNA(r.Manufacturer))
+			fmt.Printf("  Model:        %s\n", strOrNA(r.Model))
+		}
+
 		fmt.Printf("  Power:        %s\n", r.PowerSource)
+		fmt.Printf("  Serial:       %s\n", strOrNA(r.SerialNumber))
+
+		// Optional fields - only shown if present
 		if r.SWBuildID != "" {
 			fmt.Printf("  SW Build:     %s\n", r.SWBuildID)
+		}
+		if r.ProductCode != "" {
+			fmt.Printf("  Product Code: %s\n", r.ProductCode)
+		}
+		if r.ProductURL != "" {
+			fmt.Printf("  Product URL:  %s\n", r.ProductURL)
+		}
+		if r.ManufacturerVersionDetails != "" {
+			fmt.Printf("  Manuf Ver:    %s\n", r.ManufacturerVersionDetails)
+		}
+		if r.ProductLabel != "" {
+			fmt.Printf("  Label:        %s\n", r.ProductLabel)
 		}
 		if r.ManufacturerCode != 0 {
 			fmt.Printf("  Manuf Code:   0x%04X\n", r.ManufacturerCode)

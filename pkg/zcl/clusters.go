@@ -156,9 +156,14 @@ const (
 	AttrBasicHWVersion           AttributeID = 0x0003
 	AttrBasicManufacturerName    AttributeID = 0x0004
 	AttrBasicModelIdentifier     AttributeID = 0x0005
-	AttrBasicDateCode            AttributeID = 0x0006
-	AttrBasicPowerSource         AttributeID = 0x0007
-	AttrBasicLocationDescription AttributeID = 0x0010
+	AttrBasicDateCode                  AttributeID = 0x0006
+	AttrBasicPowerSource               AttributeID = 0x0007
+	AttrBasicProductCode               AttributeID = 0x000A
+	AttrBasicProductURL                AttributeID = 0x000B
+	AttrBasicManufacturerVersionDetails AttributeID = 0x000C
+	AttrBasicSerialNumber              AttributeID = 0x000D
+	AttrBasicProductLabel              AttributeID = 0x000E
+	AttrBasicLocationDescription       AttributeID = 0x0010
 	AttrBasicPhysicalEnvironment AttributeID = 0x0011
 	AttrBasicDeviceEnabled       AttributeID = 0x0012
 	AttrBasicAlarmMask           AttributeID = 0x0013
