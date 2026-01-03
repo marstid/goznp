@@ -211,6 +211,12 @@ func (a *Adapter) setupDeviceEventCallbacks() {
 			Type:     DeviceEventLeft,
 			IEEEAddr: ind.IEEEAddr,
 		})
+
+		// Clean up device name in background (non-fatal, best-effort)
+		go func() {
+			ctx := context.Background()
+			_ = a.DeleteDeviceName(ctx, ind.IEEEAddr)
+		}()
 	})
 }
 

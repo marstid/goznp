@@ -19,6 +19,7 @@ const (
 const (
 	NvStatusSuccess      uint8 = 0x00
 	NvStatusItemNotFound uint8 = 0x09
+	NvStatusBadItemLen   uint8 = 0x0A // Item doesn't exist or wrong length
 	NvStatusBadLength    uint8 = 0x0C
 )
 
@@ -307,8 +308,8 @@ func (z *ZNP) NvReadEx(ctx context.Context, sysId uint8, itemId, subId, offset u
 		return nil, fmt.Errorf("failed to read length: %w", err)
 	}
 
-	// Handle item not found
-	if status == NvStatusItemNotFound {
+	// Handle item not found (0x09) or bad item length (0x0A - item doesn't exist)
+	if status == NvStatusItemNotFound || status == NvStatusBadItemLen {
 		return nil, nil
 	}
 

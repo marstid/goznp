@@ -814,6 +814,9 @@ const (
 	// NvZStackProfile is a custom NV item for storing the application profile.
 	// Uses user data range (0x0F00+). Stores 2-byte profile ID.
 	NvZStackProfile NvItemID = 0x0F00
+	// NvDeviceNames stores custom device names/descriptions.
+	// Uses user data range (0x0F00+).
+	NvDeviceNames NvItemID = 0x0F01
 )
 
 // ApplicationProfile represents a Zigbee application profile.

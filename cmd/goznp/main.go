@@ -16,6 +16,10 @@ import (
 )
 
 var (
+	// Version information - set by GoReleaser via ldflags
+	version   = "dev"
+	buildTime = "unknown"
+
 	// Global flags
 	portPath string
 	baudRate int
@@ -46,6 +50,14 @@ var rootCmd = &cobra.Command{
 	Long:  "Command-line tool for interacting with Zigbee adapters via ZNP (Z-Stack Network Processor) protocol",
 }
 
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("goznp %s (built %s)\n", version, buildTime)
+	},
+}
+
 func init() {
 	// Add global flags to commands that need them
 	for _, cmd := range []*cobra.Command{infoCmd, pingCmd, resetCmd} {
@@ -54,6 +66,7 @@ func init() {
 	}
 
 	// Add all commands to root
+	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(infoCmd)
 	rootCmd.AddCommand(pingCmd)

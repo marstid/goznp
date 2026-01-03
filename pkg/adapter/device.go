@@ -397,6 +397,9 @@ func (a *Adapter) RemoveDevice(ctx context.Context, nwkAddr uint16, ieeeAddr [8]
 	// Remove from local device manager
 	a.deviceMgr.removeDevice(ieeeAddr)
 
+	// Clean up device name (non-fatal, best-effort)
+	_ = a.DeleteDeviceName(ctx, ieeeAddr)
+
 	return nil
 }
 
@@ -424,6 +427,9 @@ func (a *Adapter) ForceRemoveDevice(ctx context.Context, ieeeAddr [8]byte) error
 
 	// Remove from local device manager
 	a.deviceMgr.removeDevice(ieeeAddr)
+
+	// Clean up device name (non-fatal, best-effort)
+	_ = a.DeleteDeviceName(ctx, ieeeAddr)
 
 	return nil
 }

@@ -45,6 +45,11 @@ var (
 
 	// Scene flags
 	sceneID uint8
+
+	// Device name flags
+	deviceName        string
+	deviceDescription string
+	deviceNameLookup  string // For --name flag
 )
 
 var deviceCmd = &cobra.Command{
@@ -384,15 +389,27 @@ func runDeviceList(ctx context.Context) error {
 func runDeviceListQuick(ctx context.Context, a *adapter.Adapter, devices []*adapter.Device) error {
 	fmt.Printf("\nFound %d device(s):\n\n", len(devices))
 
+	// Fetch custom device names
+	deviceNames, _ := a.ListDeviceNames(ctx) // Ignore errors - names are optional
+	namesByIEEE := make(map[[8]byte]string)
+	for _, dn := range deviceNames {
+		namesByIEEE[dn.IEEEAddr] = dn.Name
+	}
+
 	// Create a tabwriter for aligned columns
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Network Addr\tIEEE Address")
-	fmt.Fprintln(w, "------------\t-----------------------")
+	fmt.Fprintln(w, "Network Addr\tIEEE Address\tName")
+	fmt.Fprintln(w, "------------\t-----------------------\t----")
 
 	for _, dev := range devices {
-		fmt.Fprintf(w, "0x%04X\t%s\n",
+		name := namesByIEEE[dev.IEEEAddr]
+		if name == "" {
+			name = "-"
+		}
+		fmt.Fprintf(w, "0x%04X\t%s\t%s\n",
 			dev.NwkAddr,
 			znp.FormatIEEEAddr(dev.IEEEAddr),
+			name,
 		)
 	}
 
@@ -405,6 +422,13 @@ func runDeviceListQuick(ctx context.Context, a *adapter.Adapter, devices []*adap
 
 func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices []*adapter.Device) error {
 	fmt.Printf("Interviewing %d device(s)...\n\n", len(devices))
+
+	// Fetch custom device names
+	deviceNames, _ := a.ListDeviceNames(ctx) // Ignore errors - names are optional
+	namesByIEEE := make(map[[8]byte]string)
+	for _, dn := range deviceNames {
+		namesByIEEE[dn.IEEEAddr] = dn.Name
+	}
 
 	results := make([]*adapter.InterviewResult, 0, len(devices))
 
@@ -435,8 +459,8 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 	fmt.Printf("\n%d device(s):\n\n", len(results))
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "Addr\tIEEE Address\tType\tManufacturer\tModel\tPower\tEndpoints")
-	fmt.Fprintln(w, "------\t--------------------\t----------\t------------\t-----\t------\t---------")
+	fmt.Fprintln(w, "Addr\tIEEE Address\tName\tType\tManufacturer\tModel\tPower\tEndpoints")
+	fmt.Fprintln(w, "------\t--------------------\t----\t----------\t------------\t-----\t------\t---------")
 
 	for _, r := range results {
 		deviceType := r.DeviceType.String()
@@ -458,9 +482,16 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 			endpoints = "-"
 		}
 
-		fmt.Fprintf(w, "0x%04X\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		// Get custom name
+		name := namesByIEEE[r.IEEEAddr]
+		if name == "" {
+			name = "-"
+		}
+
+		fmt.Fprintf(w, "0x%04X\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			r.NwkAddr,
 			r.IEEEAddrString(),
+			name,
 			deviceType,
 			manufacturer,
 			model,
@@ -486,10 +517,10 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 			continue
 		}
 
-		// Helper to show N/A for empty mandatory fields
+		// Helper to show - for empty mandatory fields
 		strOrNA := func(s string) string {
 			if s == "" {
-				return "N/A"
+				return "-"
 			}
 			return s
 		}
@@ -663,11 +694,6 @@ func runDeviceStatus(ctx context.Context) error {
 		return err
 	}
 
-	nwkAddr, err := parseNetworkAddr(deviceAddr)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -681,7 +707,32 @@ func runDeviceStatus(ctx context.Context) error {
 	}
 	defer a.Close()
 
-	fmt.Printf("Querying device 0x%04X endpoint %d...\n", nwkAddr, deviceEndpoint)
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceNameLookup, deviceIEEE, deviceAddr)
+	if err != nil {
+		return err
+	}
+
+	// Get device IEEE address to fetch custom name
+	var customName string
+	devices, err := a.GetDevices(ctx)
+	if err == nil {
+		for _, dev := range devices {
+			if dev.NwkAddr == nwkAddr {
+				// Get custom name if set
+				nameInfo, _ := a.GetDeviceName(ctx, dev.IEEEAddr)
+				if nameInfo != nil && nameInfo.Name != "" {
+					customName = nameInfo.Name
+				}
+				break
+			}
+		}
+	}
+
+	if customName != "" {
+		fmt.Printf("Querying device 0x%04X (%s) endpoint %d...\n", nwkAddr, customName, deviceEndpoint)
+	} else {
+		fmt.Printf("Querying device 0x%04X endpoint %d...\n", nwkAddr, deviceEndpoint)
+	}
 
 	status, err := a.GetDeviceStatus(ctx, nwkAddr, deviceEndpoint)
 	if err != nil {
@@ -690,6 +741,9 @@ func runDeviceStatus(ctx context.Context) error {
 
 	// Display status
 	fmt.Println("\nDevice Status:")
+	if customName != "" {
+		fmt.Printf("  Name:             %s\n", customName)
+	}
 	fmt.Printf("  Network Address:  0x%04X\n", status.NwkAddr)
 
 	if status.Manufacturer != "" {
@@ -704,7 +758,7 @@ func runDeviceStatus(ctx context.Context) error {
 	if status.BatteryPercent != nil {
 		fmt.Printf("  Battery:          %d%%\n", *status.BatteryPercent)
 	} else {
-		fmt.Printf("  Battery:          N/A\n")
+		fmt.Printf("  Battery:          -\n")
 	}
 
 	if status.OnOff != nil {
@@ -714,7 +768,7 @@ func runDeviceStatus(ctx context.Context) error {
 		}
 		fmt.Printf("  On/Off State:     %s\n", onOffStr)
 	} else {
-		fmt.Printf("  On/Off State:     N/A\n")
+		fmt.Printf("  On/Off State:     -\n")
 	}
 
 	return nil
@@ -779,11 +833,6 @@ func runDeviceControl(ctx context.Context, action string) error {
 		return err
 	}
 
-	nwkAddr, err := parseNetworkAddr(deviceAddr)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -796,6 +845,11 @@ func runDeviceControl(ctx context.Context, action string) error {
 		return fmt.Errorf("failed to open adapter: %w", err)
 	}
 	defer a.Close()
+
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceNameLookup, deviceIEEE, deviceAddr)
+	if err != nil {
+		return err
+	}
 
 	fmt.Printf("Sending %s command to device 0x%04X endpoint %d...\n", action, nwkAddr, deviceEndpoint)
 
@@ -852,11 +906,6 @@ func runDeviceBrightness(ctx context.Context) error {
 		return err
 	}
 
-	nwkAddr, err := parseNetworkAddr(deviceAddr)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -869,6 +918,11 @@ func runDeviceBrightness(ctx context.Context) error {
 		return fmt.Errorf("failed to open adapter: %w", err)
 	}
 	defer a.Close()
+
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceNameLookup, deviceIEEE, deviceAddr)
+	if err != nil {
+		return err
+	}
 
 	// If no level specified, read current brightness
 	if brightnessLevel == 0 && transitionTime == 0 {
@@ -975,7 +1029,7 @@ func runDeviceColorTemp(ctx context.Context) error {
 			kelvin := 1000000 / int(info.CurrentMireds)
 			fmt.Printf("  Current:  %d mireds (%dK)\n", info.CurrentMireds, kelvin)
 		} else {
-			fmt.Println("  Current:  N/A")
+			fmt.Println("  Current:  -")
 		}
 
 		if info.MinMireds > 0 && info.MaxMireds > 0 {
@@ -1053,11 +1107,6 @@ func runDeviceIdentify(ctx context.Context) error {
 		return err
 	}
 
-	nwkAddr, err := parseNetworkAddr(deviceAddr)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -1070,6 +1119,11 @@ func runDeviceIdentify(ctx context.Context) error {
 		return fmt.Errorf("failed to open adapter: %w", err)
 	}
 	defer a.Close()
+
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceNameLookup, deviceIEEE, deviceAddr)
+	if err != nil {
+		return err
+	}
 
 	// If effect specified, use TriggerEffect
 	if identifyEffect != "" {
@@ -2012,25 +2066,25 @@ func runDevicePower(ctx context.Context) error {
 	if data.Voltage != nil {
 		fmt.Printf("  Voltage:      %.1f V\n", *data.Voltage)
 	} else {
-		fmt.Println("  Voltage:      N/A")
+		fmt.Println("  Voltage:      -")
 	}
 
 	if data.Current != nil {
 		fmt.Printf("  Current:      %.3f A\n", *data.Current)
 	} else {
-		fmt.Println("  Current:      N/A")
+		fmt.Println("  Current:      -")
 	}
 
 	if data.ActivePower != nil {
 		fmt.Printf("  Active Power: %.1f W\n", *data.ActivePower)
 	} else {
-		fmt.Println("  Active Power: N/A")
+		fmt.Println("  Active Power: -")
 	}
 
 	if data.PowerFactor != nil {
 		fmt.Printf("  Power Factor: %d%%\n", *data.PowerFactor)
 	} else {
-		fmt.Println("  Power Factor: N/A")
+		fmt.Println("  Power Factor: -")
 	}
 
 	// Simple Metering values
@@ -2038,7 +2092,7 @@ func runDevicePower(ctx context.Context) error {
 	if data.TotalEnergy != nil {
 		fmt.Printf("  Total Energy: %.3f kWh\n", *data.TotalEnergy)
 	} else {
-		fmt.Println("  Total Energy: N/A")
+		fmt.Println("  Total Energy: -")
 	}
 
 	if data.InstantPower != nil {
@@ -2091,7 +2145,25 @@ func runDeviceInfo(ctx context.Context) error {
 		return nil
 	}
 
+	// Get device IEEE address to fetch custom name
+	devices, err := a.GetDevices(ctx)
+	if err == nil {
+		for _, dev := range devices {
+			if dev.NwkAddr == nwkAddr {
+				// Get custom name if set
+				nameInfo, _ := a.GetDeviceName(ctx, dev.IEEEAddr)
+				if nameInfo != nil && nameInfo.Name != "" {
+					fmt.Printf("Device 0x%04X (%s) has %d endpoint(s):\n", nwkAddr, nameInfo.Name, len(caps.Endpoints))
+				} else {
+					fmt.Printf("Device 0x%04X has %d endpoint(s):\n", nwkAddr, len(caps.Endpoints))
+				}
+				goto endpointLoop
+			}
+		}
+	}
+	// Fallback if we couldn't get device list or find the device
 	fmt.Printf("Device 0x%04X has %d endpoint(s):\n", nwkAddr, len(caps.Endpoints))
+endpointLoop:
 
 	for _, ep := range caps.Endpoints {
 		fmt.Printf("\n  Endpoint %d:\n", ep.Endpoint)
@@ -2287,19 +2359,19 @@ func runDeviceSensor(ctx context.Context) error {
 	if data.Temperature != nil {
 		fmt.Printf("  Temperature:  %.1f°C\n", *data.Temperature)
 	} else {
-		fmt.Println("  Temperature:  N/A (device may be asleep)")
+		fmt.Println("  Temperature:  - (device may be asleep)")
 	}
 
 	if data.Humidity != nil {
 		fmt.Printf("  Humidity:     %.1f%%\n", *data.Humidity)
 	} else {
-		fmt.Println("  Humidity:     N/A")
+		fmt.Println("  Humidity:     -")
 	}
 
 	if data.Battery != nil {
 		fmt.Printf("  Battery:      %d%%\n", *data.Battery)
 	} else {
-		fmt.Println("  Battery:      N/A")
+		fmt.Println("  Battery:      -")
 	}
 
 	return nil
@@ -2314,6 +2386,69 @@ func parseNetworkAddr(s string) (uint16, error) {
 		return 0, fmt.Errorf("invalid network address %q: %w", s, err)
 	}
 	return uint16(val), nil
+}
+
+// resolveDeviceAddr resolves a device by name, IEEE address, or network address.
+// Priority: --name > --ieee > --addr
+func resolveDeviceAddr(ctx context.Context, a *adapter.Adapter, nameLookup, ieeeLookup, addrLookup string) (uint16, error) {
+	// If name is provided, look it up
+	if nameLookup != "" {
+		names, err := a.ListDeviceNames(ctx)
+		if err != nil {
+			return 0, fmt.Errorf("failed to list device names: %w", err)
+		}
+
+		var matchedIEEE [8]byte
+		found := false
+		for _, n := range names {
+			if n.Name == nameLookup {
+				matchedIEEE = n.IEEEAddr
+				found = true
+				break
+			}
+		}
+		if !found {
+			return 0, fmt.Errorf("no device found with name %q", nameLookup)
+		}
+
+		devices, err := a.GetDevices(ctx)
+		if err != nil {
+			return 0, fmt.Errorf("failed to get devices: %w", err)
+		}
+
+		for _, d := range devices {
+			if d.IEEEAddr == matchedIEEE {
+				return d.NwkAddr, nil
+			}
+		}
+		return 0, fmt.Errorf("device %q not found in network", nameLookup)
+	}
+
+	// If IEEE is provided, look it up
+	if ieeeLookup != "" {
+		ieeeAddr, err := znp.ParseIEEEAddr(ieeeLookup)
+		if err != nil {
+			return 0, fmt.Errorf("invalid IEEE address: %w", err)
+		}
+
+		devices, err := a.GetDevices(ctx)
+		if err != nil {
+			return 0, fmt.Errorf("failed to get devices: %w", err)
+		}
+
+		for _, d := range devices {
+			if d.IEEEAddr == ieeeAddr {
+				return d.NwkAddr, nil
+			}
+		}
+		return 0, fmt.Errorf("device with IEEE %s not found in network", ieeeLookup)
+	}
+
+	// Otherwise parse the network address
+	if addrLookup == "" {
+		return 0, fmt.Errorf("one of --addr, --ieee, or --name must be specified")
+	}
+	return parseNetworkAddr(addrLookup)
 }
 
 // parseClusterID parses hex cluster ID (e.g., "0x0006" or "6").
@@ -2761,6 +2896,262 @@ func runDeviceBindings(ctx context.Context) error {
 	return nil
 }
 
+// ============================================================================
+// Device Name Commands
+// ============================================================================
+
+// Parent command for device name operations
+var deviceNameCmd = &cobra.Command{
+	Use:   "name",
+	Short: "Manage custom device names",
+	Long:  "Set, get, list, or delete custom names and descriptions for devices",
+}
+
+// goznp device name set --ieee <addr> --name <name> [--description <desc>]
+var deviceNameSetCmd = &cobra.Command{
+	Use:   "set",
+	Short: "Set custom name for a device",
+	Long: `Set a custom name and optional description for a device.
+
+The custom name is stored on the coordinator and associated with the device's
+IEEE address. This name persists across network restarts.
+
+Examples:
+  goznp device name set --ieee 00:11:22:33:44:55:66:77 --name "Living Room Light"
+  goznp device name set --ieee 00:11:22:33:44:55:66:77 --name "Kitchen Sensor" --description "Temperature and humidity sensor"`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := setupSignalHandler()
+		return runDeviceNameSet(ctx)
+	},
+}
+
+func runDeviceNameSet(ctx context.Context) error {
+	port, err := getPortPath()
+	if err != nil {
+		return err
+	}
+
+	if deviceIEEE == "" {
+		return fmt.Errorf("--ieee is required")
+	}
+
+	if deviceName == "" {
+		return fmt.Errorf("--name is required")
+	}
+
+	ieeeAddr, err := znp.ParseIEEEAddr(deviceIEEE)
+	if err != nil {
+		return fmt.Errorf("invalid IEEE address %q: %w", deviceIEEE, err)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	a := adapter.New(
+		adapter.WithSerialPath(port),
+		adapter.WithBaudRate(baudRate),
+	)
+
+	if err := a.Open(ctx); err != nil {
+		return fmt.Errorf("failed to open adapter: %w", err)
+	}
+	defer a.Close()
+
+	fmt.Printf("Setting custom name for device %s...\n", znp.FormatIEEEAddr(ieeeAddr))
+
+	if err := a.SetDeviceName(ctx, ieeeAddr, deviceName, deviceDescription); err != nil {
+		return fmt.Errorf("failed to set device name: %w", err)
+	}
+
+	fmt.Printf("Device name set to: %s\n", deviceName)
+	if deviceDescription != "" {
+		fmt.Printf("Description: %s\n", deviceDescription)
+	}
+
+	return nil
+}
+
+// goznp device name get --ieee <addr>
+var deviceNameGetCmd = &cobra.Command{
+	Use:   "get",
+	Short: "Get custom name for a device",
+	Long: `Get the custom name and description for a device.
+
+Example:
+  goznp device name get --ieee 00:11:22:33:44:55:66:77`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := setupSignalHandler()
+		return runDeviceNameGet(ctx)
+	},
+}
+
+func runDeviceNameGet(ctx context.Context) error {
+	port, err := getPortPath()
+	if err != nil {
+		return err
+	}
+
+	if deviceIEEE == "" {
+		return fmt.Errorf("--ieee is required")
+	}
+
+	ieeeAddr, err := znp.ParseIEEEAddr(deviceIEEE)
+	if err != nil {
+		return fmt.Errorf("invalid IEEE address %q: %w", deviceIEEE, err)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	a := adapter.New(
+		adapter.WithSerialPath(port),
+		adapter.WithBaudRate(baudRate),
+	)
+
+	if err := a.Open(ctx); err != nil {
+		return fmt.Errorf("failed to open adapter: %w", err)
+	}
+	defer a.Close()
+
+	info, err := a.GetDeviceName(ctx, ieeeAddr)
+	if err != nil {
+		return fmt.Errorf("failed to get device name: %w", err)
+	}
+
+	if info == nil || info.Name == "" {
+		fmt.Println("No custom name set")
+		return nil
+	}
+
+	fmt.Printf("Device: %s\n", znp.FormatIEEEAddr(ieeeAddr))
+	fmt.Printf("Name: %s\n", info.Name)
+	if info.Description != "" {
+		fmt.Printf("Description: %s\n", info.Description)
+	}
+
+	return nil
+}
+
+// goznp device name list
+var deviceNameListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all devices with custom names",
+	Long: `List all devices that have custom names set.
+
+Example:
+  goznp device name list`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := setupSignalHandler()
+		return runDeviceNameList(ctx)
+	},
+}
+
+func runDeviceNameList(ctx context.Context) error {
+	port, err := getPortPath()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	a := adapter.New(
+		adapter.WithSerialPath(port),
+		adapter.WithBaudRate(baudRate),
+	)
+
+	if err := a.Open(ctx); err != nil {
+		return fmt.Errorf("failed to open adapter: %w", err)
+	}
+	defer a.Close()
+
+	names, err := a.ListDeviceNames(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to list device names: %w", err)
+	}
+
+	if len(names) == 0 {
+		fmt.Println("No devices with custom names")
+		return nil
+	}
+
+	fmt.Printf("Found %d device(s) with custom names:\n\n", len(names))
+
+	// Create a tabwriter for aligned columns
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(w, "IEEE Address\tName\tDescription")
+	fmt.Fprintln(w, "------------\t----\t-----------")
+
+	for _, device := range names {
+		desc := device.Description
+		if desc == "" {
+			desc = "-"
+		}
+		fmt.Fprintf(w, "%s\t%s\t%s\n",
+			znp.FormatIEEEAddr(device.IEEEAddr),
+			device.Name,
+			desc,
+		)
+	}
+
+	w.Flush()
+
+	return nil
+}
+
+// goznp device name delete --ieee <addr>
+var deviceNameDeleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete custom name for a device",
+	Long: `Delete the custom name and description for a device.
+
+Example:
+  goznp device name delete --ieee 00:11:22:33:44:55:66:77`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		ctx := setupSignalHandler()
+		return runDeviceNameDelete(ctx)
+	},
+}
+
+func runDeviceNameDelete(ctx context.Context) error {
+	port, err := getPortPath()
+	if err != nil {
+		return err
+	}
+
+	if deviceIEEE == "" {
+		return fmt.Errorf("--ieee is required")
+	}
+
+	ieeeAddr, err := znp.ParseIEEEAddr(deviceIEEE)
+	if err != nil {
+		return fmt.Errorf("invalid IEEE address %q: %w", deviceIEEE, err)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	a := adapter.New(
+		adapter.WithSerialPath(port),
+		adapter.WithBaudRate(baudRate),
+	)
+
+	if err := a.Open(ctx); err != nil {
+		return fmt.Errorf("failed to open adapter: %w", err)
+	}
+	defer a.Close()
+
+	fmt.Printf("Deleting custom name for device %s...\n", znp.FormatIEEEAddr(ieeeAddr))
+
+	if err := a.DeleteDeviceName(ctx, ieeeAddr); err != nil {
+		return fmt.Errorf("failed to delete device name: %w", err)
+	}
+
+	fmt.Println("Device name deleted")
+
+	return nil
+}
+
 // getDataTypeForAttribute returns the ZCL data type for known attributes.
 func getDataTypeForAttribute(cluster zcl.ClusterID, attr zcl.AttributeID) zcl.DataType {
 	switch cluster {
@@ -2808,19 +3199,22 @@ func init() {
 
 	// Device status/control flags
 	deviceStatusCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-	deviceStatusCmd.MarkFlagRequired("addr")
+	deviceStatusCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+	deviceStatusCmd.Flags().StringVar(&deviceNameLookup, "name", "", "Device name (alternative to --addr)")
 	deviceStatusCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 
 	// Add --addr and --endpoint to control commands
 	for _, cmd := range []*cobra.Command{deviceOnCmd, deviceOffCmd, deviceToggleCmd} {
 		cmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-		cmd.MarkFlagRequired("addr")
+		cmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+		cmd.Flags().StringVar(&deviceNameLookup, "name", "", "Device name (alternative to --addr)")
 		cmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	}
 
 	// Device brightness flags
 	deviceBrightnessCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-	deviceBrightnessCmd.MarkFlagRequired("addr")
+	deviceBrightnessCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+	deviceBrightnessCmd.Flags().StringVar(&deviceNameLookup, "name", "", "Device name (alternative to --addr)")
 	deviceBrightnessCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceBrightnessCmd.Flags().Uint8Var(&brightnessLevel, "level", 0, "Brightness level (0-254, 0=off, 254=max)")
 	deviceBrightnessCmd.Flags().Uint16Var(&transitionTime, "transition", 0, "Transition time in milliseconds")
@@ -2835,7 +3229,8 @@ func init() {
 
 	// Device identify flags
 	deviceIdentifyCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-	deviceIdentifyCmd.MarkFlagRequired("addr")
+	deviceIdentifyCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+	deviceIdentifyCmd.Flags().StringVar(&deviceNameLookup, "name", "", "Device name (alternative to --addr)")
 	deviceIdentifyCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceIdentifyCmd.Flags().Uint16Var(&identifyDuration, "duration", 0, "Identify duration in seconds (default: 5)")
 	deviceIdentifyCmd.Flags().StringVar(&identifyEffect, "effect", "", "Trigger effect (blink, breathe, okay, channel, stop)")
@@ -2955,6 +3350,25 @@ func init() {
 	deviceBindingsCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
 	deviceBindingsCmd.MarkFlagRequired("addr")
 
+	// Device name flags
+	deviceNameSetCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+	deviceNameSetCmd.MarkFlagRequired("ieee")
+	deviceNameSetCmd.Flags().StringVar(&deviceName, "name", "", "Custom device name")
+	deviceNameSetCmd.MarkFlagRequired("name")
+	deviceNameSetCmd.Flags().StringVar(&deviceDescription, "description", "", "Optional device description")
+
+	deviceNameGetCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+	deviceNameGetCmd.MarkFlagRequired("ieee")
+
+	deviceNameDeleteCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+	deviceNameDeleteCmd.MarkFlagRequired("ieee")
+
+	// Build name subcommand hierarchy
+	deviceNameCmd.AddCommand(deviceNameSetCmd)
+	deviceNameCmd.AddCommand(deviceNameGetCmd)
+	deviceNameCmd.AddCommand(deviceNameListCmd)
+	deviceNameCmd.AddCommand(deviceNameDeleteCmd)
+
 	// Add port/baud flags to all device commands
 	for _, cmd := range []*cobra.Command{
 		devicePermitCmd, devicePairCmd, deviceListCmd, deviceWatchCmd, deviceStatusCmd,
@@ -2965,6 +3379,7 @@ func init() {
 		deviceSceneStoreCmd, deviceSceneRecallCmd, deviceSceneRemoveCmd, deviceSceneListCmd,
 		deviceSensorCmd, deviceListenCmd, deviceInfoCmd, devicePowerCmd, deviceResetEnergyCmd,
 		deviceRemoveCmd, deviceBindCmd, deviceConfigureReportingCmd, deviceReportingCmd, deviceBindingsCmd,
+		deviceNameSetCmd, deviceNameGetCmd, deviceNameListCmd, deviceNameDeleteCmd,
 	} {
 		cmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
 		cmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
@@ -2995,4 +3410,5 @@ func init() {
 	deviceCmd.AddCommand(deviceConfigureReportingCmd)
 	deviceCmd.AddCommand(deviceReportingCmd)
 	deviceCmd.AddCommand(deviceBindingsCmd)
+	deviceCmd.AddCommand(deviceNameCmd)
 }
