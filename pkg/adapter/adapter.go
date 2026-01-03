@@ -50,7 +50,13 @@ func newDedupeCache(window time.Duration) *dedupeCache {
 
 // isDuplicate checks if a message is a duplicate and records it if not.
 // Returns true if this message was seen within the deduplication window.
+// A zero window disables deduplication entirely.
 func (c *dedupeCache) isDuplicate(srcAddr, clusterID uint16, transSeqNum uint8) bool {
+	// Zero window means no deduplication
+	if c.window == 0 {
+		return false
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
