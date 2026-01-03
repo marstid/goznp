@@ -21,7 +21,7 @@ jobs:
             goos: linux
             goarch: arm64
           # macOS builds - macos-13 is Intel, macos-latest is ARM64
-          - os: macos-13
+          - os: macos-15
             goos: darwin
             goarch: amd64
           - os: macos-latest
