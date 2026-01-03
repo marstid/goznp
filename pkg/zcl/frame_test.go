@@ -102,9 +102,9 @@ func TestParseReadAttributesResponse(t *testing.T) {
 		// Response: attrID=0x0000, status=success, type=uint8, value=42
 		payload := []byte{
 			0x00, 0x00, // Attribute ID: 0x0000
-			0x00,       // Status: success
-			0x20,       // Data type: uint8
-			0x2A,       // Value: 42
+			0x00, // Status: success
+			0x20, // Data type: uint8
+			0x2A, // Value: 42
 		}
 
 		results, err := ParseReadAttributesResponse(payload)
@@ -139,9 +139,9 @@ func TestParseReadAttributesResponse(t *testing.T) {
 			0x10,       // Data type: boolean
 			0x01,       // Value: true
 			0x01, 0x00, // Attribute ID: 0x0001
-			0x00,             // Status: success
-			0x21,             // Data type: uint16
-			0x34, 0x12,       // Value: 0x1234 (little-endian)
+			0x00,       // Status: success
+			0x21,       // Data type: uint16
+			0x34, 0x12, // Value: 0x1234 (little-endian)
 		}
 
 		results, err := ParseReadAttributesResponse(payload)
@@ -201,15 +201,15 @@ func TestParseReadAttributesResponse(t *testing.T) {
 	t.Run("mixed success and failure", func(t *testing.T) {
 		payload := []byte{
 			0x00, 0x00, // Attribute ID: 0x0000
-			0x00, // Status: success
-			0x20, // Data type: uint8
-			0xFF, // Value: 255
+			0x00,       // Status: success
+			0x20,       // Data type: uint8
+			0xFF,       // Value: 255
 			0x01, 0x00, // Attribute ID: 0x0001
 			0x86,       // Status: unsupported
 			0x02, 0x00, // Attribute ID: 0x0002
-			0x00,       // Status: success
-			0x10,       // Data type: boolean
-			0x00,       // Value: false
+			0x00, // Status: success
+			0x10, // Data type: boolean
+			0x00, // Value: false
 		}
 
 		results, err := ParseReadAttributesResponse(payload)

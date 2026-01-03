@@ -2572,7 +2572,6 @@ func (a *Adapter) GetAnalogInputValue(ctx context.Context, nwkAddr uint16, endpo
 	return 0, fmt.Errorf("unexpected value type: %T", result.Value)
 }
 
-
 // ============================================================================
 // AnalogOutput Cluster (0x000D)
 // ============================================================================
@@ -2681,6 +2680,7 @@ func (a *Adapter) GetAnalogOutputValue(ctx context.Context, nwkAddr uint16, endp
 	}
 	return 0, fmt.Errorf("unexpected value type: %T", result.Value)
 }
+
 // ============================================================================
 // AnalogValue Cluster (0x000E)
 // ============================================================================

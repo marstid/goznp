@@ -79,11 +79,11 @@ func TestReadValueIntegers(t *testing.T) {
 
 func TestReadValueBoolean(t *testing.T) {
 	tests := []struct {
-		name     string
-		data     []byte
-		want     interface{}
-		wantN    int
-		wantErr  bool
+		name    string
+		data    []byte
+		want    interface{}
+		wantN   int
+		wantErr bool
 	}{
 		{"true (0x01)", []byte{0x01}, true, 1, false},
 		{"true (0xFF)", []byte{0xFF}, true, 1, false},

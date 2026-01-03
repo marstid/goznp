@@ -115,20 +115,29 @@ func TestRegisteredEndpoints_AddMultiple(t *testing.T) {
 
 func TestRegisteredEndpoints_GetProfiles(t *testing.T) {
 	tests := []struct {
-		name              string
-		endpoints         []struct{ ep uint8; profile znp.ApplicationProfile }
+		name      string
+		endpoints []struct {
+			ep      uint8
+			profile znp.ApplicationProfile
+		}
 		wantProfilesCount int
 		wantProfiles      map[znp.ApplicationProfile]bool
 	}{
 		{
-			name:              "empty endpoints",
-			endpoints:         []struct{ ep uint8; profile znp.ApplicationProfile }{},
+			name: "empty endpoints",
+			endpoints: []struct {
+				ep      uint8
+				profile znp.ApplicationProfile
+			}{},
 			wantProfilesCount: 0,
 			wantProfiles:      map[znp.ApplicationProfile]bool{},
 		},
 		{
 			name: "single profile",
-			endpoints: []struct{ ep uint8; profile znp.ApplicationProfile }{
+			endpoints: []struct {
+				ep      uint8
+				profile znp.ApplicationProfile
+			}{
 				{1, znp.ProfileHomeAutomation},
 			},
 			wantProfilesCount: 1,
@@ -138,7 +147,10 @@ func TestRegisteredEndpoints_GetProfiles(t *testing.T) {
 		},
 		{
 			name: "multiple unique profiles",
-			endpoints: []struct{ ep uint8; profile znp.ApplicationProfile }{
+			endpoints: []struct {
+				ep      uint8
+				profile znp.ApplicationProfile
+			}{
 				{1, znp.ProfileHomeAutomation},
 				{2, znp.ProfileSmartEnergy},
 				{3, znp.ProfileGreenPower},
@@ -152,7 +164,10 @@ func TestRegisteredEndpoints_GetProfiles(t *testing.T) {
 		},
 		{
 			name: "duplicate profiles",
-			endpoints: []struct{ ep uint8; profile znp.ApplicationProfile }{
+			endpoints: []struct {
+				ep      uint8
+				profile znp.ApplicationProfile
+			}{
 				{1, znp.ProfileHomeAutomation},
 				{11, znp.ProfileGreenPower},
 				{242, znp.ProfileGreenPower},
@@ -190,20 +205,29 @@ func TestRegisteredEndpoints_GetProfiles(t *testing.T) {
 
 func TestRegisteredEndpoints_HasProfile(t *testing.T) {
 	tests := []struct {
-		name           string
-		addEndpoints   []struct{ ep uint8; profile znp.ApplicationProfile }
+		name         string
+		addEndpoints []struct {
+			ep      uint8
+			profile znp.ApplicationProfile
+		}
 		checkProfile   znp.ApplicationProfile
 		expectedResult bool
 	}{
 		{
-			name:           "empty endpoints - check HA",
-			addEndpoints:   []struct{ ep uint8; profile znp.ApplicationProfile }{},
+			name: "empty endpoints - check HA",
+			addEndpoints: []struct {
+				ep      uint8
+				profile znp.ApplicationProfile
+			}{},
 			checkProfile:   znp.ProfileHomeAutomation,
 			expectedResult: false,
 		},
 		{
 			name: "has home automation",
-			addEndpoints: []struct{ ep uint8; profile znp.ApplicationProfile }{
+			addEndpoints: []struct {
+				ep      uint8
+				profile znp.ApplicationProfile
+			}{
 				{1, znp.ProfileHomeAutomation},
 			},
 			checkProfile:   znp.ProfileHomeAutomation,
@@ -211,7 +235,10 @@ func TestRegisteredEndpoints_HasProfile(t *testing.T) {
 		},
 		{
 			name: "does not have smart energy",
-			addEndpoints: []struct{ ep uint8; profile znp.ApplicationProfile }{
+			addEndpoints: []struct {
+				ep      uint8
+				profile znp.ApplicationProfile
+			}{
 				{1, znp.ProfileHomeAutomation},
 			},
 			checkProfile:   znp.ProfileSmartEnergy,
@@ -219,7 +246,10 @@ func TestRegisteredEndpoints_HasProfile(t *testing.T) {
 		},
 		{
 			name: "has green power from multiple endpoints",
-			addEndpoints: []struct{ ep uint8; profile znp.ApplicationProfile }{
+			addEndpoints: []struct {
+				ep      uint8
+				profile znp.ApplicationProfile
+			}{
 				{1, znp.ProfileHomeAutomation},
 				{11, znp.ProfileGreenPower},
 				{242, znp.ProfileGreenPower},

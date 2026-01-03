@@ -150,27 +150,27 @@ type AttributeID uint16
 
 // Basic Cluster Attributes (0x0000)
 const (
-	AttrBasicZCLVersion          AttributeID = 0x0000
-	AttrBasicAppVersion          AttributeID = 0x0001
-	AttrBasicStackVersion        AttributeID = 0x0002
-	AttrBasicHWVersion           AttributeID = 0x0003
-	AttrBasicManufacturerName    AttributeID = 0x0004
-	AttrBasicModelIdentifier     AttributeID = 0x0005
-	AttrBasicDateCode                  AttributeID = 0x0006
-	AttrBasicPowerSource               AttributeID = 0x0007
-	AttrBasicProductCode               AttributeID = 0x000A
-	AttrBasicProductURL                AttributeID = 0x000B
+	AttrBasicZCLVersion                 AttributeID = 0x0000
+	AttrBasicAppVersion                 AttributeID = 0x0001
+	AttrBasicStackVersion               AttributeID = 0x0002
+	AttrBasicHWVersion                  AttributeID = 0x0003
+	AttrBasicManufacturerName           AttributeID = 0x0004
+	AttrBasicModelIdentifier            AttributeID = 0x0005
+	AttrBasicDateCode                   AttributeID = 0x0006
+	AttrBasicPowerSource                AttributeID = 0x0007
+	AttrBasicProductCode                AttributeID = 0x000A
+	AttrBasicProductURL                 AttributeID = 0x000B
 	AttrBasicManufacturerVersionDetails AttributeID = 0x000C
-	AttrBasicSerialNumber              AttributeID = 0x000D
-	AttrBasicProductLabel              AttributeID = 0x000E
-	AttrBasicLocationDescription       AttributeID = 0x0010
-	AttrBasicPhysicalEnvironment AttributeID = 0x0011
-	AttrBasicDeviceEnabled       AttributeID = 0x0012
-	AttrBasicAlarmMask           AttributeID = 0x0013
-	AttrBasicDisableLocalConfig  AttributeID = 0x0014
-	AttrBasicSWBuildID           AttributeID = 0x4000
-	AttrBasicGenericDeviceClass  AttributeID = 0xFFFD
-	AttrBasicGenericDeviceType   AttributeID = 0xFFFE
+	AttrBasicSerialNumber               AttributeID = 0x000D
+	AttrBasicProductLabel               AttributeID = 0x000E
+	AttrBasicLocationDescription        AttributeID = 0x0010
+	AttrBasicPhysicalEnvironment        AttributeID = 0x0011
+	AttrBasicDeviceEnabled              AttributeID = 0x0012
+	AttrBasicAlarmMask                  AttributeID = 0x0013
+	AttrBasicDisableLocalConfig         AttributeID = 0x0014
+	AttrBasicSWBuildID                  AttributeID = 0x4000
+	AttrBasicGenericDeviceClass         AttributeID = 0xFFFD
+	AttrBasicGenericDeviceType          AttributeID = 0xFFFE
 )
 
 // Basic Cluster Commands (0x0000)
@@ -866,6 +866,7 @@ const (
 	AttrAnalogOutputStatusFlags       AttributeID = 0x006F // bitmap8: status flags
 	AttrAnalogOutputEngineeringUnits  AttributeID = 0x0075 // enum16: engineering units
 )
+
 type EngineeringUnits uint16
 
 // EngineeringUnits values for common measurements.
@@ -1263,27 +1264,27 @@ const (
 
 // DRLC (Demand Response and Load Control) Cluster Attributes (0x0701)
 const (
-	AttrDRLCUtilityEnrolmentGroup      AttributeID = 0x0000 // uint8: utility enrolment group
-	AttrDRLCStartRandomizeMinutes      AttributeID = 0x0001 // uint8: randomize start time
-	AttrDRLCDurationRandomizeMinutes   AttributeID = 0x0002 // uint8: randomize duration
-	AttrDRLCDeviceClassValue           AttributeID = 0x0003 // uint16: device class bitmap
+	AttrDRLCUtilityEnrolmentGroup    AttributeID = 0x0000 // uint8: utility enrolment group
+	AttrDRLCStartRandomizeMinutes    AttributeID = 0x0001 // uint8: randomize start time
+	AttrDRLCDurationRandomizeMinutes AttributeID = 0x0002 // uint8: randomize duration
+	AttrDRLCDeviceClassValue         AttributeID = 0x0003 // uint16: device class bitmap
 )
 
 // DRLC Device Class bitmap values.
 // These identify the type of load control device.
 const (
-	DRLCDeviceClassHVAC              uint16 = 1 << 0  // HVAC compressor or furnace
-	DRLCDeviceClassStrip             uint16 = 1 << 1  // Strip/baseboard heater
-	DRLCDeviceClassWaterHeater       uint16 = 1 << 2  // Water heater
-	DRLCDeviceClassPoolPump          uint16 = 1 << 3  // Pool pump/spa/jacuzzi
-	DRLCDeviceClassSmartAppliance    uint16 = 1 << 4  // Smart appliance
-	DRLCDeviceClassIrrigation        uint16 = 1 << 5  // Irrigation pump
-	DRLCDeviceClassManagedC_I        uint16 = 1 << 6  // Managed commercial & industrial loads
-	DRLCDeviceClassSimpleMiscLoads   uint16 = 1 << 7  // Simple misc loads
-	DRLCDeviceClassExteriorLighting  uint16 = 1 << 8  // Exterior lighting
-	DRLCDeviceClassInteriorLighting  uint16 = 1 << 9  // Interior lighting
-	DRLCDeviceClassEV                uint16 = 1 << 10 // Electric vehicle
-	DRLCDeviceClassGeneration        uint16 = 1 << 11 // Generation systems
+	DRLCDeviceClassHVAC             uint16 = 1 << 0  // HVAC compressor or furnace
+	DRLCDeviceClassStrip            uint16 = 1 << 1  // Strip/baseboard heater
+	DRLCDeviceClassWaterHeater      uint16 = 1 << 2  // Water heater
+	DRLCDeviceClassPoolPump         uint16 = 1 << 3  // Pool pump/spa/jacuzzi
+	DRLCDeviceClassSmartAppliance   uint16 = 1 << 4  // Smart appliance
+	DRLCDeviceClassIrrigation       uint16 = 1 << 5  // Irrigation pump
+	DRLCDeviceClassManagedC_I       uint16 = 1 << 6  // Managed commercial & industrial loads
+	DRLCDeviceClassSimpleMiscLoads  uint16 = 1 << 7  // Simple misc loads
+	DRLCDeviceClassExteriorLighting uint16 = 1 << 8  // Exterior lighting
+	DRLCDeviceClassInteriorLighting uint16 = 1 << 9  // Interior lighting
+	DRLCDeviceClassEV               uint16 = 1 << 10 // Electric vehicle
+	DRLCDeviceClassGeneration       uint16 = 1 << 11 // Generation systems
 )
 
 // DRLC Cluster Commands - Server to Client (0x0701)
@@ -1295,8 +1296,8 @@ const (
 
 // DRLC Cluster Commands - Client to Server (0x0701)
 const (
-	CmdDRLCReportEventStatus   uint8 = 0x00 // Report event status
-	CmdDRLCGetScheduledEvents  uint8 = 0x01 // Get scheduled events
+	CmdDRLCReportEventStatus  uint8 = 0x00 // Report event status
+	CmdDRLCGetScheduledEvents uint8 = 0x01 // Get scheduled events
 )
 
 // Price Cluster Attributes (0x0700)
@@ -1339,10 +1340,10 @@ const (
 	AttrPriceBlock16Threshold AttributeID = 0x010F // uint48: threshold for block 16
 
 	// Block Period Attributes
-	AttrPriceStartOfBlockPeriod    AttributeID = 0x0200 // uint32: UTC time of block period start
-	AttrPriceBlockPeriodDuration   AttributeID = 0x0201 // uint24: duration in minutes
-	AttrPriceThresholdMultiplier   AttributeID = 0x0202 // uint24: multiplier for thresholds
-	AttrPriceThresholdDivisor      AttributeID = 0x0203 // uint24: divisor for thresholds
+	AttrPriceStartOfBlockPeriod      AttributeID = 0x0200 // uint32: UTC time of block period start
+	AttrPriceBlockPeriodDuration     AttributeID = 0x0201 // uint24: duration in minutes
+	AttrPriceThresholdMultiplier     AttributeID = 0x0202 // uint24: multiplier for thresholds
+	AttrPriceThresholdDivisor        AttributeID = 0x0203 // uint24: divisor for thresholds
 	AttrPriceBlockPeriodDurationType AttributeID = 0x0204 // enum8: duration type
 
 	// Current Tier Summation Attributes (most commonly used)
