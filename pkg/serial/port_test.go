@@ -11,9 +11,9 @@ func TestValidatePortPath(t *testing.T) {
 		name    string
 		path    string
 		wantErr bool
-		goos    string // empty means run on all platforms
+		goos    string // empty means run on all platforms.
 	}{
-		// Linux paths
+		// Linux paths.
 		{
 			name:    "valid Linux USB port",
 			path:    "/dev/ttyUSB0",
@@ -51,7 +51,7 @@ func TestValidatePortPath(t *testing.T) {
 			goos:    "linux",
 		},
 
-		// macOS paths
+		// macOS paths.
 		{
 			name:    "valid macOS tty.usbserial",
 			path:    "/dev/tty.usbserial",
@@ -83,7 +83,7 @@ func TestValidatePortPath(t *testing.T) {
 			goos:    "darwin",
 		},
 
-		// Windows paths
+		// Windows paths.
 		{
 			name:    "valid Windows COM1",
 			path:    "COM1",
@@ -121,7 +121,7 @@ func TestValidatePortPath(t *testing.T) {
 			goos:    "windows",
 		},
 
-		// Path traversal attacks (should fail on all platforms)
+		// Path traversal attacks (should fail on all platforms).
 		{
 			name:    "path traversal with ..",
 			path:    "../etc/passwd",
@@ -143,7 +143,7 @@ func TestValidatePortPath(t *testing.T) {
 			wantErr: true,
 		},
 
-		// Invalid paths (should fail on all platforms)
+		// Invalid paths (should fail on all platforms).
 		{
 			name:    "empty path",
 			path:    "",
@@ -168,7 +168,7 @@ func TestValidatePortPath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Skip tests for other platforms if goos is specified
+			// Skip tests for other platforms if goos is specified.
 			if tt.goos != "" && tt.goos != runtime.GOOS {
 				t.Skipf("skipping %s test on %s", tt.goos, runtime.GOOS)
 			}

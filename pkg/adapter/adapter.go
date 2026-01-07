@@ -53,7 +53,7 @@ func newDedupeCache(window time.Duration) *dedupeCache {
 // Returns true if this message was seen within the deduplication window.
 // A zero window disables deduplication entirely.
 func (c *dedupeCache) isDuplicate(srcAddr, clusterID uint16, transSeqNum uint8) bool {
-	// Zero window means no deduplication
+	// Zero window means no deduplication.
 	if c.window == 0 {
 		return false
 	}
@@ -94,7 +94,7 @@ type Adapter struct {
 	deviceMgr           *deviceManager
 	registeredEndpoints *RegisteredEndpoints
 	dedupe              *dedupeCache
-	transactionID       uint32 // Per-adapter ZCL transaction ID counter
+	transactionID       uint32 // Per-adapter ZCL transaction ID counter.
 
 	mu     sync.Mutex
 	isOpen bool
@@ -185,10 +185,11 @@ func (a *Adapter) Open(ctx context.Context) error {
 		return fmt.Errorf("adapter: failed to register coordinator endpoints: %w", err)
 	}
 
-	// Start ZDO layer and restore network from NVRAM
+	// Start ZDO layer and restore network from NVRAM.
 	status, err := a.znp.StartupFromApp(ctx, 100)
+	//nolint:revive // Empty block is intentional - error is non-fatal and can be ignored.
 	if err != nil {
-		// Non-fatal - might already be started
+		// Non-fatal - coordinator might already be started, error can be ignored.
 	} else if status == 2 {
 		a.znp.Close()
 		a.port.Close()
@@ -198,7 +199,7 @@ func (a *Adapter) Open(ctx context.Context) error {
 		return fmt.Errorf("adapter: StartupFromApp failed - network not configured (use 'network form' to create)")
 	}
 
-	// Brief delay for ZDO layer initialization
+	// Brief delay for ZDO layer initialization.
 	time.Sleep(200 * time.Millisecond)
 
 	a.isOpen = true
@@ -226,21 +227,22 @@ func (a *Adapter) setupDeviceEventCallbacks() {
 			IEEEAddr: ind.IEEEAddr,
 		})
 
-		// Clean up device name in background (non-fatal, best-effort)
+		// Clean up device name in background (non-fatal, best-effort).
 		go func() {
 			ctx := context.Background()
+			//nolint:errcheck // Device name cleanup is best-effort, errors intentionally ignored.
 			_ = a.DeleteDeviceName(ctx, ind.IEEEAddr)
 		}()
 	})
 
-	// Handle device announcements (join or rejoin with potentially new network address)
+	// Handle device announcements (join or rejoin with potentially new network address).
 	a.znp.OnDeviceAnnounce(func(ind *znp.DeviceAnnounce) {
-		// Try to update existing device's network address
-		// This handles the case where a device rejoins with a new network address
+		// Try to update existing device's network address.
+		// This handles the case where a device rejoins with a new network address.
 		updated := a.deviceMgr.updateDeviceNwkAddr(ind.IEEEAddr, ind.NwkAddr)
 
-		// If device doesn't exist yet, add it
-		// This can happen if we receive an announcement before tcDeviceInd
+		// If device doesn't exist yet, add it.
+		// This can happen if we receive an announcement before tcDeviceInd.
 		if !updated {
 			dev := &Device{
 				IEEEAddr:     ind.IEEEAddr,
@@ -265,7 +267,7 @@ func (a *Adapter) Close() error {
 	var firstErr error
 
 	if a.znp != nil {
-		if err := a.znp.Close(); err != nil && firstErr == nil {
+		if err := a.znp.Close(); err != nil {
 			firstErr = fmt.Errorf("adapter: failed to close ZNP client: %w", err)
 		}
 		a.znp = nil
@@ -329,7 +331,7 @@ func (a *Adapter) Reset(ctx context.Context) error {
 	znpClient := a.znp
 	a.mu.Unlock()
 
-	// Create context with reset timeout
+	// Create context with reset timeout.
 	resetCtx, cancel := context.WithTimeout(ctx, a.options.ResetTimeout)
 	defer cancel()
 
@@ -338,7 +340,7 @@ func (a *Adapter) Reset(ctx context.Context) error {
 		return fmt.Errorf("adapter: reset failed: %w", err)
 	}
 
-	// Update version info after reset
+	// Update version info after reset.
 	version, err := znpClient.Version(ctx)
 	if err != nil {
 		return fmt.Errorf("adapter: failed to get version info after reset: %w", err)
@@ -362,7 +364,7 @@ func (a *Adapter) GetInfo(ctx context.Context) (*Info, error) {
 	cachedVersion := a.version
 	a.mu.Unlock()
 
-	// Get capabilities via ping
+	// Get capabilities via ping.
 	caps, err := znpClient.Ping(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("adapter: failed to get capabilities: %w", err)
@@ -379,7 +381,7 @@ func (a *Adapter) pingHandshake(ctx context.Context) error {
 	var lastErr error
 
 	for attempt := 0; attempt < a.options.PingRetries; attempt++ {
-		// Create context with ping timeout
+		// Create context with ping timeout.
 		pingCtx, cancel := context.WithTimeout(ctx, a.options.PingTimeout)
 
 		_, err := a.znp.Ping(pingCtx)
@@ -391,9 +393,9 @@ func (a *Adapter) pingHandshake(ctx context.Context) error {
 
 		lastErr = err
 
-		// Don't sleep after the last attempt
+		// Don't sleep after the last attempt.
 		if attempt < a.options.PingRetries-1 {
-			// Small delay before retry
+			// Small delay before retry.
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -413,6 +415,7 @@ func (a *Adapter) registerCoordinatorEndpoints(ctx context.Context) error {
 
 	for _, epDef := range CoordinatorEndpoints {
 		// Try to delete existing registration first (ignore errors)
+		//nolint:errcheck // AfDelete errors are expected and intentionally ignored
 		_, _ = a.znp.AfDelete(ctx, epDef.Endpoint)
 
 		config := znp.EndpointConfig{
@@ -426,7 +429,7 @@ func (a *Adapter) registerCoordinatorEndpoints(ctx context.Context) error {
 
 		status, err := a.znp.AfRegister(ctx, config)
 		if err != nil {
-			// Log warning but continue - some endpoints may fail
+			// Log warning but continue - some endpoints may fail.
 			fmt.Printf("Warning: failed to register endpoint %d: %v\n", epDef.Endpoint, err)
 			continue
 		}
@@ -438,7 +441,7 @@ func (a *Adapter) registerCoordinatorEndpoints(ctx context.Context) error {
 		a.registeredEndpoints.Add(epDef.Endpoint, epDef.ProfileID)
 	}
 
-	// At minimum, endpoint 1 (HA) must be registered
+	// At minimum, endpoint 1 (HA) must be registered.
 	if len(a.registeredEndpoints.Endpoints) == 0 {
 		return fmt.Errorf("failed to register any coordinator endpoints")
 	}

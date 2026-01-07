@@ -17,7 +17,7 @@ type mockZNPClient struct {
 }
 
 // Lifecycle methods
-func (m *mockZNPClient) Open(ctx context.Context) error {
+func (m *mockZNPClient) Open(_ context.Context) error {
 	m.openCalled = true
 	return nil
 }
@@ -28,169 +28,169 @@ func (m *mockZNPClient) Close() error {
 }
 
 // System commands
-func (m *mockZNPClient) Ping(ctx context.Context) (*znp.PingCapabilities, error) {
+func (m *mockZNPClient) Ping(_ context.Context) (*znp.PingCapabilities, error) {
 	return &znp.PingCapabilities{Capabilities: 0x01}, nil
 }
 
-func (m *mockZNPClient) Version(ctx context.Context) (*znp.VersionInfo, error) {
+func (m *mockZNPClient) Version(_ context.Context) (*znp.VersionInfo, error) {
 	return m.versionInfo, nil
 }
 
-func (m *mockZNPClient) Reset(ctx context.Context, resetType znp.ResetType) (*znp.ResetIndication, error) {
+func (m *mockZNPClient) Reset(_ context.Context, _ znp.ResetType) (*znp.ResetIndication, error) {
 	return &znp.ResetIndication{}, nil
 }
 
-func (m *mockZNPClient) GetDeviceInfo(ctx context.Context) (*znp.DeviceInfo, error) {
+func (m *mockZNPClient) GetDeviceInfo(_ context.Context) (*znp.DeviceInfo, error) {
 	return &znp.DeviceInfo{}, nil
 }
 
-func (m *mockZNPClient) StartupFromApp(ctx context.Context, startDelay uint16) (uint8, error) {
+func (m *mockZNPClient) StartupFromApp(_ context.Context, _ uint16) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) SetTxPower(ctx context.Context, power int8) (int8, error) {
+func (m *mockZNPClient) SetTxPower(_ context.Context, power int8) (int8, error) {
 	return power, nil
 }
 
 // Network management
-func (m *mockZNPClient) ExtNwkInfo(ctx context.Context) (*znp.ExtNetworkInfo, error) {
+func (m *mockZNPClient) ExtNwkInfo(_ context.Context) (*znp.ExtNetworkInfo, error) {
 	return &znp.ExtNetworkInfo{}, nil
 }
 
-func (m *mockZNPClient) BdbSetChannel(ctx context.Context, isPrimary bool, channel uint32) (uint8, error) {
+func (m *mockZNPClient) BdbSetChannel(_ context.Context, _ bool, _ uint32) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) BdbStartCommissioning(ctx context.Context, mode znp.BdbCommissioningMode) (uint8, error) {
+func (m *mockZNPClient) BdbStartCommissioning(_ context.Context, _ znp.BdbCommissioningMode) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) WaitForStateChange(ctx context.Context, timeout time.Duration) (znp.DevState, error) {
+func (m *mockZNPClient) WaitForStateChange(_ context.Context, _ time.Duration) (znp.DevState, error) {
 	return 0, nil
 }
 
-// AF layer
-func (m *mockZNPClient) AfRegister(ctx context.Context, config znp.EndpointConfig) (uint8, error) {
+// AF layer.
+func (m *mockZNPClient) AfRegister(_ context.Context, _ znp.EndpointConfig) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) AfDelete(ctx context.Context, endpoint uint8) (uint8, error) {
+func (m *mockZNPClient) AfDelete(_ context.Context, _ uint8) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) AfDataRequest(ctx context.Context, req znp.DataRequest) (uint8, error) {
+func (m *mockZNPClient) AfDataRequest(_ context.Context, _ znp.DataRequest) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) WaitForDataConfirm(ctx context.Context, transID uint8, timeout time.Duration) (*znp.DataConfirm, error) {
+func (m *mockZNPClient) WaitForDataConfirm(_ context.Context, _ uint8, _ time.Duration) (*znp.DataConfirm, error) {
 	return &znp.DataConfirm{}, nil
 }
 
-func (m *mockZNPClient) WaitForIncomingMsg(ctx context.Context, srcAddr uint16, clusterID uint16, timeout time.Duration) (*znp.IncomingMessage, error) {
+func (m *mockZNPClient) WaitForIncomingMsg(_ context.Context, _ uint16, _ uint16, _ time.Duration) (*znp.IncomingMessage, error) {
 	return &znp.IncomingMessage{}, nil
 }
 
-// ZDO commands
-func (m *mockZNPClient) MgmtPermitJoinReq(ctx context.Context, duration uint8) (uint8, error) {
+// ZDO commands.
+func (m *mockZNPClient) MgmtPermitJoinReq(_ context.Context, _ uint8) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) MgmtLeaveReq(ctx context.Context, dstAddr uint16, ieeeAddr [8]byte, removeChildren, rejoin bool) (uint8, error) {
+func (m *mockZNPClient) MgmtLeaveReq(_ context.Context, _ uint16, _ [8]byte, _, _ bool) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) MgmtNwkUpdateReq(ctx context.Context, dstAddr uint16, dstAddrMode uint8, channelMask uint32, scanDuration uint8, scanCount uint8, nwkManagerAddr uint16) (uint8, error) {
+func (m *mockZNPClient) MgmtNwkUpdateReq(_ context.Context, _ uint16, _ uint8, _ uint32, _ uint8, _ uint8, _ uint16) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) ActiveEpReq(ctx context.Context, dstAddr uint16) (*znp.ActiveEndpoints, error) {
+func (m *mockZNPClient) ActiveEpReq(_ context.Context, _ uint16) (*znp.ActiveEndpoints, error) {
 	return &znp.ActiveEndpoints{}, nil
 }
 
-func (m *mockZNPClient) SimpleDescReq(ctx context.Context, dstAddr uint16, endpoint uint8) (*znp.SimpleDescriptor, error) {
+func (m *mockZNPClient) SimpleDescReq(_ context.Context, _ uint16, _ uint8) (*znp.SimpleDescriptor, error) {
 	return &znp.SimpleDescriptor{}, nil
 }
 
-func (m *mockZNPClient) NodeDescReq(ctx context.Context, dstAddr uint16) (*znp.NodeDescriptor, error) {
+func (m *mockZNPClient) NodeDescReq(_ context.Context, _ uint16) (*znp.NodeDescriptor, error) {
 	return &znp.NodeDescriptor{}, nil
 }
 
-func (m *mockZNPClient) IeeeAddrReq(ctx context.Context, nwkAddr uint16) ([8]byte, error) {
+func (m *mockZNPClient) IeeeAddrReq(_ context.Context, _ uint16) ([8]byte, error) {
 	return [8]byte{}, nil
 }
 
-func (m *mockZNPClient) BindReq(ctx context.Context, dstAddr uint16, srcIEEEAddr [8]byte, srcEndpoint uint8, clusterID uint16, dstIEEEAddr [8]byte, dstEndpoint uint8) (uint8, error) {
+func (m *mockZNPClient) BindReq(_ context.Context, _ uint16, _ [8]byte, _ uint8, _ uint16, _ [8]byte, _ uint8) (uint8, error) {
 	return 0, nil
 }
 
-func (m *mockZNPClient) UnbindReq(ctx context.Context, dstAddr uint16, srcIEEEAddr [8]byte, srcEndpoint uint8, clusterID uint16, dstIEEEAddr [8]byte, dstEndpoint uint8) (uint8, error) {
+func (m *mockZNPClient) UnbindReq(_ context.Context, _ uint16, _ [8]byte, _ uint8, _ uint16, _ [8]byte, _ uint8) (uint8, error) {
 	return 0, nil
 }
 
-// Network topology
-func (m *mockZNPClient) GetAllNeighbors(ctx context.Context, dstAddr uint16) ([]znp.NeighborEntry, error) {
+// Network topology.
+func (m *mockZNPClient) GetAllNeighbors(_ context.Context, _ uint16) ([]znp.NeighborEntry, error) {
 	return []znp.NeighborEntry{}, nil
 }
 
-func (m *mockZNPClient) GetAllBindings(ctx context.Context, dstAddr uint16) ([]znp.BindingEntry, error) {
+func (m *mockZNPClient) GetAllBindings(_ context.Context, _ uint16) ([]znp.BindingEntry, error) {
 	return []znp.BindingEntry{}, nil
 }
 
-func (m *mockZNPClient) GetAllRoutes(ctx context.Context, dstAddr uint16) ([]znp.RoutingEntry, error) {
+func (m *mockZNPClient) GetAllRoutes(_ context.Context, _ uint16) ([]znp.RoutingEntry, error) {
 	return []znp.RoutingEntry{}, nil
 }
 
-// NVRAM operations
-func (m *mockZNPClient) NvRead(ctx context.Context, id znp.NvItemID, offset uint8) ([]byte, error) {
+// NVRAM operations.
+func (m *mockZNPClient) NvRead(_ context.Context, _ znp.NvItemID, _ uint8) ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (m *mockZNPClient) NvWrite(ctx context.Context, id znp.NvItemID, offset uint8, data []byte) error {
+func (m *mockZNPClient) NvWrite(_ context.Context, _ znp.NvItemID, _ uint8, _ []byte) error {
 	return nil
 }
 
-func (m *mockZNPClient) NvReadAll(ctx context.Context, id znp.NvItemID) ([]byte, error) {
+func (m *mockZNPClient) NvReadAll(_ context.Context, _ znp.NvItemID) ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (m *mockZNPClient) NvWriteAll(ctx context.Context, id znp.NvItemID, data []byte) error {
+func (m *mockZNPClient) NvWriteAll(_ context.Context, _ znp.NvItemID, _ []byte) error {
 	return nil
 }
 
-func (m *mockZNPClient) NvItemInit(ctx context.Context, id znp.NvItemID, itemLen uint16, initData []byte) error {
+func (m *mockZNPClient) NvItemInit(_ context.Context, _ znp.NvItemID, _ uint16, _ []byte) error {
 	return nil
 }
 
 // Address Manager
-func (m *mockZNPClient) ReadAddrMgrTable(ctx context.Context) ([]znp.AddrMgrEntry, error) {
+func (m *mockZNPClient) ReadAddrMgrTable(_ context.Context) ([]znp.AddrMgrEntry, error) {
 	return []znp.AddrMgrEntry{}, nil
 }
 
-func (m *mockZNPClient) DeleteAddrMgrEntry(ctx context.Context, ieeeAddr [8]byte) (bool, error) {
+func (m *mockZNPClient) DeleteAddrMgrEntry(_ context.Context, _ [8]byte) (bool, error) {
 	return true, nil
 }
 
 // Device names
-func (m *mockZNPClient) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, comment string) error {
+func (m *mockZNPClient) SetDeviceName(_ context.Context, _ [8]byte, _, _ string) error {
 	return nil
 }
 
-func (m *mockZNPClient) GetDeviceName(ctx context.Context, ieeeAddr [8]byte) (*znp.DeviceNameEntry, error) {
+func (m *mockZNPClient) GetDeviceName(_ context.Context, _ [8]byte) (*znp.DeviceNameEntry, error) {
 	return &znp.DeviceNameEntry{}, nil
 }
 
-func (m *mockZNPClient) DeleteDeviceName(ctx context.Context, ieeeAddr [8]byte) error {
+func (m *mockZNPClient) DeleteDeviceName(_ context.Context, _ [8]byte) error {
 	return nil
 }
 
-func (m *mockZNPClient) ReadDeviceNameTable(ctx context.Context) (*znp.DeviceNameTable, error) {
+func (m *mockZNPClient) ReadDeviceNameTable(_ context.Context) (*znp.DeviceNameTable, error) {
 	return &znp.DeviceNameTable{}, nil
 }
 
 // Event callbacks
-func (m *mockZNPClient) OnDeviceJoin(handler func(*znp.TcDeviceInd))       {}
-func (m *mockZNPClient) OnDeviceLeave(handler func(*znp.DeviceLeave))      {}
-func (m *mockZNPClient) OnDeviceAnnounce(handler func(*znp.DeviceAnnounce)) {}
+func (m *mockZNPClient) OnDeviceJoin(_ func(*znp.TcDeviceInd))        {}
+func (m *mockZNPClient) OnDeviceLeave(_ func(*znp.DeviceLeave))       {}
+func (m *mockZNPClient) OnDeviceAnnounce(_ func(*znp.DeviceAnnounce)) {}
 
 // TestZNPClientInterface verifies that the mockZNPClient implements ZNPClient.
 // This is a compile-time check to ensure the mock stays in sync with the interface.

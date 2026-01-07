@@ -899,8 +899,8 @@ func AvailableProfiles() []ApplicationProfile {
 type NvSystemID uint8
 
 const (
-	// NvSysIdZStack is the Z-Stack system identifier.
-	NvSysIdZStack NvSystemID = 1
+	// NvSysIDZStack is the Z-Stack system identifier.
+	NvSysIDZStack NvSystemID = 1
 )
 
 // DevState represents the device network state.

@@ -58,7 +58,7 @@ func WithAdapterNoTimeout(ctx context.Context, fn func(ctx context.Context, a *a
 // WithAdapterDevice executes a function with a ready-to-use adapter and resolved device address.
 // It handles port resolution, adapter creation, opening, device resolution, and cleanup.
 // The device is resolved using the global flags: deviceNameLookup, deviceIEEE, or deviceAddr.
-// Priority: --name > --ieee > --addr
+// Priority: --name > --ieee > --addr.
 func WithAdapterDevice(ctx context.Context, timeout time.Duration, fn func(ctx context.Context, a *adapter.Adapter, nwkAddr uint16) error) error {
 	return WithAdapter(ctx, timeout, func(ctx context.Context, a *adapter.Adapter) error {
 		nwkAddr, err := resolveDeviceAddr(ctx, a, deviceNameLookup, deviceIEEE, deviceAddr)

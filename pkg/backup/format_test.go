@@ -53,19 +53,19 @@ func TestBackupRoundtrip(t *testing.T) {
 		},
 	}
 
-	// Marshal to JSON
+	// Marshal to JSON.
 	data, err := json.Marshal(original)
 	if err != nil {
 		t.Fatalf("marshal error: %v", err)
 	}
 
-	// Unmarshal back
+	// Unmarshal back.
 	var restored Backup
 	if err := json.Unmarshal(data, &restored); err != nil {
 		t.Fatalf("unmarshal error: %v", err)
 	}
 
-	// Compare fields
+	// Compare fields.
 	if restored.Version != original.Version {
 		t.Errorf("Version mismatch: got %d, want %d", restored.Version, original.Version)
 	}
@@ -73,7 +73,7 @@ func TestBackupRoundtrip(t *testing.T) {
 		t.Errorf("Created mismatch: got %v, want %v", restored.Created, original.Created)
 	}
 
-	// Adapter
+	// Adapter.
 	if restored.Adapter.ZStackVariant != original.Adapter.ZStackVariant {
 		t.Errorf("ZStackVariant mismatch: got %d, want %d", restored.Adapter.ZStackVariant, original.Adapter.ZStackVariant)
 	}
@@ -84,7 +84,7 @@ func TestBackupRoundtrip(t *testing.T) {
 		t.Errorf("BuildDate mismatch: got %d, want %d", restored.Adapter.BuildDate, original.Adapter.BuildDate)
 	}
 
-	// Coordinator
+	// Coordinator.
 	if restored.Coordinator.IEEEAddress != original.Coordinator.IEEEAddress {
 		t.Errorf("Coordinator IEEEAddress mismatch: got %s, want %s", restored.Coordinator.IEEEAddress, original.Coordinator.IEEEAddress)
 	}
@@ -92,7 +92,7 @@ func TestBackupRoundtrip(t *testing.T) {
 		t.Errorf("Coordinator NetworkAddress mismatch: got 0x%04x, want 0x%04x", restored.Coordinator.NetworkAddress, original.Coordinator.NetworkAddress)
 	}
 
-	// Network
+	// Network.
 	if restored.Network.PanID != original.Network.PanID {
 		t.Errorf("PanID mismatch: got 0x%04x, want 0x%04x", restored.Network.PanID, original.Network.PanID)
 	}
@@ -115,7 +115,7 @@ func TestBackupRoundtrip(t *testing.T) {
 		t.Errorf("UpdateID mismatch: got %d, want %d", restored.Network.UpdateID, original.Network.UpdateID)
 	}
 
-	// Security
+	// Security.
 	if restored.Security.FrameCounter != original.Security.FrameCounter {
 		t.Errorf("FrameCounter mismatch: got %d, want %d", restored.Security.FrameCounter, original.Security.FrameCounter)
 	}
@@ -123,7 +123,7 @@ func TestBackupRoundtrip(t *testing.T) {
 		t.Errorf("TrustCenterLinkKeySeed mismatch: got %s, want %s", restored.Security.TrustCenterLinkKeySeed, original.Security.TrustCenterLinkKeySeed)
 	}
 
-	// Devices
+	// Devices.
 	if len(restored.Devices) != len(original.Devices) {
 		t.Fatalf("Devices length mismatch: got %d, want %d", len(restored.Devices), len(original.Devices))
 	}
@@ -138,12 +138,13 @@ func TestBackupRoundtrip(t *testing.T) {
 			t.Errorf("Device[%d] Type mismatch: got %s, want %s", i, restored.Devices[i].Type, original.Devices[i].Type)
 		}
 
-		// LinkKey comparison
-		if original.Devices[i].LinkKey == nil && restored.Devices[i].LinkKey != nil {
+		// LinkKey comparison.
+		switch {
+		case original.Devices[i].LinkKey == nil && restored.Devices[i].LinkKey != nil:
 			t.Errorf("Device[%d] LinkKey should be nil", i)
-		} else if original.Devices[i].LinkKey != nil && restored.Devices[i].LinkKey == nil {
+		case original.Devices[i].LinkKey != nil && restored.Devices[i].LinkKey == nil:
 			t.Errorf("Device[%d] LinkKey should not be nil", i)
-		} else if original.Devices[i].LinkKey != nil && restored.Devices[i].LinkKey != nil {
+		case original.Devices[i].LinkKey != nil && restored.Devices[i].LinkKey != nil:
 			if restored.Devices[i].LinkKey.Key != original.Devices[i].LinkKey.Key {
 				t.Errorf("Device[%d] LinkKey.Key mismatch: got %s, want %s", i, restored.Devices[i].LinkKey.Key, original.Devices[i].LinkKey.Key)
 			}
@@ -172,24 +173,24 @@ func TestToJSONFromJSON(t *testing.T) {
 		Devices: []DeviceEntry{},
 	}
 
-	// Convert to JSON
+	// Convert to JSON.
 	data, err := original.ToJSON()
 	if err != nil {
 		t.Fatalf("ToJSON error: %v", err)
 	}
 
-	// Verify JSON is indented (should contain newlines)
+	// Verify JSON is indented (should contain newlines).
 	if len(data) == 0 {
 		t.Fatal("ToJSON returned empty data")
 	}
 
-	// Convert back from JSON
+	// Convert back from JSON.
 	restored, err := FromJSON(data)
 	if err != nil {
 		t.Fatalf("FromJSON error: %v", err)
 	}
 
-	// Basic field checks
+	// Basic field checks.
 	if restored.Version != original.Version {
 		t.Errorf("Version mismatch: got %d, want %d", restored.Version, original.Version)
 	}
@@ -308,13 +309,13 @@ func TestNetworkConfigSerialization(t *testing.T) {
 		UpdateID:           0,
 	}
 
-	// Marshal to JSON
+	// Marshal to JSON.
 	data, err := json.Marshal(config)
 	if err != nil {
 		t.Fatalf("marshal error: %v", err)
 	}
 
-	// Verify JSON contains hex strings in quotes
+	// Verify JSON contains hex strings in quotes.
 	jsonStr := string(data)
 	if !contains(jsonStr, "dddddddddddddddd") {
 		t.Errorf("JSON should contain ExtendedPanID hex string: %s", jsonStr)
@@ -323,13 +324,13 @@ func TestNetworkConfigSerialization(t *testing.T) {
 		t.Errorf("JSON should contain NetworkKey hex string: %s", jsonStr)
 	}
 
-	// Unmarshal back
+	// Unmarshal back.
 	var restored NetworkConfig
 	if err := json.Unmarshal(data, &restored); err != nil {
 		t.Fatalf("unmarshal error: %v", err)
 	}
 
-	// Verify fields match
+	// Verify fields match.
 	if restored.ExtendedPanID != config.ExtendedPanID {
 		t.Errorf("ExtendedPanID mismatch: got %s, want %s", restored.ExtendedPanID, config.ExtendedPanID)
 	}
@@ -372,13 +373,13 @@ func TestEncodeDecodeHex(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Test encode
+			// Test encode.
 			encoded := EncodeHex(tt.bytes)
 			if encoded != tt.hex {
 				t.Errorf("EncodeHex() = %s, want %s", encoded, tt.hex)
 			}
 
-			// Test decode
+			// Test decode.
 			decoded, err := DecodeHex(tt.hex)
 			if err != nil {
 				t.Fatalf("DecodeHex() error: %v", err)
@@ -451,13 +452,13 @@ func TestEncodeDecodeIEEEAddr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Test encode
+			// Test encode.
 			encoded := EncodeIEEEAddr(tt.addr)
 			if encoded != tt.hex {
 				t.Errorf("EncodeIEEEAddr() = %s, want %s", encoded, tt.hex)
 			}
 
-			// Test decode
+			// Test decode.
 			decoded, err := DecodeIEEEAddr(tt.hex)
 			if err != nil {
 				t.Fatalf("DecodeIEEEAddr() error: %v", err)
@@ -535,19 +536,19 @@ func TestDeviceEntrySerialization(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Marshal
+			// Marshal.
 			data, err := json.Marshal(tt.device)
 			if err != nil {
 				t.Fatalf("marshal error: %v", err)
 			}
 
-			// Unmarshal
+			// Unmarshal.
 			var restored DeviceEntry
 			if err := json.Unmarshal(data, &restored); err != nil {
 				t.Fatalf("unmarshal error: %v", err)
 			}
 
-			// Compare
+			// Compare.
 			if restored.IEEEAddress != tt.device.IEEEAddress {
 				t.Errorf("IEEEAddress mismatch: got %s, want %s", restored.IEEEAddress, tt.device.IEEEAddress)
 			}
@@ -558,7 +559,7 @@ func TestDeviceEntrySerialization(t *testing.T) {
 				t.Errorf("Type mismatch: got %s, want %s", restored.Type, tt.device.Type)
 			}
 
-			// LinkKey comparison
+			// LinkKey comparison.
 			if tt.device.LinkKey == nil {
 				if restored.LinkKey != nil {
 					t.Error("LinkKey should be nil")
@@ -583,8 +584,8 @@ func TestDeviceEntrySerialization(t *testing.T) {
 
 // Helper function to check if a string contains a substring.
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
-		(len(s) > 0 && len(substr) > 0 && containsImpl(s, substr)))
+	return len(s) >= len(substr) && (s == substr || substr == "" ||
+		(s != "" && substr != "" && containsImpl(s, substr)))
 }
 
 func containsImpl(s, substr string) bool {

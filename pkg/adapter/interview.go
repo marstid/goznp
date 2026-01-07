@@ -84,20 +84,20 @@ func (e *EndpointInfo) HasCluster(clusterID uint16) bool {
 
 // InterviewResult contains all discovered information about a device.
 type InterviewResult struct {
-	// Device addressing
+	// Device addressing.
 	IEEEAddr [8]byte
 	NwkAddr  uint16
 
-	// From NodeDescriptor
+	// From NodeDescriptor.
 	DeviceType       DeviceType
 	ManufacturerCode uint16
 
-	// From Basic cluster
+	// From Basic cluster.
 	Manufacturer               string
 	Model                      string
 	PowerSource                PowerSource
-	SWBuildID                  string // Software build ID (optional)
-	ProductCode                string // Product code (optional, octet string)
+	SWBuildID                  string // Software build ID (optional).
+	ProductCode                string // Product code (optional, octet string).
 	ProductURL                 string // Product URL (optional)
 	ManufacturerVersionDetails string // Manufacturer version details (optional)
 	SerialNumber               string // Serial number (optional)
@@ -422,7 +422,7 @@ func (a *Adapter) InterviewAllDevicesWithOptions(ctx context.Context, opts Inter
 	results := make([]*InterviewResult, 0, len(devices))
 
 	for _, dev := range devices {
-		// Check if context is cancelled
+		// Check if context is canceled.
 		if ctx.Err() != nil {
 			return results, ctx.Err()
 		}

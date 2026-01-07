@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/marstid/goznp/pkg/znp"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -40,7 +41,7 @@ var networkFormCmd = &cobra.Command{
 	Use:   "form",
 	Short: "Form a new Zigbee network",
 	Long:  "Form a new Zigbee network as coordinator. Generates random PAN ID and network key.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runNetworkForm(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -107,7 +108,7 @@ var networkChannelCmd = &cobra.Command{
 	Use:   "channel",
 	Short: "Show or change network channel",
 	Long:  "Show current channel or change to a new channel. Use --set to change, --force for forced (non-seamless) change.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runNetworkChannel(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -158,10 +159,11 @@ func runNetworkChannel(ctx context.Context) error {
 		fmt.Println("WARNING: Forced channel change will disrupt existing network!")
 		fmt.Print("Proceed? [y/N]: ")
 		reader := bufio.NewReader(os.Stdin)
+		//nolint:errcheck // User input, error intentionally ignored
 		response, _ := reader.ReadString('\n')
 		response = strings.TrimSpace(strings.ToLower(response))
 		if response != "y" && response != "yes" {
-			fmt.Println("Cancelled.")
+			fmt.Println("Canceled.")
 			return nil
 		}
 	}
@@ -182,7 +184,7 @@ var networkPowerCmd = &cobra.Command{
 	Use:   "power",
 	Short: "Show or set TX power",
 	Long:  "Show current TX power or set a new power level in dBm",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		setRequested := cmd.Flags().Changed("set")
 		if err := runNetworkPower(ctx, setRequested); err != nil {
@@ -252,7 +254,7 @@ var networkProfileCmd = &cobra.Command{
 The coordinator registers multiple endpoints with different Application Profiles
 during startup to support communication with various device types (following the
 zigbee-herdsman pattern). Profiles cannot be changed dynamically.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runNetworkProfile(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -317,7 +319,7 @@ This discovers how devices are connected in the mesh:
 - Coordinator (0x0000) is the central hub
 - Routers (plugs) can relay messages and have children
 - End Devices (sensors) connect to a parent (coordinator or router)`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runNetworkTopology(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -448,28 +450,11 @@ func formatDeviceType(dt uint8) string {
 	}
 }
 
-func formatRelation(rel uint8) string {
-	switch rel {
-	case 0:
-		return "Parent"
-	case 1:
-		return "Child"
-	case 2:
-		return "Sibling"
-	case 3:
-		return "None"
-	case 4:
-		return "PreviousChild"
-	default:
-		return fmt.Sprintf("Unknown(%d)", rel)
-	}
-}
-
 var resetFactoryCmd = &cobra.Command{
 	Use:   "factory",
 	Short: "Factory reset the adapter",
 	Long:  "Erase all network configuration and return adapter to factory state",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runResetFactory(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -491,10 +476,11 @@ func runResetFactory(ctx context.Context) error {
 	fmt.Println("WARNING: This will erase all network configuration!")
 	fmt.Print("Proceed? [y/N]: ")
 	reader := bufio.NewReader(os.Stdin)
+	//nolint:errcheck // User input, error intentionally ignored
 	response, _ := reader.ReadString('\n')
 	response = strings.TrimSpace(strings.ToLower(response))
 	if response != "y" && response != "yes" {
-		fmt.Println("Cancelled.")
+		fmt.Println("Canceled.")
 		return nil
 	}
 
@@ -529,7 +515,7 @@ var networkHealthCmd = &cobra.Command{
 - Network topology
 
 This command queries all routers to gather mesh topology data.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runNetworkHealth(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -636,7 +622,7 @@ Provide address in hex format: 0xABCD
 
 Only routers and coordinators maintain routing tables.
 End devices will return an error.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		ctx := setupSignalHandler()
 		if err := runNetworkRoutes(ctx, args); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)

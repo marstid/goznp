@@ -15,16 +15,16 @@ const MaxClusters = 32
 // EndpointConfig defines endpoint registration parameters.
 type EndpointConfig struct {
 	Endpoint    uint8
-	AppProfID   uint16 // Profile ID (0x0104 = Home Automation)
-	AppDeviceID uint16 // Device ID
-	AppDevVer   uint8  // Device version
-	LatencyReq  uint8  // Latency requirement (0=none)
+	AppProfID   uint16 // Profile ID (0x0104 = Home Automation).
+	AppDeviceID uint16 // Device ID.
+	AppDevVer   uint8  // Device version.
+	LatencyReq  uint8  // Latency requirement (0=none).
 	InClusters  []uint16
 	OutClusters []uint16
 }
 
-// Common profile IDs - defined in commands.go as ApplicationProfile type
-// Use: ProfileHomeAutomation, ProfileSmartEnergy, ProfileGreenPower, ProfileLightLink
+// Common profile IDs - defined in commands.go as ApplicationProfile type.
+// Use: ProfileHomeAutomation, ProfileSmartEnergy, ProfileGreenPower, ProfileLightLink.
 
 // AfDelete unregisters/deletes an endpoint.
 // Returns status (0=success, 0x09=not found).
@@ -46,7 +46,7 @@ func (z *ZNP) AfDelete(ctx context.Context, endpoint uint8) (uint8, error) {
 // AfRegister registers an endpoint on the coordinator.
 // Returns status (0=success).
 func (z *ZNP) AfRegister(ctx context.Context, config EndpointConfig) (uint8, error) {
-	// Validate cluster list lengths to prevent buffer overflow
+	// Validate cluster list lengths to prevent buffer overflow.
 	if len(config.InClusters) > MaxClusters {
 		return 0, fmt.Errorf("af register: too many input clusters: %d (max %d)",
 			len(config.InClusters), MaxClusters)
@@ -56,7 +56,7 @@ func (z *ZNP) AfRegister(ctx context.Context, config EndpointConfig) (uint8, err
 			len(config.OutClusters), MaxClusters)
 	}
 
-	// Build request manually due to variable length cluster lists
+	// Build request manually due to variable length cluster lists.
 	buf := NewBuffaloWriter()
 	buf.WriteUint8(config.Endpoint)
 	buf.WriteUint16(config.AppProfID)
@@ -107,20 +107,20 @@ type DataRequest struct {
 	ClusterID   uint16
 	TransID     uint8
 	Options     DataRequestOptions
-	Radius      uint8 // 0 = use default (30)
+	Radius      uint8 // 0 = use default (30).
 	Data        []byte
 }
 
 // AfDataRequest sends data to a device endpoint.
 // Returns status (0=success).
 func (z *ZNP) AfDataRequest(ctx context.Context, req DataRequest) (uint8, error) {
-	// Default radius to 30 if 0
+	// Default radius to 30 if 0.
 	radius := req.Radius
 	if radius == 0 {
 		radius = 30
 	}
 
-	// Build request
+	// Build request.
 	buf := NewBuffaloWriter()
 	buf.WriteUint16(req.DstAddr)
 	buf.WriteUint8(req.DstEndpoint)
@@ -152,20 +152,20 @@ type DataConfirm struct {
 
 // WaitForDataConfirm waits for a data confirmation matching the transaction ID.
 func (z *ZNP) WaitForDataConfirm(ctx context.Context, transID uint8, timeout time.Duration) (*DataConfirm, error) {
-	// Create matcher for data confirm AREQ
+	// Create matcher for data confirm AREQ.
 	matcher := FrameMatcher{
 		Type:      unpi.AREQ,
 		Subsystem: unpi.AF,
 		CommandID: CmdAfDataConfirm.ID,
 	}
 
-	// Wait for confirmation with timeout
+	// Wait for confirmation with timeout.
 	frame, err := z.waiter.WaitFor(ctx, matcher, timeout)
 	if err != nil {
 		return nil, fmt.Errorf("wait for data confirm: %w", err)
 	}
 
-	// Parse response
+	// Parse response.
 	buf := NewBuffalo(frame.Data)
 
 	status, err := buf.ReadUint8()
@@ -183,7 +183,7 @@ func (z *ZNP) WaitForDataConfirm(ctx context.Context, transID uint8, timeout tim
 		return nil, fmt.Errorf("failed to read transId: %w", err)
 	}
 
-	// Check if this is the transaction we're waiting for
+	// Check if this is the transaction we're waiting for.
 	if receivedTransID != transID {
 		return nil, fmt.Errorf("received wrong transaction ID: expected %d, got %d", transID, receivedTransID)
 	}
@@ -214,51 +214,51 @@ type IncomingMessage struct {
 // If srcAddr is non-zero, only matches messages from that address.
 // If clusterID is non-zero, only matches messages from that cluster.
 func (z *ZNP) WaitForIncomingMsg(ctx context.Context, srcAddr uint16, clusterID uint16, timeout time.Duration) (*IncomingMessage, error) {
-	// Create matcher for incoming message AREQ
+	// Create matcher for incoming message AREQ.
 	matcher := FrameMatcher{
 		Type:      unpi.AREQ,
 		Subsystem: unpi.AF,
 		CommandID: CmdAfIncomingMsg.ID,
 	}
 
-	// Track deadline for proper timeout handling
+	// Track deadline for proper timeout handling.
 	deadline := time.Now().Add(timeout)
 
-	// Keep trying until we get a matching message or timeout
+	// Keep trying until we get a matching message or timeout.
 	for {
-		// Calculate remaining time to prevent waiter exhaustion
+		// Calculate remaining time to prevent waiter exhaustion.
 		remaining := time.Until(deadline)
 		if remaining <= 0 {
 			return nil, fmt.Errorf("wait for incoming message: %w", ErrTimeout)
 		}
 
-		// Use shorter wait duration or remaining time, whichever is smaller
+		// Use shorter wait duration or remaining time, whichever is smaller.
 		waitDuration := 100 * time.Millisecond
 		if remaining < waitDuration {
 			waitDuration = remaining
 		}
 
-		// Wait for any incoming message
+		// Wait for any incoming message.
 		waitCtx, cancel := context.WithTimeout(ctx, waitDuration)
 		frame, err := z.waiter.WaitFor(waitCtx, matcher, waitDuration)
 		cancel()
 
 		if err != nil {
-			// Check if context was cancelled
+			// Check if context was canceled.
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
 			default:
-				// Timeout on this wait, check if overall deadline exceeded
+				// Timeout on this wait, check if overall deadline exceeded.
 				if time.Now().After(deadline) {
 					return nil, fmt.Errorf("wait for incoming message: %w", ErrTimeout)
 				}
-				// No match yet, try again
+				// No match yet, try again.
 				continue
 			}
 		}
 
-		// Parse the message
+		// Parse the message.
 		msg, err := parseIncomingMsg(frame.Data)
 		if err != nil {
 			// Invalid message, skip and continue waiting

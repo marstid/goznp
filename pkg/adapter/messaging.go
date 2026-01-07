@@ -219,9 +219,9 @@ func (a *Adapter) ResetAlarmLog(ctx context.Context, nwkAddr uint16, endpoint ui
 // This is part of the Smart Energy profile used for dynamic pricing and
 // demand response applications.
 type PriceInfo struct {
-	ProviderId         uint32 // Unique identifier for the commodity supplier
+	ProviderID         uint32 // Unique identifier for the commodity supplier
 	RateLabel          string // User-defined rate label (e.g., "Peak", "Off-Peak")
-	IssuerEventId      uint32 // Unique identifier for this pricing event
+	IssuerEventID      uint32 // Unique identifier for this pricing event
 	CurrentTime        uint32 // Current time in Zigbee time (seconds since 2000-01-01)
 	UnitOfMeasure      uint8  // Unit of measurement (kWh, m3, etc.)
 	Currency           uint16 // ISO 4217 currency code (e.g., 840 = USD)
@@ -252,7 +252,8 @@ func (a *Adapter) GetCurrentPrice(ctx context.Context, nwkAddr uint16, endpoint 
 	// The full command payload can include CommandOptions (1 byte), but for a simple
 	// request for current price, we use an empty payload or 0x00 for default options.
 	seqNum := a.nextTransactionID()
-	payload := []byte{0x00} // CommandOptions: 0x00 = RequestorRxOnWhenIdle
+	// CommandOptions: 0x00 for RequestorRxOnWhenIdle
+	payload := []byte{0x00}
 	frame := zcl.BuildClusterCommand(seqNum, zcl.CmdPriceGetCurrentPrice, payload)
 
 	respFrame, err := a.sendZclRequest(ctx, nwkAddr, endpoint, uint16(zcl.ClusterPrice), frame)
@@ -277,8 +278,8 @@ func (a *Adapter) GetCurrentPrice(ctx context.Context, nwkAddr uint16, endpoint 
 	info := &PriceInfo{}
 	offset := 0
 
-	// ProviderId (uint32)
-	info.ProviderId = uint32(respFrame.Payload[offset]) |
+	// ProviderID (uint32)
+	info.ProviderID = uint32(respFrame.Payload[offset]) |
 		uint32(respFrame.Payload[offset+1])<<8 |
 		uint32(respFrame.Payload[offset+2])<<16 |
 		uint32(respFrame.Payload[offset+3])<<24
@@ -296,11 +297,11 @@ func (a *Adapter) GetCurrentPrice(ctx context.Context, nwkAddr uint16, endpoint 
 	info.RateLabel = string(respFrame.Payload[offset : offset+labelLen])
 	offset += labelLen
 
-	// IssuerEventId (uint32)
+	// IssuerEventID (uint32)
 	if offset+4 > len(respFrame.Payload) {
 		return nil, fmt.Errorf("payload truncated at issuerEventId")
 	}
-	info.IssuerEventId = uint32(respFrame.Payload[offset]) |
+	info.IssuerEventID = uint32(respFrame.Payload[offset]) |
 		uint32(respFrame.Payload[offset+1])<<8 |
 		uint32(respFrame.Payload[offset+2])<<16 |
 		uint32(respFrame.Payload[offset+3])<<24
@@ -383,7 +384,7 @@ type SEMessage struct {
 	MessageID uint32 // Unique message identifier
 	Control   uint8  // MessageControl bitmap (transmission, importance, confirmation)
 	StartTime uint32 // Zigbee time when message should be displayed (0 = now)
-	Duration  uint16 // Duration to display message in minutes (0xFFFF = until explicitly cancelled)
+	Duration  uint16 // Duration to display message in minutes (0xFFFF = until explicitly canceled).
 	Message   string // Message text to display
 }
 

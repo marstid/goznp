@@ -12,10 +12,10 @@ import (
 // TestBdbStartCommissioning tests the BdbStartCommissioning method.
 func TestBdbStartCommissioning(t *testing.T) {
 	tests := []struct {
-		name      string
-		mode      BdbCommissioningMode
-		status    uint8
-		wantErr   bool
+		name    string
+		mode    BdbCommissioningMode
+		status  uint8
+		wantErr bool
 	}{
 		{
 			name:    "network steering",
@@ -41,6 +41,7 @@ func TestBdbStartCommissioning(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -87,11 +88,11 @@ func TestBdbStartCommissioningNotOpen(t *testing.T) {
 // TestBdbSetChannel tests the BdbSetChannel method.
 func TestBdbSetChannel(t *testing.T) {
 	tests := []struct {
-		name        string
-		isPrimary   bool
-		channel     uint32
-		status      uint8
-		wantErr     bool
+		name      string
+		isPrimary bool
+		channel   uint32
+		status    uint8
+		wantErr   bool
 	}{
 		{
 			name:      "primary channel 11",
@@ -127,6 +128,7 @@ func TestBdbSetChannel(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request

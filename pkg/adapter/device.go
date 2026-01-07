@@ -40,7 +40,7 @@ const (
 type DeviceEvent struct {
 	Type     DeviceEventType
 	Device   *Device
-	IEEEAddr [8]byte // For leave events
+	IEEEAddr [8]byte // For leave events.
 }
 
 // deviceManager manages paired devices.
@@ -90,17 +90,6 @@ func (dm *deviceManager) getDeviceByNwkAddr(nwkAddr uint16) *Device {
 	return nil
 }
 
-// getAllDevices returns all devices.
-func (dm *deviceManager) getAllDevices() []*Device {
-	dm.mu.RLock()
-	defer dm.mu.RUnlock()
-	devices := make([]*Device, 0, len(dm.devices))
-	for _, dev := range dm.devices {
-		devices = append(devices, dev)
-	}
-	return devices
-}
-
 // updateDeviceNwkAddr updates the network address for a device.
 // This is called when a device announces with a new address (e.g., after rejoin).
 // Returns true if the device was found and updated, false otherwise.
@@ -131,14 +120,14 @@ func (dm *deviceManager) notifyEvent(event DeviceEvent) {
 	dm.mu.RUnlock()
 
 	if handler != nil {
-		// Deep copy event to avoid potential data races with event data
+		// Deep copy event to avoid potential data races with event data.
 		eventCopy := event
-		// Deep copy the Device struct if present to avoid concurrent modification
+		// Deep copy the Device struct if present to avoid concurrent modification.
 		if event.Device != nil {
 			deviceCopy := *event.Device
 			eventCopy.Device = &deviceCopy
 		}
-		// Call handler in a goroutine to avoid blocking
+		// Call handler in a goroutine to avoid blocking.
 		go handler(eventCopy)
 	}
 }
@@ -176,7 +165,7 @@ func (a *Adapter) GetDevices(ctx context.Context) ([]*Device, error) {
 	znpClient := a.znp
 	a.mu.Unlock()
 
-	// Read devices from NVRAM Address Manager table
+	// Read devices from NVRAM Address Manager table.
 	entries, err := znpClient.ReadAddrMgrTable(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("reading address manager table: %w", err)
@@ -184,7 +173,7 @@ func (a *Adapter) GetDevices(ctx context.Context) ([]*Device, error) {
 
 	devices := make([]*Device, 0, len(entries))
 	for _, entry := range entries {
-		// Skip coordinator (address 0x0000)
+		// Skip coordinator (address 0x0000).
 		if entry.NwkAddr == 0x0000 {
 			continue
 		}
@@ -287,7 +276,7 @@ type DeviceCapabilities struct {
 
 // GetDeviceCapabilities queries all endpoints and their clusters from a device.
 func (a *Adapter) GetDeviceCapabilities(ctx context.Context, nwkAddr uint16) (*DeviceCapabilities, error) {
-	// First get active endpoints
+	// First get active endpoints.
 	endpoints, err := a.GetActiveEndpoints(ctx, nwkAddr)
 	if err != nil {
 		return nil, fmt.Errorf("getting active endpoints: %w", err)
@@ -298,11 +287,11 @@ func (a *Adapter) GetDeviceCapabilities(ctx context.Context, nwkAddr uint16) (*D
 		Endpoints: make([]*EndpointDescriptor, 0, len(endpoints)),
 	}
 
-	// Query each endpoint for its simple descriptor
+	// Query each endpoint for its simple descriptor.
 	for _, ep := range endpoints {
 		desc, err := a.GetSimpleDescriptor(ctx, nwkAddr, ep)
 		if err != nil {
-			// Log error but continue with other endpoints
+			// Log error but continue with other endpoints.
 			continue
 		}
 		caps.Endpoints = append(caps.Endpoints, desc)
@@ -315,10 +304,10 @@ func (a *Adapter) GetDeviceCapabilities(ctx context.Context, nwkAddr uint16) (*D
 type NeighborInfo struct {
 	NwkAddr    uint16
 	IEEEAddr   [8]byte
-	DeviceType uint8 // 0=Coordinator, 1=Router, 2=EndDevice
-	Relation   uint8 // 0=Parent, 1=Child, 2=Sibling, 3=None, 4=PreviousChild
-	LQI        uint8 // Link Quality (0-255, higher is better)
-	Depth      uint8 // Tree depth from coordinator
+	DeviceType uint8 // 0=Coordinator, 1=Router, 2=EndDevice.
+	Relation   uint8 // 0=Parent, 1=Child, 2=Sibling, 3=None, 4=PreviousChild.
+	LQI        uint8 // Link Quality (0-255, higher is better).
+	Depth      uint8 // Tree depth from coordinator.
 }
 
 // GetNeighborTable retrieves the neighbor table from a device.
@@ -354,12 +343,12 @@ func (a *Adapter) GetNeighborTable(ctx context.Context, nwkAddr uint16) ([]Neigh
 
 // BindingInfo contains information about a binding entry on a device.
 type BindingInfo struct {
-	SrcAddr     [8]byte // Source device IEEE address
-	SrcEndpoint uint8   // Source endpoint
-	ClusterID   uint16  // Cluster ID
-	DstAddrMode uint8   // 0x01=group, 0x03=IEEE address
-	DstAddr     [8]byte // Destination IEEE address (or group ID)
-	DstEndpoint uint8   // Destination endpoint
+	SrcAddr     [8]byte // Source device IEEE address.
+	SrcEndpoint uint8   // Source endpoint.
+	ClusterID   uint16  // Cluster ID.
+	DstAddrMode uint8   // 0x01=group, 0x03=IEEE address.
+	DstAddr     [8]byte // Destination IEEE address (or group ID).
+	DstEndpoint uint8   // Destination endpoint.
 }
 
 // GetBindingTable retrieves the binding table from a device.
@@ -414,10 +403,11 @@ func (a *Adapter) RemoveDevice(ctx context.Context, nwkAddr uint16, ieeeAddr [8]
 		return fmt.Errorf("remove device returned status 0x%02X", status)
 	}
 
-	// Remove from local device manager
+	// Remove from local device manager.
 	a.deviceMgr.removeDevice(ieeeAddr)
 
 	// Clean up device name (non-fatal, best-effort)
+	//nolint:errcheck // Device name cleanup is best-effort, errors intentionally ignored
 	_ = a.DeleteDeviceName(ctx, ieeeAddr)
 
 	return nil
@@ -445,10 +435,11 @@ func (a *Adapter) ForceRemoveDevice(ctx context.Context, ieeeAddr [8]byte) error
 		return ErrDeviceNotFound
 	}
 
-	// Remove from local device manager
+	// Remove from local device manager.
 	a.deviceMgr.removeDevice(ieeeAddr)
 
 	// Clean up device name (non-fatal, best-effort)
+	//nolint:errcheck // Device name cleanup is best-effort, errors intentionally ignored
 	_ = a.DeleteDeviceName(ctx, ieeeAddr)
 
 	return nil
@@ -519,58 +510,6 @@ func (a *Adapter) Unbind(ctx context.Context, deviceIEEEAddr [8]byte, deviceNwkA
 
 	if status != 0 {
 		return fmt.Errorf("unbind returned status 0x%02X", status)
-	}
-
-	return nil
-}
-
-// refreshDeviceList refreshes device list from the coordinator's device info.
-func (a *Adapter) refreshDeviceList(ctx context.Context) error {
-	a.mu.Lock()
-	if !a.isOpen {
-		a.mu.Unlock()
-		return ErrNotOpen
-	}
-	znpClient := a.znp
-	a.mu.Unlock()
-
-	// Get device info which includes associated devices list
-	deviceInfo, err := znpClient.GetDeviceInfo(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get device info: %w", err)
-	}
-
-	// Query each associated device by network address
-	for _, nwkAddr := range deviceInfo.AssocDevices {
-		// Skip coordinator (address 0x0000)
-		if nwkAddr == 0x0000 {
-			continue
-		}
-
-		// Create device entry with network address
-		dev := &Device{
-			NwkAddr:  nwkAddr,
-			LastSeen: time.Now(),
-		}
-
-		// Try to get IEEE address via ZDO IEEE address request
-		ieeeCtx, ieeeCancel := context.WithTimeout(ctx, 2*time.Second)
-		ieeeAddr, err := znpClient.IeeeAddrReq(ieeeCtx, nwkAddr)
-		ieeeCancel()
-		if err == nil {
-			dev.IEEEAddr = ieeeAddr
-		}
-
-		// Try to get active endpoints (non-blocking, best effort)
-		epCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-		endpoints, err := a.GetActiveEndpoints(epCtx, dev.NwkAddr)
-		cancel()
-		if err == nil {
-			dev.Endpoints = endpoints
-		}
-
-		// Add to device manager
-		a.deviceMgr.addDevice(dev)
 	}
 
 	return nil

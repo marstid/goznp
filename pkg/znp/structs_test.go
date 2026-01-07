@@ -339,14 +339,14 @@ func TestApsLinkKeyEntry(t *testing.T) {
 func TestSecurityManagerEntry(t *testing.T) {
 	entry := SecurityManagerEntry{
 		Ami:     0x1234,
-		KeyNvId: 0x5678,
+		KeyNvID: 0x5678,
 	}
 
 	if entry.Ami != 0x1234 {
 		t.Errorf("Ami = 0x%04X, want 0x1234", entry.Ami)
 	}
-	if entry.KeyNvId != 0x5678 {
-		t.Errorf("KeyNvId = 0x%04X, want 0x5678", entry.KeyNvId)
+	if entry.KeyNvID != 0x5678 {
+		t.Errorf("KeyNvID = 0x%04X, want 0x5678", entry.KeyNvID)
 	}
 }
 

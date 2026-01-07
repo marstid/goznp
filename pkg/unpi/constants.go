@@ -6,10 +6,10 @@ const (
 	SOF byte = 0xFE
 
 	// Frame position constants indicate byte offsets in the UNPI frame.
-	PositionDataLength = 1 // Position of the data length field
-	PositionCmd0       = 2 // Position of the first command byte
-	PositionCmd1       = 3 // Position of the second command byte
-	DataStart          = 4 // Position where data payload begins
+	PositionDataLength = 1 // Position of the data length field.
+	PositionCmd0       = 2 // Position of the first command byte.
+	PositionCmd1       = 3 // Position of the second command byte.
+	DataStart          = 4 // Position where data payload begins.
 
 	// MinMessageLength is the minimum valid frame size (SOF + Len + Cmd0 + Cmd1 + FCS).
 	MinMessageLength = 5

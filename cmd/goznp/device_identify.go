@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/marstid/goznp/pkg/zcl"
-	"github.com/spf13/cobra"
 )
 
 // goznp device identify -p <port> --addr <nwk-addr> [--endpoint <ep>] [--duration <secs>] [--effect <effect>]
@@ -35,7 +36,7 @@ Examples:
   goznp device identify --addr 0xBE87 --endpoint 11              # Identify for 5s
   goznp device identify --addr 0xBE87 --endpoint 11 --duration 10 # Identify for 10s
   goznp device identify --addr 0xBE87 --endpoint 11 --effect blink # Trigger blink effect`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceIdentify(ctx)
 	},

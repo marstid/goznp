@@ -275,14 +275,11 @@ func (a *Adapter) GetMainsInfo(ctx context.Context, nwkAddr uint16, endpoint uin
 // This uses manufacturer-specific methods and may not work on all devices.
 // For Tuya TS011F plugs, zigbee2mqtt uses Basic cluster resetFactDefault command.
 func (a *Adapter) ResetEnergy(ctx context.Context, nwkAddr uint16, endpoint uint8) error {
-	var lastErr error
-
 	// Method 1: Basic cluster (0x0000) command 0 (resetFactDefault)
 	// This is what zigbee2mqtt uses for TS011F energy reset
-	if err := a.SendClusterCommand(ctx, nwkAddr, endpoint, zcl.ClusterBasic, 0x00, nil); err == nil {
+	err := a.SendClusterCommand(ctx, nwkAddr, endpoint, zcl.ClusterBasic, 0x00, nil)
+	if err == nil {
 		return nil
-	} else {
-		lastErr = err
 	}
 
 	// Method 2: Tuya cluster 0xE001, attribute 0xD004, value 1
@@ -292,10 +289,9 @@ func (a *Adapter) ResetEnergy(ctx context.Context, nwkAddr uint16, endpoint uint
 			Value: uint8(1),
 		},
 	}
-	if err := a.WriteAttributes(ctx, nwkAddr, endpoint, zcl.ClusterTuyaSpecific, tuyaValues1); err == nil {
+	err = a.WriteAttributes(ctx, nwkAddr, endpoint, zcl.ClusterTuyaSpecific, tuyaValues1)
+	if err == nil {
 		return nil
-	} else {
-		lastErr = err
 	}
 
 	// Method 3: Tuya cluster 0xE000, attribute 0xD004
@@ -305,10 +301,9 @@ func (a *Adapter) ResetEnergy(ctx context.Context, nwkAddr uint16, endpoint uint
 			Value: uint8(1),
 		},
 	}
-	if err := a.WriteAttributes(ctx, nwkAddr, endpoint, zcl.ClusterID(0xE000), tuyaValues2); err == nil {
+	err = a.WriteAttributes(ctx, nwkAddr, endpoint, zcl.ClusterID(0xE000), tuyaValues2)
+	if err == nil {
 		return nil
-	} else {
-		lastErr = err
 	}
 
 	// Method 4: Try writing 0 to the metering summation attribute (standard but rarely works)
@@ -318,11 +313,10 @@ func (a *Adapter) ResetEnergy(ctx context.Context, nwkAddr uint16, endpoint uint
 			Value: uint64(0),
 		},
 	}
-	if err := a.WriteAttributes(ctx, nwkAddr, endpoint, zcl.ClusterMeteringSimple, meterValues); err == nil {
+	err = a.WriteAttributes(ctx, nwkAddr, endpoint, zcl.ClusterMeteringSimple, meterValues)
+	if err == nil {
 		return nil
-	} else {
-		lastErr = err
 	}
 
-	return fmt.Errorf("energy reset failed (tried 4 methods): %w", lastErr)
+	return fmt.Errorf("energy reset failed (tried 4 methods): %w", err)
 }

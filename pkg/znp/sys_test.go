@@ -11,15 +11,15 @@ import (
 
 // mockPort is a mock implementation of io.ReadWriteCloser for testing.
 type mockPort struct {
-	writeData   [][]byte
-	writeDelay  time.Duration
-	readData    [][]byte
-	readDelay   time.Duration
-	readIndex   int
-	writeError  error
-	closed      bool
-	closeError  error
-	onWrite     func([]byte)
+	writeData  [][]byte
+	writeDelay time.Duration
+	readData   [][]byte
+	readDelay  time.Duration
+	readIndex  int
+	writeError error
+	closed     bool
+	closeError error
+	onWrite    func([]byte)
 }
 
 func (m *mockPort) Write(data []byte) (int, error) {
@@ -53,14 +53,14 @@ func (m *mockPort) Close() error {
 
 // TestPingCapabilities tests the PingCapabilities.HasCapability method.
 func TestPingCapabilities(t *testing.T) {
-	cap := &PingCapabilities{
+	capabilities := &PingCapabilities{
 		Capabilities: 0x000F, // Bits 0-3 set
 	}
 
 	tests := []struct {
-		name         string
-		capability   uint16
-		wantHas      bool
+		name       string
+		capability uint16
+		wantHas    bool
 	}{
 		{"bit 0 set", 0x0001, true},
 		{"bit 1 set", 0x0002, true},
@@ -75,16 +75,16 @@ func TestPingCapabilities(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := cap.HasCapability(tt.capability); got != tt.wantHas {
+			if got := capabilities.HasCapability(tt.capability); got != tt.wantHas {
 				t.Errorf("HasCapability() = %v, want %v", got, tt.wantHas)
 			}
 		})
 	}
 
 	// Test with no capabilities set
-	cap = &PingCapabilities{Capabilities: 0x0000}
+	capabilities = &PingCapabilities{Capabilities: 0x0000}
 	for i := uint16(0); i < 16; i++ {
-		if cap.HasCapability(1 << i) {
+		if capabilities.HasCapability(1 << i) {
 			t.Errorf("HasCapability() should return false for bit %d when no capabilities set", i)
 		}
 	}
@@ -115,9 +115,9 @@ func TestZStackVariantString(t *testing.T) {
 // TestVersionInfoVariant tests the VersionInfo.Variant method.
 func TestVersionInfoVariant(t *testing.T) {
 	tests := []struct {
-		name  string
-		info  VersionInfo
-		want  ZStackVariant
+		name string
+		info VersionInfo
+		want ZStackVariant
 	}{
 		{"Product ID 0", VersionInfo{Product: 0}, ZStack12},
 		{"Product ID 1", VersionInfo{Product: 1}, ZStack3},
@@ -406,11 +406,13 @@ func TestPing(t *testing.T) {
 	// Create a mock ZNP that responds to ping
 	mock := &mockPort{}
 	z := New(mock)
+	//nolint:errcheck // Test setup
 	z.Open(context.Background())
 
 	// Simulate a ping response (little-endian)
-	// 0x001F in little-endian is [0x1F, 0x00]
-	responseData := []byte{0x1F, 0x00} // Capabilities = 0x001F
+	// 0x001F in little-endian is 0x1F, 0x00
+	// Capabilities value is 0x001F
+	responseData := []byte{0x1F, 0x00}
 
 	// Create response frame
 	responseFrame := &unpi.Frame{
@@ -465,6 +467,7 @@ func TestPingTimeout(t *testing.T) {
 func TestVersion(t *testing.T) {
 	mock := &mockPort{}
 	z := New(mock)
+	//nolint:errcheck // Test setup
 	z.Open(context.Background())
 
 	// Simulate a version response
@@ -545,9 +548,9 @@ func TestRoundTripIEEEAddr(t *testing.T) {
 // TestPingCapabilitiesEdgeCases tests edge cases for PingCapabilities.
 func TestPingCapabilitiesEdgeCases(t *testing.T) {
 	tests := []struct {
-		name  string
-		caps  uint16
-		bits  []uint16
+		name string
+		caps uint16
+		bits []uint16
 	}{
 		{
 			name: "all bits set",
@@ -568,9 +571,9 @@ func TestPingCapabilitiesEdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cap := &PingCapabilities{Capabilities: tt.caps}
+			capabilities := &PingCapabilities{Capabilities: tt.caps}
 			for _, bit := range tt.bits {
-				if !cap.HasCapability(bit) {
+				if !capabilities.HasCapability(bit) {
 					t.Errorf("HasCapability(0x%04X) should return true for capabilities 0x%04X", bit, tt.caps)
 				}
 			}
@@ -608,11 +611,9 @@ func TestStackTuneOperationConstants(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Just verify the constant is defined
-			if tt.value > 255 {
-				t.Errorf("%s value out of range: %d", tt.name, tt.value)
-			}
+		t.Run(tt.name, func(_ *testing.T) {
+			// Just verify the constant is defined (value is uint8, always valid)
+			_ = tt.value
 		})
 	}
 }
@@ -648,9 +649,9 @@ func TestVersionInfoMethods(t *testing.T) {
 // TestChannelMasking tests channel mask functionality.
 func TestChannelMasking(t *testing.T) {
 	tests := []struct {
-		name         string
-		channels     []uint8
-		wantMask     uint32
+		name     string
+		channels []uint8
+		wantMask uint32
 	}{
 		{
 			name:     "single channel 15",
@@ -731,8 +732,8 @@ func TestZNPOpen(t *testing.T) {
 	z.Close()
 }
 
-// TestZNPOpenWithCancelledContext tests Open with a cancelled context.
-func TestZNPOpenWithCancelledContext(t *testing.T) {
+// TestZNPOpenWithCanceledContext tests Open with a canceled context.
+func TestZNPOpenWithCanceledContext(t *testing.T) {
 	mock := &mockPort{}
 	z := New(mock)
 
@@ -741,7 +742,7 @@ func TestZNPOpenWithCancelledContext(t *testing.T) {
 
 	err := z.Open(ctx)
 	if !errors.Is(err, context.Canceled) {
-		t.Errorf("Open() with cancelled context error = %v, want context.Canceled", err)
+		t.Errorf("Open() with canceled context error = %v, want context.Canceled", err)
 	}
 }
 
@@ -749,6 +750,7 @@ func TestZNPOpenWithCancelledContext(t *testing.T) {
 func TestZNPClose(t *testing.T) {
 	mock := &mockPort{}
 	z := New(mock)
+	//nolint:errcheck // Test setup
 	z.Open(context.Background())
 
 	err := z.Close()
@@ -773,6 +775,7 @@ func TestZNPClose(t *testing.T) {
 func TestZNPCloseIdempotent(t *testing.T) {
 	mock := &mockPort{}
 	z := New(mock)
+	//nolint:errcheck // Test setup
 	z.Open(context.Background())
 
 	err := z.Close()
@@ -903,6 +906,7 @@ func TestSendNotOpen(t *testing.T) {
 func TestRequestWithWriteError(t *testing.T) {
 	mock := &mockPort{writeError: errors.New("write failed")}
 	z := New(mock)
+	//nolint:errcheck // Test setup
 	z.Open(context.Background())
 
 	ctx := context.Background()
@@ -918,6 +922,7 @@ func TestRequestWithWriteError(t *testing.T) {
 func TestSendWithWriteError(t *testing.T) {
 	mock := &mockPort{writeError: errors.New("write failed")}
 	z := New(mock)
+	//nolint:errcheck // Test setup
 	z.Open(context.Background())
 
 	err := z.Send(unpi.SYS, CmdSysPing, nil)
@@ -1011,9 +1016,9 @@ func TestPingCapabilitiesFields(t *testing.T) {
 // TestAddressManagerEntryIsValid tests the AddressManagerEntry.IsValid method.
 func TestAddressManagerEntryIsValid(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		entry AddressManagerEntry
-		want bool
+		want  bool
 	}{
 		{
 			name: "valid entry with assoc flag",

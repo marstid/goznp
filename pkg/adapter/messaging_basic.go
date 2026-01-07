@@ -134,9 +134,10 @@ func (a *Adapter) ReadDeviceInfo(ctx context.Context, nwkAddr uint16, endpoint u
 				info.PhysicalEnvironment = &v
 			}
 		case zcl.AttrBasicDeviceEnabled:
-			if v, ok := r.Value.(bool); ok {
+			switch v := r.Value.(type) {
+			case bool:
 				info.DeviceEnabled = &v
-			} else if v, ok := r.Value.(uint8); ok {
+			case uint8:
 				enabled := v != 0
 				info.DeviceEnabled = &enabled
 			}

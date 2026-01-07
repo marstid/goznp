@@ -136,5 +136,4 @@
 //   - Ensure images come from trusted sources
 //   - Use install codes for secure device joining
 //   - Verify manufacturer and image type before serving
-//
 package ota

@@ -8,7 +8,7 @@ import (
 
 // Example demonstrating basic frame creation and serialization.
 func ExampleNewFrame() {
-	// Create a SREQ frame to the SYS subsystem
+	// Create a SREQ frame to the SYS subsystem.
 	frame, err := unpi.NewFrame(
 		unpi.SREQ,
 		unpi.SYS,
@@ -19,7 +19,7 @@ func ExampleNewFrame() {
 		panic(err)
 	}
 
-	// Serialize to bytes for transmission
+	// Serialize to bytes for transmission.
 	frameBytes := frame.ToBytes()
 
 	fmt.Printf("Frame length: %d bytes\n", len(frameBytes))
@@ -35,10 +35,10 @@ func ExampleNewFrame() {
 
 // Example demonstrating frame parsing from bytes.
 func ExampleParseFrame() {
-	// Raw bytes received from serial port (example SREQ to SYS)
+	// Raw bytes received from serial port (example SREQ to SYS).
 	rawBytes := []byte{0xFE, 0x03, 0x21, 0x01, 0xAA, 0xBB, 0xCC, 0xFE}
 
-	// Parse the frame
+	// Parse the frame.
 	frame, err := unpi.ParseFrame(rawBytes)
 	if err != nil {
 		panic(err)
@@ -59,14 +59,14 @@ func ExampleParseFrame() {
 func ExampleParser() {
 	parser := unpi.NewParser()
 
-	// Simulate receiving data from serial port in chunks
+	// Simulate receiving data from serial port in chunks.
 	chunk1 := []byte{0xFE, 0x01, 0x21}
 	chunk2 := []byte{0x01, 0xAA, 0x8B}
 
 	parser.Feed(chunk1)
 	parser.Feed(chunk2)
 
-	// Read parsed frame
+	// Read parsed frame.
 	select {
 	case frame := <-parser.Frames():
 		fmt.Printf("Type: %s\n", frame.Type)

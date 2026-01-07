@@ -123,7 +123,7 @@ func (z *ZNP) Close() error {
 
 // Request sends a synchronous request (SREQ) and waits for the corresponding response (SRSP).
 // It automatically creates a frame matcher for the expected SRSP response.
-// Returns the response frame or an error if the request times out or the context is cancelled.
+// Returns the response frame or an error if the request times out or the context is canceled.
 func (z *ZNP) Request(ctx context.Context, subsystem unpi.Subsystem, cmd Command, data []byte) (*unpi.Frame, error) {
 	z.mu.Lock()
 	if !z.isOpen {

@@ -84,7 +84,7 @@ func TestLookup(t *testing.T) {
 }
 
 func TestLookupByManufacturer(t *testing.T) {
-	// Should find any GLEDOPTO device
+	// Should find any GLEDOPTO device.
 	info := LookupByManufacturer("GLEDOPTO")
 	if info == nil {
 		t.Fatal("LookupByManufacturer(GLEDOPTO) = nil, want non-nil")
@@ -93,7 +93,7 @@ func TestLookupByManufacturer(t *testing.T) {
 		t.Errorf("Vendor = %q, want GLEDOPTO", info.Vendor)
 	}
 
-	// Unknown manufacturer should return nil
+	// Unknown manufacturer should return nil.
 	info = LookupByManufacturer("Unknown_Manufacturer")
 	if info != nil {
 		t.Errorf("LookupByManufacturer(Unknown) = %v, want nil", info)
@@ -101,22 +101,21 @@ func TestLookupByManufacturer(t *testing.T) {
 }
 
 func TestLookupWithFallback(t *testing.T) {
-	// Exact match should work
+	// Exact match should work.
 	info := LookupWithFallback("GLEDOPTO", "GL-SD-301P")
 	if info == nil || info.Model != "GL-SD-301P" {
 		t.Error("exact match failed")
 	}
 
-	// Fallback to manufacturer when model doesn't match
+	// Fallback to manufacturer when model doesn't match.
 	info = LookupWithFallback("GLEDOPTO", "UNKNOWN_MODEL")
 	if info == nil {
 		t.Error("manufacturer fallback failed")
-	}
-	if info.Vendor != "GLEDOPTO" {
+	} else if info.Vendor != "GLEDOPTO" {
 		t.Errorf("Vendor = %q, want GLEDOPTO", info.Vendor)
 	}
 
-	// Unknown manufacturer should return nil
+	// Unknown manufacturer should return nil.
 	info = LookupWithFallback("Unknown", "Unknown")
 	if info != nil {
 		t.Errorf("LookupWithFallback(Unknown, Unknown) = %v, want nil", info)

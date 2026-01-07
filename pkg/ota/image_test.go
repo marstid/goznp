@@ -8,57 +8,69 @@ import (
 
 // TestParseBytes tests parsing OTA image byte data.
 func TestParseBytes(t *testing.T) {
-	// Create a minimal valid OTA image
+	// Create a minimal valid OTA image.
 	buf := new(bytes.Buffer)
 
 	// Upgrade file ID
-	binary.Write(buf, binary.LittleEndian, uint32(UpgradeFileID))
+	//nolint:errcheck // Test data construction
+	_ = binary.Write(buf, binary.LittleEndian, uint32(UpgradeFileID))
 
 	// Header version
-	binary.Write(buf, binary.LittleEndian, uint16(HeaderVersion))
+	//nolint:errcheck // Test data construction
+	_ = binary.Write(buf, binary.LittleEndian, uint16(HeaderVersion))
 
 	// Header length (minimal header = 32 bytes)
-	binary.Write(buf, binary.LittleEndian, uint16(32))
+	//nolint:errcheck // Test data construction
+	_ = binary.Write(buf, binary.LittleEndian, uint16(32))
 
 	// Field control (no optional fields)
-	binary.Write(buf, binary.LittleEndian, uint16(0))
+	//nolint:errcheck // Test data construction
+	_ = binary.Write(buf, binary.LittleEndian, uint16(0))
 
 	// Manufacturer code
-	binary.Write(buf, binary.LittleEndian, uint16(0x115F))
+	//nolint:errcheck // Test data construction
+	_ = binary.Write(buf, binary.LittleEndian, uint16(0x115F))
 
 	// Image type
-	binary.Write(buf, binary.LittleEndian, uint16(0x2200))
+	//nolint:errcheck // Test data construction
+	_ = binary.Write(buf, binary.LittleEndian, uint16(0x2200))
 
 	// File version
+	//nolint:errcheck // Test data construction
 	binary.Write(buf, binary.LittleEndian, uint32(0x01020304))
 
 	// Stack version
+	//nolint:errcheck // Test data construction
 	binary.Write(buf, binary.LittleEndian, uint16(0x0200))
 
-	// Header string
+	// Header string.
 	headerString := []byte("Test OTA Header\x00")
 	headerString = append(headerString, make([]byte, 32-len(headerString))...)
+	//nolint:errcheck // Test data construction
 	buf.Write(headerString)
 
-	// Image size
+	// Image size.
 	imageData := []byte("firmware data here")
+	//nolint:errcheck // Test data construction
 	binary.Write(buf, binary.LittleEndian, uint32(len(imageData)))
 
 	// Sub-element terminator (0xFFFF) to indicate end of header
 	// Terminator has 2-byte tag (0xFFFF) + 4-byte length (0x00000000)
+	//nolint:errcheck // Test data construction
 	binary.Write(buf, binary.LittleEndian, uint16(0xFFFF))
+	//nolint:errcheck // Test data construction
 	binary.Write(buf, binary.LittleEndian, uint32(0))
 
-	// Image data
+	// Image data.
 	buf.Write(imageData)
 
-	// Parse the image
+	// Parse the image.
 	img, err := ParseBytes(buf.Bytes())
 	if err != nil {
 		t.Fatalf("ParseBytes() error = %v", err)
 	}
 
-	// Validate parsed data
+	// Validate parsed data.
 	if img.UpgradeFileID != UpgradeFileID {
 		t.Errorf("UpgradeFileID = 0x%08X, want 0x%08X", img.UpgradeFileID, UpgradeFileID)
 	}
@@ -101,7 +113,8 @@ func TestParseBytesInvalid(t *testing.T) {
 			name: "invalid file ID",
 			data: func() []byte {
 				buf := new(bytes.Buffer)
-				binary.Write(buf, binary.LittleEndian, uint32(0xDEADBEEF)) // Invalid ID
+				//nolint:errcheck // Test data construction
+				binary.Write(buf, binary.LittleEndian, uint32(0xDEADBEEF)) // Invalid ID.
 				return buf.Bytes()
 			}(),
 			wantErr: "invalid upgrade file ID",
@@ -110,8 +123,10 @@ func TestParseBytesInvalid(t *testing.T) {
 			name: "invalid header version",
 			data: func() []byte {
 				buf := new(bytes.Buffer)
+				//nolint:errcheck // Test data construction
 				binary.Write(buf, binary.LittleEndian, uint32(UpgradeFileID))
-				binary.Write(buf, binary.LittleEndian, uint16(0x0201)) // Wrong version
+				//nolint:errcheck // Test data construction
+				binary.Write(buf, binary.LittleEndian, uint16(0x0201)) // Wrong version.
 				return buf.Bytes()
 			}(),
 			wantErr: "unsupported header version",
@@ -245,7 +260,7 @@ func TestIsCompatible(t *testing.T) {
 		},
 	}
 
-	// Test with hardware version check disabled
+	// Test with hardware version check disabled.
 	t.Run("no field control", func(t *testing.T) {
 		img.HeaderFieldControl = 0
 		if !img.IsCompatible(0x115F, 0x2200, 255) {
@@ -253,10 +268,10 @@ func TestIsCompatible(t *testing.T) {
 		}
 	})
 
-	// Test with hardware version field
+	// Test with hardware version field.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Re-enable hardware version check
+			// Re-enable hardware version check.
 			img.HeaderFieldControl = FCHardwareVersions
 			if got := img.IsCompatible(tt.manufacturer, tt.imageType, tt.deviceVersion); got != tt.want {
 				t.Errorf("IsCompatible() = %v, want %v", got, tt.want)
@@ -367,60 +382,60 @@ func TestNextBlockOffset(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		offset        uint32
-		maxSize       uint8
-		wantOffset    uint32
-		wantDataSize  uint8
-		wantFinished  bool
+		name         string
+		offset       uint32
+		maxSize      uint8
+		wantOffset   uint32
+		wantDataSize uint8
+		wantFinished bool
 	}{
 		{
-			name:          "first block",
-			offset:        0,
-			maxSize:       64,
-			wantOffset:    0,
-			wantDataSize:  64,
-			wantFinished:  false,
+			name:         "first block",
+			offset:       0,
+			maxSize:      64,
+			wantOffset:   0,
+			wantDataSize: 64,
+			wantFinished: false,
 		},
 		{
-			name:          "middle block",
-			offset:        128,
-			maxSize:       64,
-			wantOffset:    128,
-			wantDataSize:  64,
-			wantFinished:  false,
+			name:         "middle block",
+			offset:       128,
+			maxSize:      64,
+			wantOffset:   128,
+			wantDataSize: 64,
+			wantFinished: false,
 		},
 		{
-			name:          "last partial block",
-			offset:        200,
-			maxSize:       64,
-			wantOffset:    200,
-			wantDataSize:  56,
-			wantFinished:  true,
+			name:         "last partial block",
+			offset:       200,
+			maxSize:      64,
+			wantOffset:   200,
+			wantDataSize: 56,
+			wantFinished: true,
 		},
 		{
-			name:          "exactly at end",
-			offset:        256,
-			maxSize:       64,
-			wantOffset:    256,
-			wantDataSize:  0,
-			wantFinished:  true,
+			name:         "exactly at end",
+			offset:       256,
+			maxSize:      64,
+			wantOffset:   256,
+			wantDataSize: 0,
+			wantFinished: true,
 		},
 		{
-			name:          "beyond end",
-			offset:        300,
-			maxSize:       64,
-			wantOffset:    300,
-			wantDataSize:  0,
-			wantFinished:  true,
+			name:         "beyond end",
+			offset:       300,
+			maxSize:      64,
+			wantOffset:   300,
+			wantDataSize: 0,
+			wantFinished: true,
 		},
 		{
-			name:          "small max size",
-			offset:        0,
-			maxSize:       16,
-			wantOffset:    0,
-			wantDataSize:  16,
-			wantFinished:  false,
+			name:         "small max size",
+			offset:       0,
+			maxSize:      16,
+			wantOffset:   0,
+			wantDataSize: 16,
+			wantFinished: false,
 		},
 	}
 

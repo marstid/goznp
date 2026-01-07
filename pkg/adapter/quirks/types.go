@@ -91,17 +91,17 @@ func (m *DeviceMatcher) Compile() error {
 
 // Matches checks if the device matches the criteria.
 func (m *DeviceMatcher) Matches(manufacturerCode uint16, manufacturer, model string) bool {
-	// Check manufacturer code if specified
+	// Check manufacturer code if specified.
 	if m.ManufacturerCode != nil && *m.ManufacturerCode != manufacturerCode {
 		return false
 	}
 
-	// Check manufacturer pattern if specified
+	// Check manufacturer pattern if specified.
 	if m.compiledManuf != nil && !m.compiledManuf.MatchString(manufacturer) {
 		return false
 	}
 
-	// Check model pattern if specified
+	// Check model pattern if specified.
 	if m.compiledModel != nil && !m.compiledModel.MatchString(model) {
 		return false
 	}
@@ -111,7 +111,7 @@ func (m *DeviceMatcher) Matches(manufacturerCode uint16, manufacturer, model str
 
 // globToRegex converts a glob pattern to a regex.
 func globToRegex(pattern string) (*regexp.Regexp, error) {
-	// Convert glob to regex
+	// Convert glob to regex.
 	regex := "^"
 	for _, c := range pattern {
 		switch c {
@@ -133,17 +133,17 @@ func globToRegex(pattern string) (*regexp.Regexp, error) {
 type AttributeOverride struct {
 	ClusterID   zcl.ClusterID
 	AttributeID zcl.AttributeID
-	Divisor     *float64 // Divide value by this
-	Multiplier  *float64 // Multiply value by this
-	Offset      *float64 // Add this to value
-	Invert      bool     // Invert boolean values
+	Divisor     *float64 // Divide value by this.
+	Multiplier  *float64 // Multiply value by this.
+	Offset      *float64 // Add this to value.
+	Invert      bool     // Invert boolean values.
 }
 
 // ResponseOverride defines alternate acceptable command responses.
 type ResponseOverride struct {
 	ClusterID       zcl.ClusterID
-	ExpectedCommand uint8   // Original expected command
-	AcceptCommands  []uint8 // Also accept these commands as valid responses
+	ExpectedCommand uint8   // Original expected command.
+	AcceptCommands  []uint8 // Also accept these commands as valid responses.
 }
 
 // EnergyResetMethod defines how to reset energy counter.
@@ -151,16 +151,16 @@ type EnergyResetMethod struct {
 	ClusterID   zcl.ClusterID
 	AttributeID zcl.AttributeID
 	Value       interface{}
-	UseCommand  bool  // If true, use SendClusterCommand instead of WriteAttributes
-	CommandID   uint8 // Command ID if UseCommand is true
+	UseCommand  bool  // If true, use SendClusterCommand instead of WriteAttributes.
+	CommandID   uint8 // Command ID if UseCommand is true.
 }
 
 // TimingOverride defines custom timing parameters.
 type TimingOverride struct {
-	InterviewTimeout int // Interview timeout in seconds
-	CommandTimeout   int // Command timeout in milliseconds
-	RetryCount       int // Number of retries
-	RetryDelay       int // Delay between retries in milliseconds
+	InterviewTimeout int // Interview timeout in seconds.
+	CommandTimeout   int // Command timeout in milliseconds.
+	RetryCount       int // Number of retries.
+	RetryDelay       int // Delay between retries in milliseconds.
 }
 
 // DeviceQuirk represents a specific quirk for a device type.

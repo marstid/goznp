@@ -121,7 +121,7 @@ func (a *Adapter) FormNetwork(ctx context.Context, config NetworkFormConfig) err
 	}
 
 	// Clear secondary channel (single channel operation)
-	status, err = znpClient.BdbSetChannel(ctx, false, 0)
+	_, err = znpClient.BdbSetChannel(ctx, false, 0)
 	if err != nil {
 		return fmt.Errorf("failed to clear secondary channel: %w", err)
 	}
@@ -144,7 +144,7 @@ func (a *Adapter) FormNetwork(ctx context.Context, config NetworkFormConfig) err
 	for {
 		state, err := znpClient.WaitForStateChange(formationCtx, 5*time.Second)
 		if err != nil {
-			// Check if context cancelled or timed out
+			// Check if context canceled or timed out.
 			if formationCtx.Err() != nil {
 				return fmt.Errorf("network formation timed out: %w", formationCtx.Err())
 			}
@@ -243,7 +243,9 @@ func (a *Adapter) SetTxPower(ctx context.Context, power int8) error {
 		powerUint = uint8(power)
 	}
 	// Initialize NV item if it doesn't exist, then write
+	//nolint:errcheck // Errors intentionally ignored
 	_ = znpClient.NvItemInit(ctx, znp.NvTransmitPower, 1, []byte{powerUint})
+	//nolint:errcheck // Errors intentionally ignored
 	_ = znpClient.NvWrite(ctx, znp.NvTransmitPower, 0, []byte{powerUint})
 
 	return nil
@@ -293,20 +295,17 @@ func (a *Adapter) FactoryReset(ctx context.Context) error {
 
 	// Clear NIB (network information base)
 	emptyNib := make([]byte, 116) // Standard NIB size
-	if err := znpClient.NvWriteAll(ctx, znp.NvNIB, emptyNib); err != nil {
-		// Non-fatal, continue
-	}
+	//nolint:errcheck // Non-fatal error, continue on failure
+	_ = znpClient.NvWriteAll(ctx, znp.NvNIB, emptyNib)
 
 	// Clear active network key
 	emptyKey := make([]byte, 17)
-	if err := znpClient.NvWrite(ctx, znp.NvNwkActiveKeyInfo, 0, emptyKey); err != nil {
-		// Non-fatal, continue
-	}
+	//nolint:errcheck // Non-fatal error, continue on failure
+	_ = znpClient.NvWrite(ctx, znp.NvNwkActiveKeyInfo, 0, emptyKey)
 
 	// Clear alternate network key
-	if err := znpClient.NvWrite(ctx, znp.NvNwkAlternKeyInfo, 0, emptyKey); err != nil {
-		// Non-fatal, continue
-	}
+	//nolint:errcheck // Non-fatal error, continue on failure
+	_ = znpClient.NvWrite(ctx, znp.NvNwkAlternKeyInfo, 0, emptyKey)
 
 	// Reset device to apply changes
 	_, err := znpClient.Reset(ctx, znp.ResetTypeSoft)

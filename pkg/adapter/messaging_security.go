@@ -263,9 +263,10 @@ func (a *Adapter) GetDoorLockStatus(ctx context.Context, nwkAddr uint16, endpoin
 				status.DoorState = &doorState
 			}
 		case zcl.AttrDoorLockActuatorEnabled:
-			if v, ok := r.Value.(bool); ok {
+			switch v := r.Value.(type) {
+			case bool:
 				status.ActuatorEnabled = v
-			} else if v, ok := r.Value.(uint8); ok {
+			case uint8:
 				status.ActuatorEnabled = v != 0
 			}
 		case zcl.AttrDoorLockAutoRelockTime:

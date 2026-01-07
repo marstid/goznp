@@ -9,10 +9,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/marstid/goznp/pkg/serial"
 	"github.com/marstid/goznp/pkg/znp"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -53,7 +54,7 @@ var rootCmd = &cobra.Command{
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print version information",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Printf("goznp %s (built %s)\n", version, buildTime)
 	},
 }
@@ -98,7 +99,7 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List available serial ports",
 	Long:  "Shows USB ports with VID/PID info and highlights detected CC2652/SONOFF adapters",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		if err := runList(); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(1)
@@ -149,7 +150,7 @@ var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Display adapter information",
 	Long:  "Connect to adapter and display firmware version, capabilities, and device info",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runInfo(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -244,7 +245,7 @@ var pingCmd = &cobra.Command{
 	Use:   "ping",
 	Short: "Ping the adapter",
 	Long:  "Ping the adapter and display capabilities with response time",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runPing(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -292,7 +293,7 @@ var resetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "Reset the adapter",
 	Long:  "Perform soft reset and wait for reset indication",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runReset(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)

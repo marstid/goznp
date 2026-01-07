@@ -6,11 +6,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/marstid/goznp/pkg/backup"
 	"github.com/marstid/goznp/pkg/serial"
 	"github.com/marstid/goznp/pkg/znp"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -29,7 +30,7 @@ var backupCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a backup of the adapter configuration",
 	Long:  "Creates a JSON backup file containing network configuration and paired devices",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runBackupCreate(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -42,7 +43,7 @@ var backupRestoreCmd = &cobra.Command{
 	Use:   "restore",
 	Short: "Restore adapter configuration from a backup",
 	Long:  "Restores network configuration from a JSON backup file",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runBackupRestore(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -55,7 +56,7 @@ var backupShowCmd = &cobra.Command{
 	Use:   "show",
 	Short: "Display contents of a backup file",
 	Long:  "Shows the contents of a backup file without connecting to adapter",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		if err := runBackupShow(); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(1)
@@ -67,7 +68,7 @@ var backupDebugCmd = &cobra.Command{
 	Use:   "debug",
 	Short: "Debug NVRAM content",
 	Long:  "Dump raw NVRAM Address Manager table for debugging",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runBackupDebug(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -77,28 +78,31 @@ var backupDebugCmd = &cobra.Command{
 }
 
 func init() {
-	// Add flags to backup create
+	// Add flags to backup create.
 	backupCreateCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
 	backupCreateCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 	backupCreateCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file path (required)")
-	backupCreateCmd.MarkFlagRequired("output")
+	//nolint:errcheck // Required flag in init
+	_ = backupCreateCmd.MarkFlagRequired("output")
 
-	// Add flags to backup restore
+	// Add flags to backup restore.
 	backupRestoreCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
 	backupRestoreCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 	backupRestoreCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Input file path (required)")
 	backupRestoreCmd.Flags().BoolVarP(&forceRestore, "force", "f", false, "Skip confirmation prompt")
-	backupRestoreCmd.MarkFlagRequired("input")
+	//nolint:errcheck // Required flag in init
+	_ = backupRestoreCmd.MarkFlagRequired("input")
 
-	// Add flags to backup show
+	// Add flags to backup show.
 	backupShowCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Input file path (required)")
-	backupShowCmd.MarkFlagRequired("input")
+	//nolint:errcheck // Required flag in init
+	_ = backupShowCmd.MarkFlagRequired("input")
 
-	// Add flags to backup debug
+	// Add flags to backup debug.
 	backupDebugCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
 	backupDebugCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 
-	// Build command hierarchy
+	// Build command hierarchy.
 	backupCmd.AddCommand(backupCreateCmd)
 	backupCmd.AddCommand(backupRestoreCmd)
 	backupCmd.AddCommand(backupShowCmd)
@@ -136,7 +140,7 @@ func runBackupCreate(ctx context.Context) error {
 		return fmt.Errorf("failed to serialize backup: %w", err)
 	}
 
-	if err := os.WriteFile(outputFile, data, 0600); err != nil {
+	if err := os.WriteFile(outputFile, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write backup file: %w", err)
 	}
 
@@ -155,7 +159,7 @@ func runBackupRestore(ctx context.Context) error {
 		return err
 	}
 
-	// Read backup file
+	// Read backup file.
 	data, err := os.ReadFile(inputFile)
 	if err != nil {
 		return fmt.Errorf("failed to read backup file: %w", err)
@@ -170,7 +174,7 @@ func runBackupRestore(ctx context.Context) error {
 		return fmt.Errorf("invalid backup: %w", err)
 	}
 
-	// Show what will be restored
+	// Show what will be restored.
 	fmt.Println("Backup contents:")
 	fmt.Printf("  Created:     %s\n", b.Created.Format(time.RFC3339))
 	fmt.Printf("  Coordinator: %s\n", b.Coordinator.IEEEAddress)
@@ -181,9 +185,10 @@ func runBackupRestore(ctx context.Context) error {
 	if !forceRestore {
 		fmt.Print("\nWARNING: This will overwrite the current configuration. Continue? [y/N]: ")
 		var response string
-		fmt.Scanln(&response)
+		//nolint:errcheck // User input, error intentionally ignored
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" {
-			fmt.Println("Restore cancelled.")
+			fmt.Println("Restore canceled.")
 			return nil
 		}
 	}
@@ -243,7 +248,7 @@ func runBackupShow() error {
 	fmt.Printf("  Extended PAN ID:  %s\n", b.Network.ExtendedPanID)
 	fmt.Printf("  Channel:          %d\n", b.Network.Channel)
 	fmt.Printf("  Security Level:   %d\n", b.Network.SecurityLevel)
-	fmt.Printf("  Network Key:      %s...\n", b.Network.NetworkKey[:8]) // Only show first 8 chars
+	fmt.Printf("  Network Key:      %s...\n", b.Network.NetworkKey[:8]) // Only show first 8 chars.
 
 	if len(b.Devices) > 0 {
 		fmt.Printf("\nDevices (%d):\n", len(b.Devices))
@@ -282,7 +287,7 @@ func runBackupDebug(ctx context.Context) error {
 	}
 	defer z.Close()
 
-	// Ping
+	// Ping.
 	if _, err := z.Ping(ctx); err != nil {
 		return fmt.Errorf("ping failed: %w", err)
 	}
@@ -290,7 +295,7 @@ func runBackupDebug(ctx context.Context) error {
 	fmt.Println("=== NVRAM Contents for Paired Devices ===")
 	fmt.Println()
 
-	// 1. Address Manager - IEEE/NWK address mappings
+	// 1. Address Manager - IEEE/NWK address mappings.
 	fmt.Println("1. ADDRESS MANAGER (device addresses)")
 	addrEntries, err := z.ReadAddrMgrTable(ctx)
 	if err != nil {
@@ -313,7 +318,7 @@ func runBackupDebug(ctx context.Context) error {
 		}
 	}
 
-	// 2. TCLK Table - Trust Center Link Keys
+	// 2. TCLK Table - Trust Center Link Keys.
 	fmt.Println("\n2. TCLK TABLE (Trust Center Link Keys)")
 	tclkEntries, err := z.NvReadTable(ctx, znp.NvSysZStack, znp.NvExTclkTable)
 	if err != nil {
@@ -330,7 +335,7 @@ func runBackupDebug(ctx context.Context) error {
 			}
 			if !isEmpty {
 				nonEmpty++
-				// TCLK entry format: txFrmCntr(4) + rxFrmCntr(4) + extAddr(8) + keyAttr(1) + keyType(1) + seedShift(1) + padding(1) = 20 bytes
+				// TCLK entry format: txFrmCntr(4) + rxFrmCntr(4) + extAddr(8) + keyAttr(1) + keyType(1) + seedShift(1) + padding(1) = 20 bytes.
 				if len(data) >= 20 {
 					var ieee [8]byte
 					copy(ieee[:], data[8:16])
@@ -346,7 +351,7 @@ func runBackupDebug(ctx context.Context) error {
 		}
 	}
 
-	// 3. APS Key Data - Application layer keys
+	// 3. APS Key Data - Application layer keys.
 	fmt.Println("\n3. APS KEY DATA TABLE (Application Keys)")
 	apsEntries, err := z.NvReadTable(ctx, znp.NvSysZStack, znp.NvExApsKeyData)
 	if err != nil {
@@ -371,7 +376,7 @@ func runBackupDebug(ctx context.Context) error {
 		}
 	}
 
-	// 4. Legacy OSAL items
+	// 4. Legacy OSAL items.
 	fmt.Println("\n4. LEGACY OSAL NV ITEMS")
 
 	osalItems := []struct {

@@ -8,7 +8,7 @@ import (
 func TestParser_SingleFrame(t *testing.T) {
 	parser := NewParser()
 
-	// Create a test frame
+	// Create a test frame.
 	frame, err := NewFrame(SREQ, SYS, 0x01, []byte{0xAA, 0xBB})
 	if err != nil {
 		t.Fatalf("NewFrame() error = %v", err)
@@ -16,10 +16,10 @@ func TestParser_SingleFrame(t *testing.T) {
 
 	frameBytes := frame.ToBytes()
 
-	// Feed the frame
+	// Feed the frame.
 	parser.Feed(frameBytes)
 
-	// Read the parsed frame
+	// Read the parsed frame.
 	select {
 	case parsed := <-parser.Frames():
 		if parsed.Type != frame.Type {
@@ -40,22 +40,25 @@ func TestParser_MultipleFrames(t *testing.T) {
 	parser := NewParser()
 
 	// Create multiple test frames
+	//nolint:errcheck // Test frames are always valid
 	frame1, _ := NewFrame(SREQ, SYS, 0x01, []byte{0xAA})
+	//nolint:errcheck // Test frames are always valid
 	frame2, _ := NewFrame(AREQ, ZDO, 0x02, []byte{0xBB, 0xCC})
+	//nolint:errcheck // Test frames are always valid
 	frame3, _ := NewFrame(SRSP, AF, 0x03, []byte{})
 
-	// Concatenate all frames
+	// Concatenate all frames.
 	allBytes := append(frame1.ToBytes(), frame2.ToBytes()...)
 	allBytes = append(allBytes, frame3.ToBytes()...)
 
-	// Feed all frames at once
+	// Feed all frames at once.
 	parser.Feed(allBytes)
 
-	// Should receive 3 frames
+	// Should receive 3 frames.
 	for i := 0; i < 3; i++ {
 		select {
 		case <-parser.Frames():
-			// Successfully received frame
+			// Successfully received frame.
 		case <-time.After(100 * time.Millisecond):
 			t.Fatalf("timeout waiting for frame %d", i+1)
 		}
@@ -66,10 +69,11 @@ func TestParser_PartialFrames(t *testing.T) {
 	parser := NewParser()
 
 	// Create a test frame
+	//nolint:errcheck // Test setup
 	frame, _ := NewFrame(SREQ, SYS, 0x01, []byte{0xAA, 0xBB, 0xCC})
 	frameBytes := frame.ToBytes()
 
-	// Feed frame in chunks
+	// Feed frame in chunks.
 	chunkSize := 3
 	for i := 0; i < len(frameBytes); i += chunkSize {
 		end := i + chunkSize
@@ -79,7 +83,7 @@ func TestParser_PartialFrames(t *testing.T) {
 		parser.Feed(frameBytes[i:end])
 	}
 
-	// Should eventually receive the complete frame
+	// Should eventually receive the complete frame.
 	select {
 	case parsed := <-parser.Frames():
 		if parsed.CommandID != frame.CommandID {
@@ -94,17 +98,18 @@ func TestParser_SOFSynchronization(t *testing.T) {
 	parser := NewParser()
 
 	// Create a valid frame
+	//nolint:errcheck // Test setup
 	frame, _ := NewFrame(SREQ, SYS, 0x01, []byte{0xAA})
 	frameBytes := frame.ToBytes()
 
-	// Add garbage before the frame
+	// Add garbage before the frame.
 	garbageBytes := []byte{0x00, 0x11, 0x22, 0x33}
-	dataWithGarbage := append(garbageBytes, frameBytes...)
+	dataWithGarbage := append(append([]byte(nil), garbageBytes...), frameBytes...)
 
-	// Feed data with garbage
+	// Feed data with garbage.
 	parser.Feed(dataWithGarbage)
 
-	// Should skip garbage and parse the valid frame
+	// Should skip garbage and parse the valid frame.
 	select {
 	case parsed := <-parser.Frames():
 		if parsed.CommandID != frame.CommandID {
@@ -114,26 +119,26 @@ func TestParser_SOFSynchronization(t *testing.T) {
 		t.Fatal("timeout waiting for parsed frame")
 	}
 
-	// Should also receive error about skipped bytes
+	// Should also receive error about skipped bytes.
 	select {
 	case err := <-parser.Errors():
 		if err == nil {
 			t.Error("expected error about skipped bytes, got nil")
 		}
 	case <-time.After(100 * time.Millisecond):
-		// No error is also acceptable if implementation doesn't report it
+		// No error is also acceptable if implementation doesn't report it.
 	}
 }
 
 func TestParser_InvalidChecksum(t *testing.T) {
 	parser := NewParser()
 
-	// Create a frame with invalid checksum
-	invalidFrame := []byte{0xFE, 0x01, 0x21, 0x01, 0xAA, 0xFF} // Wrong checksum
+	// Create a frame with invalid checksum.
+	invalidFrame := []byte{0xFE, 0x01, 0x21, 0x01, 0xAA, 0xFF} // Wrong checksum.
 
 	parser.Feed(invalidFrame)
 
-	// Should receive an error
+	// Should receive an error.
 	select {
 	case err := <-parser.Errors():
 		if err == nil {
@@ -147,42 +152,43 @@ func TestParser_InvalidChecksum(t *testing.T) {
 func TestParser_EmptyBuffer(t *testing.T) {
 	parser := NewParser()
 
-	// Feed empty data
+	// Feed empty data.
 	parser.Feed([]byte{})
 
-	// Should not receive any frames or errors
+	// Should not receive any frames or errors.
 	select {
 	case <-parser.Frames():
 		t.Error("unexpected frame from empty buffer")
 	case <-parser.Errors():
-		// Some implementations may report this, others may not
+		// Some implementations may report this, others may not.
 	case <-time.After(50 * time.Millisecond):
-		// Expected: timeout means nothing was parsed
+		// Expected: timeout means nothing was parsed.
 	}
 }
 
 func TestParser_IncompleteFrame(t *testing.T) {
 	parser := NewParser()
 
-	// Create an incomplete frame (missing FCS byte)
+	// Create an incomplete frame (missing FCS byte).
+	//nolint:errcheck // Test setup
 	frame, _ := NewFrame(SREQ, SYS, 0x01, []byte{0xAA, 0xBB})
 	frameBytes := frame.ToBytes()
-	incompleteFrame := frameBytes[:len(frameBytes)-1] // Remove last byte (FCS)
+	incompleteFrame := frameBytes[:len(frameBytes)-1] // Remove last byte (FCS).
 
 	parser.Feed(incompleteFrame)
 
-	// Should not receive a frame yet (waiting for more data)
+	// Should not receive a frame yet (waiting for more data).
 	select {
 	case <-parser.Frames():
 		t.Error("unexpected frame from incomplete data")
 	case <-time.After(50 * time.Millisecond):
-		// Expected: timeout means frame is still buffered
+		// Expected: timeout means frame is still buffered.
 	}
 
-	// Now send the missing byte
+	// Now send the missing byte.
 	parser.Feed(frameBytes[len(frameBytes)-1:])
 
-	// Should now receive the complete frame
+	// Should now receive the complete frame.
 	select {
 	case parsed := <-parser.Frames():
 		if parsed.CommandID != frame.CommandID {
@@ -196,7 +202,7 @@ func TestParser_IncompleteFrame(t *testing.T) {
 func TestParser_MaxDataSize(t *testing.T) {
 	parser := NewParser()
 
-	// Create a frame with maximum data size
+	// Create a frame with maximum data size.
 	maxData := make([]byte, MaxDataSize)
 	for i := range maxData {
 		maxData[i] = byte(i % 256)
@@ -210,7 +216,7 @@ func TestParser_MaxDataSize(t *testing.T) {
 	frameBytes := frame.ToBytes()
 	parser.Feed(frameBytes)
 
-	// Should parse successfully
+	// Should parse successfully.
 	select {
 	case parsed := <-parser.Frames():
 		if len(parsed.Data) != MaxDataSize {
@@ -225,7 +231,7 @@ func TestParser_MaxDataSize(t *testing.T) {
 func TestParserPartialData(t *testing.T) {
 	parser := NewParser()
 
-	// Create a test frame
+	// Create a test frame.
 	frame, err := NewFrame(SREQ, SYS, 0x01, []byte{0xAA, 0xBB, 0xCC})
 	if err != nil {
 		t.Fatalf("NewFrame() error = %v", err)
@@ -233,22 +239,22 @@ func TestParserPartialData(t *testing.T) {
 
 	fullFrame := frame.ToBytes()
 
-	// Feed data byte by byte
+	// Feed data byte by byte.
 	for i, b := range fullFrame {
 		parser.Feed([]byte{b})
 
-		// Should not receive frame until all bytes are fed
+		// Should not receive frame until all bytes are fed.
 		if i < len(fullFrame)-1 {
 			select {
 			case <-parser.Frames():
 				t.Fatalf("unexpected frame after byte %d/%d", i+1, len(fullFrame))
 			case <-time.After(10 * time.Millisecond):
-				// Expected: no frame yet
+				// Expected: no frame yet.
 			}
 		}
 	}
 
-	// After feeding all bytes, should receive complete frame
+	// After feeding all bytes, should receive complete frame.
 	select {
 	case parsed := <-parser.Frames():
 		if parsed.Type != frame.Type {
@@ -279,12 +285,14 @@ func TestParserMultiplePartialFeeds(t *testing.T) {
 			parser := NewParser()
 
 			// Create multiple frames
+			//nolint:errcheck // Test frames are always valid
 			frame1, _ := NewFrame(SREQ, SYS, 0x01, []byte{0xAA})
+			//nolint:errcheck // Test frames are always valid
 			frame2, _ := NewFrame(AREQ, ZDO, 0x02, []byte{0xBB, 0xCC})
 
 			allBytes := append(frame1.ToBytes(), frame2.ToBytes()...)
 
-			// Feed in chunks
+			// Feed in chunks.
 			for i := 0; i < len(allBytes); i += tt.chunkSize {
 				end := i + tt.chunkSize
 				if end > len(allBytes) {
@@ -313,6 +321,7 @@ func TestParserErrorRecovery(t *testing.T) {
 	parser := NewParser()
 
 	// Create a valid frame
+	//nolint:errcheck // Test frames are always valid
 	goodFrame, _ := NewFrame(SREQ, SYS, 0x01, []byte{0xAA})
 	goodBytes := goodFrame.ToBytes()
 
@@ -363,6 +372,7 @@ func TestParserRecoveryFromGarbageStream(t *testing.T) {
 	}
 
 	// Now feed a valid frame
+	//nolint:errcheck // Test frames are always valid
 	goodFrame, _ := NewFrame(SREQ, SYS, 0x01, []byte{0xBB})
 	parser.Feed(goodFrame.ToBytes())
 
@@ -401,6 +411,7 @@ func TestParserBufferOverflow(t *testing.T) {
 	}
 
 	// Parser should still work after overflow - feed valid frame
+	//nolint:errcheck // Test frames are always valid
 	goodFrame, _ := NewFrame(SREQ, SYS, 0x01, []byte{0xCC})
 	parser.Feed(goodFrame.ToBytes())
 
@@ -420,7 +431,9 @@ func TestParserInterleavedGoodAndBadFrames(t *testing.T) {
 	parser := NewParser()
 
 	// Create frames
+	//nolint:errcheck // Test frames are always valid
 	good1, _ := NewFrame(SREQ, SYS, 0x01, []byte{0xAA})
+	//nolint:errcheck // Test frames are always valid
 	good2, _ := NewFrame(AREQ, ZDO, 0x02, []byte{0xBB})
 
 	// Bad frame with invalid checksum
@@ -499,6 +512,7 @@ func TestParserFrameWithSOFInPayload(t *testing.T) {
 func TestParserIncompleteThenComplete(t *testing.T) {
 	parser := NewParser()
 
+	//nolint:errcheck // Test frames are always valid
 	frame, _ := NewFrame(SREQ, SYS, 0x10, []byte{0xAA, 0xBB, 0xCC, 0xDD})
 	frameBytes := frame.ToBytes()
 
@@ -554,6 +568,7 @@ func TestParserZeroLengthFrame(t *testing.T) {
 	parser := NewParser()
 
 	// Create frame with zero length
+	//nolint:errcheck // Test frames are always valid
 	frame, _ := NewFrame(POLL, SYS, 0x00, []byte{})
 	parser.Feed(frame.ToBytes())
 
@@ -578,6 +593,7 @@ func TestParserConcurrentFrames(t *testing.T) {
 	// Create 10 frames
 	frames := make([]*Frame, 10)
 	for i := 0; i < 10; i++ {
+		//nolint:errcheck // Test frames are always valid
 		frames[i], _ = NewFrame(SREQ, SYS, uint8(i), []byte{uint8(i * 10)})
 	}
 

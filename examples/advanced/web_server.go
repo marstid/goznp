@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/marstid/goznp/pkg/adapter"
-	"github.com/marstid/goznp/pkg/zcl"
 )
 
 var (
@@ -130,9 +129,9 @@ func withCORS(next http.Handler) http.HandlerFunc {
 
 // API Response structures
 type APIResponse struct {
-	Success bool        `json:"success"`
-	Data    any         `json:"data,omitempty"`
-	Error   string      `json:"error,omitempty"`
+	Success bool   `json:"success"`
+	Data    any    `json:"data,omitempty"`
+	Error   string `json:"error,omitempty"`
 }
 
 func writeJSON(w http.ResponseWriter, status int, data APIResponse) {
@@ -307,10 +306,10 @@ func handleDeviceGet(w http.ResponseWriter, nwkAddr uint16) {
 	var endpoints []map[string]any
 	for _, ep := range target.Endpoints {
 		epInfo := map[string]any{
-			"id":       ep.ID,
-			"profile":  ep.ProfileID,
-			"device":   ep.DeviceID,
-			"in_clust": ep.InClusters,
+			"id":        ep.ID,
+			"profile":   ep.ProfileID,
+			"device":    ep.DeviceID,
+			"in_clust":  ep.InClusters,
 			"out_clust": ep.OutClusters,
 		}
 		endpoints = append(endpoints, epInfo)

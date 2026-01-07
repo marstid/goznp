@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/marstid/goznp/pkg/zcl"
-	"github.com/spf13/cobra"
 )
 
 // Power and Energy Monitoring Commands
@@ -17,7 +18,7 @@ var deviceInfoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Query device capabilities",
 	Long:  "Query device endpoints and supported clusters (capabilities)",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceInfo(ctx)
 	},
@@ -28,7 +29,7 @@ var devicePowerCmd = &cobra.Command{
 	Use:   "power",
 	Short: "Read power consumption",
 	Long:  "Read power consumption data from a smart plug (voltage, current, power, energy)",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDevicePower(ctx)
 	},
@@ -39,7 +40,7 @@ var deviceResetEnergyCmd = &cobra.Command{
 	Use:   "reset-energy",
 	Short: "Reset energy counter",
 	Long:  "Reset the accumulated energy counter on a smart plug (manufacturer-specific)",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceResetEnergy(ctx)
 	},
@@ -203,6 +204,7 @@ func runDeviceInfo(ctx context.Context) error {
 		for _, dev := range devices {
 			if dev.NwkAddr == nwkAddr {
 				// Get custom name if set
+				//nolint:errcheck // Name is optional, errors intentionally ignored
 				nameInfo, _ := a.GetDeviceName(ctx, dev.IEEEAddr)
 				if nameInfo != nil && nameInfo.Name != "" {
 					fmt.Printf("Device 0x%04X (%s) has %d endpoint(s):\n", nwkAddr, nameInfo.Name, len(caps.Endpoints))
@@ -258,12 +260,14 @@ func formatProfileID(profileID uint16) string {
 func init() {
 	// Device info flags
 	deviceInfoCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
 	deviceInfoCmd.MarkFlagRequired("addr")
 	deviceInfoCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
 	deviceInfoCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 
 	// Device power flags
 	devicePowerCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
 	devicePowerCmd.MarkFlagRequired("addr")
 	devicePowerCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	devicePowerCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
@@ -271,6 +275,7 @@ func init() {
 
 	// Device reset-energy flags
 	deviceResetEnergyCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
 	deviceResetEnergyCmd.MarkFlagRequired("addr")
 	deviceResetEnergyCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceResetEnergyCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")

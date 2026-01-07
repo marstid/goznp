@@ -6,10 +6,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/marstid/goznp/pkg/adapter/quirks"
 	"github.com/marstid/goznp/pkg/znp"
-	"github.com/spf13/cobra"
 )
 
 var quirksCmd = &cobra.Command{
@@ -22,7 +23,7 @@ var quirksListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all registered quirks",
 	Long:  "Show all device quirks registered in the system",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		runQuirksList()
 	},
 }
@@ -59,7 +60,7 @@ var quirksDeviceCmd = &cobra.Command{
 	Long: `Show which quirks apply to a specific device.
 Address should be in hex format: 0xABCD`,
 	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		ctx := setupSignalHandler()
 		if err := runQuirksDevice(ctx, args[0]); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -198,7 +199,7 @@ var quirksMatchCmd = &cobra.Command{
 	Long: `Test which quirks would match a device with the given manufacturer and model.
 Useful for debugging quirk patterns without connecting to a device.`,
 	Args: cobra.ExactArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		runQuirksMatch(args[0], args[1])
 	},
 }

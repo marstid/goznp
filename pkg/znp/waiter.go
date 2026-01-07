@@ -32,7 +32,7 @@ type pendingRequest struct {
 	matcher FrameMatcher
 	// response is the channel where the matching frame will be delivered.
 	response chan *unpi.Frame
-	// done is closed when the request is completed or cancelled.
+	// done is closed when the request is completed or canceled.
 	done chan struct{}
 }
 
@@ -56,7 +56,7 @@ func NewWaiter() *Waiter {
 }
 
 // WaitFor registers a waiter for a frame matching the given criteria.
-// It blocks until a matching frame arrives, the timeout expires, or the context is cancelled.
+// It blocks until a matching frame arrives, the timeout expires, or the context is canceled.
 // Returns the matching frame or an error if the wait was interrupted.
 func (w *Waiter) WaitFor(ctx context.Context, matcher FrameMatcher, timeout time.Duration) (*unpi.Frame, error) {
 	// Create pending request

@@ -87,16 +87,16 @@ func TestFrameRoundTrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create frame
+			// Create frame.
 			frame, err := NewFrame(tt.msgType, tt.subsystem, tt.commandID, tt.data)
 			if err != nil {
 				t.Fatalf("NewFrame() error = %v", err)
 			}
 
-			// Serialize to bytes
+			// Serialize to bytes.
 			frameBytes := frame.ToBytes()
 
-			// Verify frame structure
+			// Verify frame structure..
 			if frameBytes[0] != SOF {
 				t.Errorf("SOF byte = 0x%02X, want 0x%02X", frameBytes[0], SOF)
 			}
@@ -104,13 +104,13 @@ func TestFrameRoundTrip(t *testing.T) {
 				t.Errorf("Length = %d, want %d", frameBytes[PositionDataLength], len(tt.data))
 			}
 
-			// Parse back
+			// Parse back.
 			parsed, err := ParseFrame(frameBytes)
 			if err != nil {
 				t.Fatalf("ParseFrame() error = %v", err)
 			}
 
-			// Verify fields match
+			// Verify fields match.
 			if parsed.Type != tt.msgType {
 				t.Errorf("Type = %v, want %v", parsed.Type, tt.msgType)
 			}
@@ -156,7 +156,7 @@ func TestParseFrame_Errors(t *testing.T) {
 			if err == nil {
 				t.Fatal("ParseFrame() expected error, got nil")
 			}
-			// Check if error is of expected type (using error wrapping)
+			// Check if error is of expected type (using error wrapping).
 			if tt.wantErr != nil && !isErrorType(err, tt.wantErr) {
 				t.Errorf("ParseFrame() error = %v, want error type %v", err, tt.wantErr)
 			}
@@ -173,12 +173,12 @@ func TestCalculateFCS(t *testing.T) {
 		{
 			name: "simple XOR",
 			data: []byte{0x01, 0x02, 0x03},
-			want: 0x00, // 0x01 ^ 0x02 ^ 0x03 = 0x00
+			want: 0x00, // XOR result: 0x01 XOR 0x02 XOR 0x03 equals 0x00.
 		},
 		{
 			name: "real frame data",
 			data: []byte{0x00, 0x21, 0x01},
-			want: 0x20, // 0x00 ^ 0x21 ^ 0x01 = 0x20
+			want: 0x20, // XOR result: 0x00 XOR 0x21 XOR 0x01 equals 0x20.
 		},
 	}
 
@@ -236,12 +236,12 @@ func TestSubsystemString(t *testing.T) {
 	}
 }
 
-// isErrorType checks if err wraps or equals target error
+// isErrorType checks if err wraps or equals target error.
 func isErrorType(err, target error) bool {
 	if err == target {
 		return true
 	}
-	// Simple check for error message containing target message
+	// Simple check for error message containing target message.
 	if err != nil && target != nil {
 		return bytes.Contains([]byte(err.Error()), []byte(target.Error()))
 	}
@@ -303,18 +303,18 @@ func TestFrameChecksum(t *testing.T) {
 
 			frameBytes := frame.ToBytes()
 
-			// Calculate expected checksum manually
+			// Calculate expected checksum manually.
 			dataLen := len(tt.data)
 			checksumData := frameBytes[PositionDataLength : DataStart+dataLen]
 			expectedChecksum := calculateFCS(checksumData)
 
-			// Verify the checksum in the frame matches
+			// Verify the checksum in the frame matches.
 			actualChecksum := frameBytes[len(frameBytes)-1]
 			if actualChecksum != expectedChecksum {
 				t.Errorf("checksum = 0x%02X, want 0x%02X", actualChecksum, expectedChecksum)
 			}
 
-			// Verify frame can be parsed back (checksum validation)
+			// Verify frame can be parsed back (checksum validation).
 			parsed, err := ParseFrame(frameBytes)
 			if err != nil {
 				t.Errorf("ParseFrame() error = %v (checksum validation failed)", err)
@@ -369,7 +369,7 @@ func TestFrameMaxPayloadSize(t *testing.T) {
 			}
 
 			if !tt.wantErr && frame != nil {
-				// Verify frame can be serialized and parsed
+				// Verify frame can be serialized and parsed.
 				frameBytes := frame.ToBytes()
 				if frameBytes[PositionDataLength] != uint8(tt.size) {
 					t.Errorf("length field = %d, want %d", frameBytes[PositionDataLength], tt.size)
@@ -430,7 +430,7 @@ func TestFrameEmptyPayload(t *testing.T) {
 
 			frameBytes := frame.ToBytes()
 
-			// Verify frame structure
+			// Verify frame structure.
 			if len(frameBytes) != MinMessageLength {
 				t.Errorf("frame length = %d, want %d", len(frameBytes), MinMessageLength)
 			}
@@ -438,7 +438,7 @@ func TestFrameEmptyPayload(t *testing.T) {
 				t.Errorf("data length = %d, want 0", frameBytes[PositionDataLength])
 			}
 
-			// Verify checksum is calculated correctly for empty payload
+			// Verify checksum is calculated correctly for empty payload.
 			checksumData := frameBytes[PositionDataLength:DataStart]
 			expectedChecksum := calculateFCS(checksumData)
 			actualChecksum := frameBytes[len(frameBytes)-1]
@@ -446,7 +446,7 @@ func TestFrameEmptyPayload(t *testing.T) {
 				t.Errorf("checksum = 0x%02X, want 0x%02X", actualChecksum, expectedChecksum)
 			}
 
-			// Parse and verify
+			// Parse and verify.
 			parsed, err := ParseFrame(frameBytes)
 			if err != nil {
 				t.Fatalf("ParseFrame() error = %v", err)
@@ -477,25 +477,25 @@ func TestParseFrameInvalidLength(t *testing.T) {
 		{
 			name: "length field larger than actual data",
 			data: []byte{
-				0xFE,       // SOF
-				0x05,       // Length = 5
-				0x21,       // Cmd0
-				0x01,       // Cmd1
-				0xAA, 0xBB, // Only 2 data bytes instead of 5
-				0x00, // FCS (incorrect)
+				0xFE,       // SOF.
+				0x05,       // Length = 5.
+				0x21,       // Cmd0.
+				0x01,       // Cmd1.
+				0xAA, 0xBB, // Only 2 data bytes instead of 5.
+				0x00, // FCS (incorrect).
 			},
 			wantErr: ErrFrameTooShort,
 		},
 		{
 			name: "zero length but has data bytes",
 			data: []byte{
-				0xFE, // SOF
-				0x00, // Length = 0
-				0x21, // Cmd0
-				0x01, // Cmd1
-				0x20, // FCS
+				0xFE, // SOF.
+				0x00, // Length = 0.
+				0x21, // Cmd0.
+				0x01, // Cmd1.
+				0x20, // FCS.
 			},
-			wantErr: nil, // Should parse successfully as zero-length frame
+			wantErr: nil, // Should parse successfully as zero-length frame.
 		},
 	}
 
@@ -530,7 +530,7 @@ func TestFrameTypeAndSubsystemEncoding(t *testing.T) {
 
 				frameBytes := frame.ToBytes()
 
-				// Verify Cmd0 encoding: (Type << 5) | (Subsystem & 0x1F)
+				// Verify Cmd0 encoding: (Type << 5) | (Subsystem & 0x1F).
 				cmd0 := frameBytes[PositionCmd0]
 				decodedType := Type(cmd0 >> 5)
 				decodedSubsystem := Subsystem(cmd0 & 0x1F)
@@ -542,7 +542,7 @@ func TestFrameTypeAndSubsystemEncoding(t *testing.T) {
 					t.Errorf("decoded subsystem = %v, want %v", decodedSubsystem, subsystem)
 				}
 
-				// Verify round-trip
+				// Verify round-trip.
 				parsed, err := ParseFrame(frameBytes)
 				if err != nil {
 					t.Fatalf("ParseFrame() error = %v", err)
@@ -583,12 +583,12 @@ func TestCalculateFCSEdgeCases(t *testing.T) {
 		{
 			name: "two identical bytes",
 			data: []byte{0xFF, 0xFF},
-			want: 0x00, // 0xFF ^ 0xFF = 0x00
+			want: 0x00, // XOR result: 0xFF XOR 0xFF equals 0x00.
 		},
 		{
 			name: "three identical bytes",
 			data: []byte{0xAA, 0xAA, 0xAA},
-			want: 0xAA, // 0xAA ^ 0xAA ^ 0xAA = 0xAA
+			want: 0xAA, // XOR result: 0xAA XOR 0xAA XOR 0xAA equals 0xAA.
 		},
 		{
 			name: "max values",

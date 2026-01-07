@@ -6,19 +6,18 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/marstid/goznp/pkg/ota"
 	"github.com/marstid/goznp/pkg/znp"
-	"github.com/spf13/cobra"
 )
 
 var (
 	// OTA command flags
-	otaDirFlag      string
-	otaVersionFlag  uint32
-	otaMaxSizeFlag  uint8
-	otaServeFlag    bool
-	otaImageFile    string
+	otaDirFlag     string
+	otaMaxSizeFlag uint8
+	otaImageFile   string
 )
 
 var otaCmd = &cobra.Command{
@@ -32,7 +31,7 @@ var otaListCmd = &cobra.Command{
 	Short: "List available OTA firmware images",
 	Long:  "List all OTA firmware images in a directory with version information",
 	Args:  cobra.MaximumNArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		dir := otaDirFlag
 		if len(args) > 0 {
 			dir = args[0]
@@ -49,7 +48,7 @@ var otaInfoCmd = &cobra.Command{
 	Short: "Display OTA image information",
 	Long:  "Display detailed information about an OTA firmware image file",
 	Args:  cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := runOTAInfo(args[0]); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
 			os.Exit(1)
@@ -62,7 +61,7 @@ var otaCheckCmd = &cobra.Command{
 	Short: "Check if OTA image is compatible with device",
 	Long:  "Check if an OTA firmware image is compatible with a device based on manufacturer code, image type, and version",
 	Args:  cobra.ExactArgs(4),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		var manufacturer uint16
 		var imageType uint16
 		var deviceVersion uint32
@@ -97,7 +96,7 @@ var otaServerCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start OTA server for serving firmware images",
 	Long:  "Start an OTA server that responds to firmware update requests from Zigbee devices",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runOTAServer(ctx); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -107,7 +106,7 @@ var otaServerCmd = &cobra.Command{
 }
 
 var (
-	otaImageAddrFlag uint16
+	otaImageAddrFlag     uint16
 	otaImageEndpointFlag uint8
 )
 
@@ -115,7 +114,7 @@ var otaImageCmd = &cobra.Command{
 	Use:   "image",
 	Short: "Get OTA firmware information from a device",
 	Long:  "Query a device for its OTA firmware information including version, manufacturer, and image type",
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runOTAImage(ctx, otaImageAddrFlag, otaImageEndpointFlag); err != nil {
 			fmt.Fprintln(os.Stderr, "Error:", err)
@@ -259,6 +258,7 @@ func runOTACheck(path string, manufacturer uint16, imageType uint16, deviceVersi
 		}
 	}
 
+	//nolint:gocritic // ifElseChain: conditions use different variables, switch not applicable.
 	if validateErr == nil {
 		fmt.Println("Upgrade: Valid ✓ (higher version available)")
 	} else if compatible {
@@ -327,7 +327,7 @@ func runOTAServer(ctx context.Context) error {
 	// Note: For a production OTA server, you'd need to:
 	// 1. Register the OTA cluster callback with the adapter
 	// 2. Handle QueryImage, ImageBlock, and UpgradeEnd commands
-	// 3. Server OTA events until context is cancelled
+	// 3. Server OTA events until context is canceled
 
 	// For now, just wait for context cancellation
 	<-ctx.Done()
@@ -359,7 +359,7 @@ func runOTAImage(ctx context.Context, nwkAddr uint16, endpoint uint8) error {
 	// Get device OTA info
 	info, err := a.GetOTAInfo(ctx, nwkAddr, endpoint)
 	if err != nil {
-		return fmt.Errorf("failed to get OTA info: %v\n", err)
+		return fmt.Errorf("failed to get OTA info: %v", err)
 	}
 
 	fmt.Printf("OTA Information for 0x%04X (endpoint %d)\n", nwkAddr, endpoint)

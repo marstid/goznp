@@ -4,10 +4,10 @@ import "testing"
 
 func TestToUint8(t *testing.T) {
 	tests := []struct {
-		name    string
-		input   interface{}
-		want    uint8
-		wantOk  bool
+		name   string
+		input  interface{}
+		want   uint8
+		wantOk bool
 	}{
 		{"valid uint8", uint8(42), 42, true},
 		{"zero uint8", uint8(0), 0, true},

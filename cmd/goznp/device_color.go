@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/spf13/cobra"
+
+	"github.com/marstid/goznp/pkg/adapter"
 )
 
 var (
@@ -54,7 +55,7 @@ Examples:
   goznp device color hue-sat --addr 0xBE87 --endpoint 11 --hue 85 --sat 254          # Green
   goznp device color hue-sat --addr 0xBE87 --endpoint 11 --hue 170 --sat 254         # Blue
   goznp device color hue-sat --addr 0xBE87 --endpoint 11 --hue 42 --sat 200 --transition 50  # Orange with 5s transition`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runColorHueSat(ctx)
 	},
@@ -124,7 +125,7 @@ Examples:
   goznp device color xy --addr 0xBE87 --endpoint 11 --x 0.167 --y 0.04          # Blue
   goznp device color xy --addr 0xBE87 --endpoint 11 --x 44203 --y 21102         # Red (raw values)
   goznp device color xy --addr 0xBE87 --endpoint 11 --x 0.3 --y 0.3 --transition 20  # Warm white with 2s transition`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runColorXY(ctx)
 	},
@@ -235,7 +236,7 @@ Examples:
   goznp device color rgb --addr 0xBE87 --endpoint 11 --r 0 --g 0 --b 255       # Blue
   goznp device color rgb --addr 0xBE87 --endpoint 11 --r 255 --g 128 --b 0     # Orange
   goznp device color rgb --addr 0xBE87 --endpoint 11 --r 128 --g 0 --b 128 --transition 30  # Purple with 3s transition`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runColorRGB(ctx)
 	},
@@ -307,7 +308,7 @@ Examples:
   goznp device color kelvin --addr 0xBE87 --endpoint 11 --kelvin 4000            # Cool white
   goznp device color kelvin --addr 0xBE87 --endpoint 11 --kelvin 6500            # Daylight
   goznp device color kelvin --addr 0xBE87 --endpoint 11 --kelvin 2700 --transition 50  # Warm with 5s transition`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runColorKelvin(ctx)
 	},
@@ -369,7 +370,7 @@ This displays:
 
 Examples:
   goznp device color get --addr 0xBE87 --endpoint 11`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runColorGet(ctx)
 	},
@@ -433,45 +434,57 @@ func formatColorMode(mode uint8) string {
 func init() {
 	// Color hue-sat flags
 	deviceColorHueSatCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
 	deviceColorHueSatCmd.MarkFlagRequired("addr")
 	deviceColorHueSatCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceColorHueSatCmd.Flags().Uint8Var(&colorHue, "hue", 0, "Hue value (0-254)")
+	//nolint:errcheck // Required flag in init
 	deviceColorHueSatCmd.MarkFlagRequired("hue")
 	deviceColorHueSatCmd.Flags().Uint8Var(&colorSaturation, "sat", 254, "Saturation value (0-254)")
 	deviceColorHueSatCmd.Flags().Uint16Var(&transitionTime, "transition", 10, "Transition time in milliseconds")
 
 	// Color XY flags
 	deviceColorXYCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
 	deviceColorXYCmd.MarkFlagRequired("addr")
 	deviceColorXYCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceColorXYCmd.Flags().StringVar(&colorX, "x", "", "X coordinate (0.0-1.0 or 0-65279)")
+	//nolint:errcheck // Required flag in init
 	deviceColorXYCmd.MarkFlagRequired("x")
 	deviceColorXYCmd.Flags().StringVar(&colorY, "y", "", "Y coordinate (0.0-1.0 or 0-65279)")
+	//nolint:errcheck // Required flag in init
 	deviceColorXYCmd.MarkFlagRequired("y")
 	deviceColorXYCmd.Flags().Uint16Var(&transitionTime, "transition", 10, "Transition time in milliseconds")
 
 	// Color RGB flags
 	deviceColorRGBCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
 	deviceColorRGBCmd.MarkFlagRequired("addr")
 	deviceColorRGBCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceColorRGBCmd.Flags().Uint8Var(&colorR, "r", 0, "Red value (0-255)")
+	//nolint:errcheck // Required flag in init
 	deviceColorRGBCmd.MarkFlagRequired("r")
 	deviceColorRGBCmd.Flags().Uint8Var(&colorG, "g", 0, "Green value (0-255)")
+	//nolint:errcheck // Required flag in init
 	deviceColorRGBCmd.MarkFlagRequired("g")
 	deviceColorRGBCmd.Flags().Uint8Var(&colorB, "b", 0, "Blue value (0-255)")
+	//nolint:errcheck // Required flag in init
 	deviceColorRGBCmd.MarkFlagRequired("b")
 	deviceColorRGBCmd.Flags().Uint16Var(&transitionTime, "transition", 10, "Transition time in milliseconds")
 
 	// Color kelvin flags
 	deviceColorKelvinCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
 	deviceColorKelvinCmd.MarkFlagRequired("addr")
 	deviceColorKelvinCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceColorKelvinCmd.Flags().Uint16Var(&colorKelvin, "kelvin", 0, "Color temperature in Kelvin (2000-6500)")
+	//nolint:errcheck // Required flag in init
 	deviceColorKelvinCmd.MarkFlagRequired("kelvin")
 	deviceColorKelvinCmd.Flags().Uint16Var(&transitionTime, "transition", 10, "Transition time in milliseconds")
 
 	// Color get flags
 	deviceColorGetCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
 	deviceColorGetCmd.MarkFlagRequired("addr")
 	deviceColorGetCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 

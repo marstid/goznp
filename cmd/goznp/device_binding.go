@@ -8,10 +8,11 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/marstid/goznp/pkg/zcl"
 	"github.com/marstid/goznp/pkg/znp"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -41,7 +42,7 @@ Common clusters:
 
 Example:
   goznp device bind -p /dev/ttyUSB0 --addr 0xB120 --cluster 0x0006`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceBind(ctx)
 	},
@@ -160,7 +161,7 @@ Common cluster/attribute combinations:
 
 Example:
   goznp device configure-reporting -p /dev/ttyUSB0 --addr 0xB120 --cluster 0x0006 --attr 0x0000 --min 1 --max 300`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceConfigureReporting(ctx)
 	},
@@ -252,7 +253,7 @@ Common cluster/attribute combinations:
 Examples:
   goznp device reporting --addr 0xE2CA --cluster 0x0702 --attr 0x0000
   goznp device reporting --ieee 00:11:22:33:44:55:66:77 --cluster 0x0006 --attr 0x0000`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceReporting(ctx)
 	},
@@ -378,7 +379,7 @@ var deviceBindingsCmd = &cobra.Command{
 
 The binding table shows where the device will send reports for each cluster.
 Use this to verify that clusters are properly bound to the coordinator.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceBindings(ctx)
 	},
@@ -483,19 +484,29 @@ func getDataTypeForAttribute(cluster zcl.ClusterID, attr zcl.AttributeID) zcl.Da
 func init() {
 	// Device bind flags
 	deviceBindCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
+	//nolint:errcheck // Required flag in init
 	deviceBindCmd.MarkFlagRequired("addr")
 	deviceBindCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceBindCmd.Flags().StringVar(&bindCluster, "cluster", "", "Cluster ID (hex, e.g., 0x0006)")
+	//nolint:errcheck // Required flag in init
+	//nolint:errcheck // Required flag in init
 	deviceBindCmd.MarkFlagRequired("cluster")
 	deviceBindCmd.Flags().BoolVar(&bindUnbind, "unbind", false, "Remove binding instead of creating")
 
 	// Device configure-reporting flags
 	deviceConfigureReportingCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
+	//nolint:errcheck // Required flag in init
 	deviceConfigureReportingCmd.MarkFlagRequired("addr")
 	deviceConfigureReportingCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceConfigureReportingCmd.Flags().StringVar(&reportCluster, "cluster", "", "Cluster ID (hex, e.g., 0x0006)")
+	//nolint:errcheck // Required flag in init
+	//nolint:errcheck // Required flag in init
 	deviceConfigureReportingCmd.MarkFlagRequired("cluster")
 	deviceConfigureReportingCmd.Flags().StringVar(&reportAttr, "attr", "", "Attribute ID (hex, e.g., 0x0000)")
+	//nolint:errcheck // Required flag in init
+	//nolint:errcheck // Required flag in init
 	deviceConfigureReportingCmd.MarkFlagRequired("attr")
 	deviceConfigureReportingCmd.Flags().Uint16Var(&reportMin, "min", 1, "Minimum reporting interval (seconds)")
 	deviceConfigureReportingCmd.Flags().Uint16Var(&reportMax, "max", 300, "Maximum reporting interval (seconds)")
@@ -505,12 +516,18 @@ func init() {
 	deviceReportingCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
 	deviceReportingCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	deviceReportingCmd.Flags().StringVar(&reportCluster, "cluster", "", "Cluster ID (hex, e.g., 0x0006)")
+	//nolint:errcheck // Required flag in init
+	//nolint:errcheck // Required flag in init
 	deviceReportingCmd.MarkFlagRequired("cluster")
 	deviceReportingCmd.Flags().StringVar(&reportAttr, "attr", "", "Attribute ID (hex, e.g., 0x0000)")
+	//nolint:errcheck // Required flag in init
+	//nolint:errcheck // Required flag in init
 	deviceReportingCmd.MarkFlagRequired("attr")
 
 	// Device bindings flags
 	deviceBindingsCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
+	//nolint:errcheck // Required flag in init
 	deviceBindingsCmd.MarkFlagRequired("addr")
 
 	// Add port/baud flags to all binding commands

@@ -12,44 +12,44 @@ import (
 // TestNvItemInit tests the NvItemInit method.
 func TestNvItemInit(t *testing.T) {
 	tests := []struct {
-		name      string
-		id        NvItemID
-		itemLen   uint16
-		initData  []byte
-		status    uint8
-		wantErr   bool
+		name     string
+		id       NvItemID
+		itemLen  uint16
+		initData []byte
+		status   uint8
+		wantErr  bool
 	}{
 		{
-			name:    "success new item",
-			id:      NvStartupOption,
-			itemLen: 4,
+			name:     "success new item",
+			id:       NvStartupOption,
+			itemLen:  4,
 			initData: []byte{0x01, 0x02, 0x03, 0x04},
-			status:  NvStatusSuccess,
-			wantErr: false,
+			status:   NvStatusSuccess,
+			wantErr:  false,
 		},
 		{
-			name:    "success without init data",
-			id:      NvStartupOption,
-			itemLen: 4,
+			name:     "success without init data",
+			id:       NvStartupOption,
+			itemLen:  4,
 			initData: nil,
-			status:  NvStatusSuccess,
-			wantErr: false,
+			status:   NvStatusSuccess,
+			wantErr:  false,
 		},
 		{
-			name:    "success already exists",
-			id:      NvStartupOption,
-			itemLen: 4,
+			name:     "success already exists",
+			id:       NvStartupOption,
+			itemLen:  4,
 			initData: []byte{0x01, 0x02, 0x03, 0x04},
-			status:  NvStatusItemNotFound, // Already exists
-			wantErr: false,
+			status:   NvStatusItemNotFound, // Already exists
+			wantErr:  false,
 		},
 		{
-			name:    "success init data shorter than itemLen",
-			id:      NvStartupOption,
-			itemLen: 10,
+			name:     "success init data shorter than itemLen",
+			id:       NvStartupOption,
+			itemLen:  10,
 			initData: []byte{0x01, 0x02},
-			status:  NvStatusSuccess,
-			wantErr: false,
+			status:   NvStatusSuccess,
+			wantErr:  false,
 		},
 	}
 
@@ -57,6 +57,7 @@ func TestNvItemInit(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -85,10 +86,10 @@ func TestNvItemInit(t *testing.T) {
 // TestNvLength tests the NvLength method.
 func TestNvLength(t *testing.T) {
 	tests := []struct {
-		name     string
-		id       NvItemID
-		length   uint16
-		wantErr  bool
+		name    string
+		id      NvItemID
+		length  uint16
+		wantErr bool
 	}{
 		{
 			name:    "small item",
@@ -114,6 +115,7 @@ func TestNvLength(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -147,12 +149,12 @@ func TestNvLength(t *testing.T) {
 // TestNvRead tests the NvRead method.
 func TestNvRead(t *testing.T) {
 	tests := []struct {
-		name     string
-		id       NvItemID
-		offset   uint8
-		status   uint8
-		value    []byte
-		wantErr  bool
+		name    string
+		id      NvItemID
+		offset  uint8
+		status  uint8
+		value   []byte
+		wantErr bool
 	}{
 		{
 			name:    "success",
@@ -192,6 +194,7 @@ func TestNvRead(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -275,6 +278,7 @@ func TestNvWrite(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			if !tt.wantErr {
@@ -326,32 +330,32 @@ func TestNvReadAll(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:     "single chunk",
-			id:       NvStartupOption,
-			totalLen: 100,
+			name:      "single chunk",
+			id:        NvStartupOption,
+			totalLen:  100,
 			chunkData: make([]byte, 100),
-			wantErr:  false,
+			wantErr:   false,
 		},
 		{
-			name:     "exact max chunk size",
-			id:       NvNIB,
-			totalLen: MaxNvReadSize,
+			name:      "exact max chunk size",
+			id:        NvNIB,
+			totalLen:  MaxNvReadSize,
 			chunkData: make([]byte, MaxNvReadSize),
-			wantErr:  false,
+			wantErr:   false,
 		},
 		{
-			name:     "two chunks",
-			id:       NvNIB,
-			totalLen: MaxNvReadSize + 50,
+			name:      "two chunks",
+			id:        NvNIB,
+			totalLen:  MaxNvReadSize + 50,
 			chunkData: make([]byte, MaxNvReadSize+50),
-			wantErr:  false,
+			wantErr:   false,
 		},
 		{
-			name:     "three chunks",
-			id:       NvNIB,
-			totalLen: MaxNvReadSize*2 + 50,
+			name:      "three chunks",
+			id:        NvNIB,
+			totalLen:  MaxNvReadSize*2 + 50,
 			chunkData: make([]byte, MaxNvReadSize*2+50),
-			wantErr:  false,
+			wantErr:   false,
 		},
 	}
 
@@ -359,6 +363,7 @@ func TestNvReadAll(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Mock NvLength response
@@ -429,10 +434,10 @@ func TestNvReadAll(t *testing.T) {
 // TestNvWriteAll tests the NvWriteAll method with multi-chunk writes.
 func TestNvWriteAll(t *testing.T) {
 	tests := []struct {
-		name     string
-		id       NvItemID
-		data     []byte
-		wantErr  bool
+		name    string
+		id      NvItemID
+		data    []byte
+		wantErr bool
 	}{
 		{
 			name:    "single chunk",
@@ -464,6 +469,7 @@ func TestNvWriteAll(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Mock NvWrite responses
@@ -510,25 +516,25 @@ func TestNvWriteAll(t *testing.T) {
 func TestNvLengthEx(t *testing.T) {
 	tests := []struct {
 		name    string
-		sysId   uint8
-		itemId  uint16
-		subId   uint16
+		sysID   uint8
+		itemID  uint16
+		subID   uint16
 		length  uint8
 		wantErr bool
 	}{
 		{
 			name:    "success",
-			sysId:   NvSysZStack,
-			itemId:  NvExAddrMgr,
-			subId:   0,
+			sysID:   NvSysZStack,
+			itemID:  NvExAddrMgr,
+			subID:   0,
 			length:  10,
 			wantErr: false,
 		},
 		{
 			name:    "not found",
-			sysId:   NvSysZStack,
-			itemId:  NvExAddrMgr,
-			subId:   999,
+			sysID:   NvSysZStack,
+			itemID:  NvExAddrMgr,
+			subID:   999,
 			length:  0,
 			wantErr: false,
 		},
@@ -538,6 +544,7 @@ func TestNvLengthEx(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -555,7 +562,7 @@ func TestNvLengthEx(t *testing.T) {
 			}()
 
 			ctx := context.Background()
-			length, err := z.NvLengthEx(ctx, tt.sysId, tt.itemId, tt.subId)
+			length, err := z.NvLengthEx(ctx, tt.sysID, tt.itemID, tt.subID)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NvLengthEx() error = %v, wantErr %v", err, tt.wantErr)
@@ -572,9 +579,9 @@ func TestNvLengthEx(t *testing.T) {
 func TestNvReadEx(t *testing.T) {
 	tests := []struct {
 		name    string
-		sysId   uint8
-		itemId  uint16
-		subId   uint16
+		sysID   uint8
+		itemID  uint16
+		subID   uint16
 		offset  uint16
 		length  uint8
 		status  uint8
@@ -583,9 +590,9 @@ func TestNvReadEx(t *testing.T) {
 	}{
 		{
 			name:    "success",
-			sysId:   NvSysZStack,
-			itemId:  NvExAddrMgr,
-			subId:   0,
+			sysID:   NvSysZStack,
+			itemID:  NvExAddrMgr,
+			subID:   0,
 			offset:  0,
 			length:  10,
 			status:  NvStatusSuccess,
@@ -594,9 +601,9 @@ func TestNvReadEx(t *testing.T) {
 		},
 		{
 			name:    "not found",
-			sysId:   NvSysZStack,
-			itemId:  NvExAddrMgr,
-			subId:   999,
+			sysID:   NvSysZStack,
+			itemID:  NvExAddrMgr,
+			subID:   999,
 			offset:  0,
 			length:  10,
 			status:  NvStatusItemNotFound,
@@ -609,6 +616,7 @@ func TestNvReadEx(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -630,7 +638,7 @@ func TestNvReadEx(t *testing.T) {
 			}()
 
 			ctx := context.Background()
-			value, err := z.NvReadEx(ctx, tt.sysId, tt.itemId, tt.subId, tt.offset, tt.length)
+			value, err := z.NvReadEx(ctx, tt.sysID, tt.itemID, tt.subID, tt.offset, tt.length)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NvReadEx() error = %v, wantErr %v", err, tt.wantErr)
@@ -649,27 +657,27 @@ func TestNvReadEx(t *testing.T) {
 func TestNvReadExAll(t *testing.T) {
 	tests := []struct {
 		name    string
-		sysId   uint8
-		itemId  uint16
-		subId   uint16
+		sysID   uint8
+		itemID  uint16
+		subID   uint16
 		length  uint8
 		value   []byte
 		wantErr bool
 	}{
 		{
 			name:    "success",
-			sysId:   NvSysZStack,
-			itemId:  NvExAddrMgr,
-			subId:   0,
+			sysID:   NvSysZStack,
+			itemID:  NvExAddrMgr,
+			subID:   0,
 			length:  10,
 			value:   make([]byte, 10),
 			wantErr: false,
 		},
 		{
 			name:    "not found",
-			sysId:   NvSysZStack,
-			itemId:  NvExAddrMgr,
-			subId:   999,
+			sysID:   NvSysZStack,
+			itemID:  NvExAddrMgr,
+			subID:   999,
 			length:  0,
 			value:   nil,
 			wantErr: false,
@@ -680,6 +688,7 @@ func TestNvReadExAll(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Mock NvLengthEx response
@@ -715,7 +724,7 @@ func TestNvReadExAll(t *testing.T) {
 			}()
 
 			ctx := context.Background()
-			value, err := z.NvReadExAll(ctx, tt.sysId, tt.itemId, tt.subId)
+			value, err := z.NvReadExAll(ctx, tt.sysID, tt.itemID, tt.subID)
 
 			if (err != nil) != tt.wantErr {
 				t.Logf("NvReadExAll() error = %v, wantErr %v", err, tt.wantErr)
@@ -733,20 +742,20 @@ func TestNvReadExAll(t *testing.T) {
 // TestNvWriteEx tests the NvWriteEx method.
 func TestNvWriteEx(t *testing.T) {
 	tests := []struct {
-		name      string
-		sysId     uint8
-		itemId    uint16
-		subId     uint16
-		offset    uint16
-		data      []byte
-		status    uint8
-		wantErr   bool
+		name    string
+		sysID   uint8
+		itemID  uint16
+		subID   uint16
+		offset  uint16
+		data    []byte
+		status  uint8
+		wantErr bool
 	}{
 		{
 			name:    "success",
-			sysId:   NvSysZStack,
-			itemId:  NvExAddrMgr,
-			subId:   0,
+			sysID:   NvSysZStack,
+			itemID:  NvExAddrMgr,
+			subID:   0,
 			offset:  0,
 			data:    []byte{0x01, 0x02, 0x03},
 			status:  NvStatusSuccess,
@@ -754,9 +763,9 @@ func TestNvWriteEx(t *testing.T) {
 		},
 		{
 			name:    "empty data",
-			sysId:   NvSysZStack,
-			itemId:  NvExAddrMgr,
-			subId:   0,
+			sysID:   NvSysZStack,
+			itemID:  NvExAddrMgr,
+			subID:   0,
 			offset:  0,
 			data:    []byte{},
 			status:  NvStatusSuccess,
@@ -768,6 +777,7 @@ func TestNvWriteEx(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -785,7 +795,7 @@ func TestNvWriteEx(t *testing.T) {
 			}()
 
 			ctx := context.Background()
-			err := z.NvWriteEx(ctx, tt.sysId, tt.itemId, tt.subId, tt.offset, tt.data)
+			err := z.NvWriteEx(ctx, tt.sysID, tt.itemID, tt.subID, tt.offset, tt.data)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NvWriteEx() error = %v, wantErr %v", err, tt.wantErr)
@@ -807,10 +817,9 @@ func TestNvStatusCodes(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.value > 0xFF {
-				t.Errorf("%s = %d, out of valid range", tt.name, tt.value)
-			}
+		t.Run(tt.name, func(_ *testing.T) {
+			// tt.value is uint8, so it's always in valid range [0, 255]
+			_ = tt.value
 		})
 	}
 }

@@ -10,16 +10,18 @@ import (
 // MockPort is a mock implementation of Port for testing.
 // It is thread-safe and can simulate various serial port behaviors.
 type MockPort struct {
-	mu            sync.Mutex
-	readBuf       []byte        // Buffer for data to be read
-	writeBuf      []byte        // Buffer storing all written data
-	closed        bool          // Whether the port is closed
-	readTimeout   time.Duration // Read timeout setting
-	dtr           bool          // DTR signal state
-	rts           bool          // RTS signal state
-	onWrite       func([]byte)  // Callback invoked when data is written
-	readDeadline  time.Time     // Read deadline for timeout simulation
-	writeDeadline time.Time     // Write deadline for timeout simulation
+	mu          sync.Mutex
+	readBuf     []byte        // Buffer for data to be read.
+	writeBuf    []byte        // Buffer storing all written data.
+	closed      bool          // Whether the port is closed.
+	readTimeout time.Duration // Read timeout setting.
+	dtr         bool          // DTR signal state.
+	rts         bool          // RTS signal state.
+	onWrite     func([]byte)  // Callback invoked when data is written.
+	//nolint:unused // Reserved for future timeout simulation
+	readDeadline time.Time // Read deadline for timeout simulation.
+	//nolint:unused // Reserved for future timeout simulation
+	writeDeadline time.Time // Write deadline for timeout simulation.
 }
 
 // NewMockPort creates a new MockPort for testing.
@@ -44,16 +46,16 @@ func (m *MockPort) Read(p []byte) (int, error) {
 	}
 
 	if len(m.readBuf) == 0 {
-		// Simulate timeout behavior
+		// Simulate timeout behavior.
 		if m.readTimeout > 0 {
-			// In a real implementation, this would block until timeout
-			// For testing, we just return immediately with no data
+			// In a real implementation, this would block until timeout.
+			// For testing, we just return immediately with no data.
 			return 0, nil
 		}
 		return 0, io.EOF
 	}
 
-	// Copy available data to the caller's buffer
+	// Copy available data to the caller's buffer.
 	n := copy(p, m.readBuf)
 	m.readBuf = m.readBuf[n:]
 	return n, nil
@@ -69,11 +71,11 @@ func (m *MockPort) Write(p []byte) (int, error) {
 		return 0, fmt.Errorf("mock serial: port is closed")
 	}
 
-	// Store written data
+	// Store written data.
 	m.writeBuf = append(m.writeBuf, p...)
 	n := len(p)
 
-	// Invoke callback if set (outside lock to avoid deadlock)
+	// Invoke callback if set (outside lock to avoid deadlock).
 	if m.onWrite != nil {
 		callback := m.onWrite
 		dataCopy := make([]byte, len(p))
@@ -167,7 +169,7 @@ func (m *MockPort) WrittenData() []byte {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Return a copy to prevent external modification
+	// Return a copy to prevent external modification.
 	result := make([]byte, len(m.writeBuf))
 	copy(result, m.writeBuf)
 	return result

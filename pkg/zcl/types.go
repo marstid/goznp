@@ -243,7 +243,7 @@ func ReadValue(data []byte, dataType DataType) (interface{}, int, error) {
 		if len(data) < 1 {
 			return nil, 0, fmt.Errorf("insufficient data for uint8: need 1 byte, have %d", len(data))
 		}
-		return uint8(data[0]), 1, nil
+		return data[0], 1, nil
 
 	case TypeUint16, TypeData16, TypeBitmap16, TypeEnum16, TypeClusterID, TypeAttrID:
 		if len(data) < 2 {
@@ -668,7 +668,7 @@ func WriteValue(value interface{}, dataType DataType) ([]byte, error) {
 		}
 		result := make([]byte, 1+len(v))
 		result[0] = byte(len(v))
-		copy(result[1:], []byte(v))
+		copy(result[1:], v)
 		return result, nil
 
 	case TypeIEEEAddr:

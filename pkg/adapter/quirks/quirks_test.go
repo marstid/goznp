@@ -124,7 +124,7 @@ func TestDeviceMatcher_Matches(t *testing.T) {
 func TestRegistry_FindQuirks(t *testing.T) {
 	registry := NewRegistry()
 
-	// Register test quirks
+	// Register test quirks.
 	quirk1 := &DeviceQuirk{
 		ID:   "test-tuya",
 		Type: QuirkResponseOverride,
@@ -247,14 +247,14 @@ func TestAppliedQuirks_ApplyAttributeOverride(t *testing.T) {
 			clusterID: zcl.ClusterElectricalMeas,
 			attrID:    zcl.AttrElecRMSCurrent,
 			input:     1500.0,
-			expected:  1.5, // 1500 / 1000
+			expected:  1.5, // 1500 / 1000.
 		},
 		{
 			name:      "apply multiplier and offset",
 			clusterID: zcl.ClusterElectricalMeas,
 			attrID:    zcl.AttrElecRMSVoltage,
 			input:     100.0,
-			expected:  205.0, // (100 * 2) + 5
+			expected:  205.0, // (100 * 2) + 5.
 		},
 		{
 			name:      "no override returns original",
@@ -345,7 +345,7 @@ func TestDefaultRegistry(t *testing.T) {
 		t.Error("DefaultRegistry() should have built-in quirks")
 	}
 
-	// Check that built-in quirks are registered
+	// Check that built-in quirks are registered.
 	tuyaQuirk := registry.GetQuirkByID("tuya-reporting-response")
 	if tuyaQuirk == nil {
 		t.Error("Expected tuya-reporting-response quirk to be registered")

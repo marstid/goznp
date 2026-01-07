@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/spf13/cobra"
+
+	"github.com/marstid/goznp/pkg/adapter"
 )
 
 // Group-related global variables
@@ -33,7 +34,7 @@ Group IDs are 16-bit values (1-65535). Group 0 is reserved.
 Examples:
   goznp device group add --addr 0xBE87 --endpoint 11 --group 1
   goznp device group add --addr 0xBE87 --endpoint 11 --group 1 --name "Living Room"`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceGroupAdd(ctx)
 	},
@@ -92,7 +93,7 @@ Use --group 0 or --all to remove from all groups.
 Examples:
   goznp device group remove --addr 0xBE87 --endpoint 11 --group 1
   goznp device group remove --addr 0xBE87 --endpoint 11 --all`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceGroupRemove(ctx)
 	},
@@ -152,7 +153,7 @@ var deviceGroupListCmd = &cobra.Command{
 
 Example:
   goznp device group list --addr 0xBE87 --endpoint 11`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceGroupList(ctx)
 	},
@@ -216,7 +217,7 @@ This is much faster than sending individual commands to each device.
 
 Example:
   goznp device group on --group 1`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceGroupCommand(ctx, "on")
 	},
@@ -232,7 +233,7 @@ This uses multicast addressing so all group members receive the command simultan
 
 Example:
   goznp device group off --group 1`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceGroupCommand(ctx, "off")
 	},
@@ -248,7 +249,7 @@ This uses multicast addressing so all group members receive the command simultan
 
 Example:
   goznp device group toggle --group 1`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceGroupCommand(ctx, "toggle")
 	},
@@ -270,7 +271,7 @@ Transition time is in milliseconds (default: 0 for instant).
 Examples:
   goznp device group brightness --group 1 --level 128                    # Set to 50%
   goznp device group brightness --group 1 --level 254 --transition 1000  # Fade to max over 1s`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceGroupBrightness(ctx)
 	},
@@ -287,7 +288,7 @@ The devices will transition to their saved scene states.
 
 Example:
   goznp device group recall-scene --group 1 --scene 1`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceGroupScene(ctx)
 	},
@@ -417,10 +418,12 @@ func init() {
 	// Device group flags
 	for _, cmd := range []*cobra.Command{deviceGroupAddCmd, deviceGroupRemoveCmd, deviceGroupListCmd} {
 		cmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+		//nolint:errcheck // Required flag in init
 		cmd.MarkFlagRequired("addr")
 		cmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 	}
 	deviceGroupAddCmd.Flags().Uint16Var(&groupID, "group", 0, "Group ID (1-65535)")
+	//nolint:errcheck // Required flag in init
 	deviceGroupAddCmd.MarkFlagRequired("group")
 	deviceGroupAddCmd.Flags().StringVar(&groupName, "name", "", "Optional group name (max 16 chars)")
 	deviceGroupRemoveCmd.Flags().Uint16Var(&groupID, "group", 0, "Group ID to remove from")
@@ -429,16 +432,21 @@ func init() {
 	// Device group command flags (for on/off/toggle/brightness)
 	for _, cmd := range []*cobra.Command{deviceGroupOnCmd, deviceGroupOffCmd, deviceGroupToggleCmd} {
 		cmd.Flags().Uint16Var(&groupID, "group", 0, "Group ID (1-65535)")
+		//nolint:errcheck // Required flag in init
 		cmd.MarkFlagRequired("group")
 	}
 	deviceGroupBrightnessCmd.Flags().Uint16Var(&groupID, "group", 0, "Group ID (1-65535)")
+	//nolint:errcheck // Required flag in init
 	deviceGroupBrightnessCmd.MarkFlagRequired("group")
 	deviceGroupBrightnessCmd.Flags().Uint8Var(&brightnessLevel, "level", 0, "Brightness level (0-254)")
+	//nolint:errcheck // Required flag in init
 	deviceGroupBrightnessCmd.MarkFlagRequired("level")
 	deviceGroupBrightnessCmd.Flags().Uint16Var(&transitionTime, "transition", 0, "Transition time in milliseconds")
 	deviceGroupSceneCmd.Flags().Uint16Var(&groupID, "group", 0, "Group ID (1-65535)")
+	//nolint:errcheck // Required flag in init
 	deviceGroupSceneCmd.MarkFlagRequired("group")
 	deviceGroupSceneCmd.Flags().Uint8Var(&sceneID, "scene", 0, "Scene ID (0-255)")
+	//nolint:errcheck // Required flag in init
 	deviceGroupSceneCmd.MarkFlagRequired("scene")
 
 	// Add port/baud flags to all device commands

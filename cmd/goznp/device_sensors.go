@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/spf13/cobra"
+
+	"github.com/marstid/goznp/pkg/adapter"
 )
 
 // goznp device sensor -p <port> --addr <nwk-addr> [--endpoint <ep>]
@@ -14,7 +15,7 @@ var deviceSensorCmd = &cobra.Command{
 	Use:   "sensor",
 	Short: "Read sensor data",
 	Long:  "Read temperature, humidity, and battery from a sensor device",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceSensor(ctx)
 	},
@@ -25,7 +26,7 @@ var deviceListenCmd = &cobra.Command{
 	Use:   "listen",
 	Short: "Listen for sensor reports",
 	Long:  "Listen for incoming sensor reports (temperature, humidity, etc.) from all devices",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceListen(ctx)
 	},
@@ -186,6 +187,7 @@ func runDeviceSensor(ctx context.Context) error {
 func init() {
 	// Device sensor flags
 	deviceSensorCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+	//nolint:errcheck // Required flag in init
 	deviceSensorCmd.MarkFlagRequired("addr")
 	deviceSensorCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 

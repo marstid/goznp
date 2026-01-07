@@ -27,7 +27,7 @@ func (d *DeviceNameInfo) IEEEAddrString() string {
 // Name is limited to 32 characters, comment to 64 characters.
 // Names are stored in NVRAM and persist across restarts.
 func (a *Adapter) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, comment string) error {
-	// Validate name and comment length
+	// Validate name and comment length.
 	if len(name) > znp.DeviceNameMaxName {
 		return fmt.Errorf("name too long: %d bytes (max %d)", len(name), znp.DeviceNameMaxName)
 	}
@@ -66,7 +66,7 @@ func (a *Adapter) GetDeviceName(ctx context.Context, ieeeAddr [8]byte) (*DeviceN
 		return nil, fmt.Errorf("failed to get device name: %w", err)
 	}
 
-	// Return nil if no name is set
+	// Return nil if no name is set.
 	if entry == nil {
 		return nil, nil
 	}
@@ -110,7 +110,7 @@ func (a *Adapter) ListDeviceNames(ctx context.Context) ([]DeviceNameInfo, error)
 		return nil, fmt.Errorf("failed to read device name table: %w", err)
 	}
 
-	// Filter out empty entries and convert to DeviceNameInfo
+	// Filter out empty entries and convert to DeviceNameInfo.
 	result := make([]DeviceNameInfo, 0, len(table.Entries))
 	for i := range table.Entries {
 		if !table.Entries[i].IsEmpty() {

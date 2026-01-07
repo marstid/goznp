@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/spf13/cobra"
+
+	"github.com/marstid/goznp/pkg/adapter"
 )
 
 // goznp device on -p <port> --addr <nwk-addr> [--endpoint <ep>]
@@ -14,7 +15,7 @@ var deviceOnCmd = &cobra.Command{
 	Use:   "on",
 	Short: "Turn device on",
 	Long:  "Send On command to device (On/Off cluster)",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceControl(ctx, "on")
 	},
@@ -25,7 +26,7 @@ var deviceOffCmd = &cobra.Command{
 	Use:   "off",
 	Short: "Turn device off",
 	Long:  "Send Off command to device (On/Off cluster)",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceControl(ctx, "off")
 	},
@@ -36,7 +37,7 @@ var deviceToggleCmd = &cobra.Command{
 	Use:   "toggle",
 	Short: "Toggle device state",
 	Long:  "Send Toggle command to device (On/Off cluster)",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceControl(ctx, "toggle")
 	},
@@ -109,7 +110,7 @@ Examples:
   goznp device brightness --addr 0xBE87                      # Read current brightness
   goznp device brightness --addr 0xBE87 --level 128          # Set to 50%
   goznp device brightness --addr 0xBE87 --level 254 --transition 1000  # Fade to max over 1s`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceBrightness(ctx)
 	},

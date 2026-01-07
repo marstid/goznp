@@ -37,7 +37,8 @@ func TestAfDelete(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
-			z.Open(context.Background())
+			//nolint:errcheck // Test setup
+			_ = z.Open(context.Background())
 
 			// Simulate a response after the request
 			go func() {
@@ -81,10 +82,10 @@ func TestAfDeleteNotOpen(t *testing.T) {
 // TestAfRegister tests the AfRegister method.
 func TestAfRegister(t *testing.T) {
 	tests := []struct {
-		name     string
-		config   EndpointConfig
-		status   uint8
-		wantErr  bool
+		name    string
+		config  EndpointConfig
+		status  uint8
+		wantErr bool
 	}{
 		{
 			name: "simple endpoint",
@@ -129,7 +130,7 @@ func TestAfRegister(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:     "too many input clusters",
+			name: "too many input clusters",
 			config: EndpointConfig{
 				Endpoint:    4,
 				AppProfID:   0x0104,
@@ -162,7 +163,8 @@ func TestAfRegister(t *testing.T) {
 			z := New(mock)
 
 			if !tt.wantErr {
-				z.Open(context.Background())
+				//nolint:errcheck // Test setup
+				_ = z.Open(context.Background())
 
 				// Simulate a response after the request
 				go func() {
@@ -319,7 +321,8 @@ func TestAfDataRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
-			z.Open(context.Background())
+			//nolint:errcheck // Test setup
+			_ = z.Open(context.Background())
 
 			// Simulate a response after the request
 			go func() {
@@ -386,7 +389,7 @@ func TestWaitForDataConfirm(t *testing.T) {
 		cancelContext bool
 	}{
 		{
-			name: "success",
+			name:    "success",
 			transID: 1,
 			responses: [][]byte{
 				// status, endpoint, transID
@@ -399,7 +402,7 @@ func TestWaitForDataConfirm(t *testing.T) {
 			wantErr:      false,
 		},
 		{
-			name: "wrong transID rejected",
+			name:    "wrong transID rejected",
 			transID: 1,
 			responses: [][]byte{
 				// Wrong transID first
@@ -420,14 +423,14 @@ func TestWaitForDataConfirm(t *testing.T) {
 				// status, endpoint, transID
 				{0x00, 0x01, 0x02}, // Wrong transID
 			},
-			timeout:  50 * time.Millisecond,
-			wantErr:  true,
+			timeout: 50 * time.Millisecond,
+			wantErr: true,
 		},
 		{
-			name:      "context cancelled",
-			transID:   1,
-			timeout:   100 * time.Millisecond,
-			wantErr:   true,
+			name:    "context canceled",
+			transID: 1,
+			timeout: 100 * time.Millisecond,
+			wantErr: true,
 		},
 	}
 
@@ -491,37 +494,37 @@ func TestWaitForDataConfirm(t *testing.T) {
 // TestParseIncomingMsg tests the parseIncomingMsg function.
 func TestParseIncomingMsg(t *testing.T) {
 	tests := []struct {
-		name      string
-		data      []byte
-		wantErr   bool
-		wantGroup uint16
+		name        string
+		data        []byte
+		wantErr     bool
+		wantGroup   uint16
 		wantCluster uint16
-		wantSrcAddr  uint16
+		wantSrcAddr uint16
 	}{
 		{
 			name: "valid message with data",
 			data: // groupID(2), clusterID(2), srcAddr(2), srcEndpoint(1), dstEndpoint(1),
-				// wasBroadcast(1), linkQuality(1), securityUse(1), timestamp(4), transSeq(1), dataLen(1), data(N)
-				func() []byte {
-					buf := NewBuffaloWriter()
-					buf.WriteUint16(0x0000)  // groupID
-					buf.WriteUint16(0x0006)  // clusterID
-					buf.WriteUint16(0x1234)  // srcAddr
-					buf.WriteUint8(0x01)     // srcEndpoint
-					buf.WriteUint8(0x00)     // dstEndpoint
-					buf.WriteUint8(0x00)     // wasBroadcast
-					buf.WriteUint8(0xFF)     // linkQuality
-					buf.WriteUint8(0x00)     // securityUse
-					buf.WriteUint32(12345)   // timestamp
-					buf.WriteUint8(0x01)     // transSeqNum
-					buf.WriteUint8(0x02)     // data length
-					buf.WriteBytes([]byte{0x01, 0x00}) // data
-					return buf.Bytes()
-				}(),
-			wantErr:      false,
-			wantGroup:    0x0000,
-			wantCluster:  0x0006,
-			wantSrcAddr:  0x1234,
+			// wasBroadcast(1), linkQuality(1), securityUse(1), timestamp(4), transSeq(1), dataLen(1), data(N)
+			func() []byte {
+				buf := NewBuffaloWriter()
+				buf.WriteUint16(0x0000)            // groupID
+				buf.WriteUint16(0x0006)            // clusterID
+				buf.WriteUint16(0x1234)            // srcAddr
+				buf.WriteUint8(0x01)               // srcEndpoint
+				buf.WriteUint8(0x00)               // dstEndpoint
+				buf.WriteUint8(0x00)               // wasBroadcast
+				buf.WriteUint8(0xFF)               // linkQuality
+				buf.WriteUint8(0x00)               // securityUse
+				buf.WriteUint32(12345)             // timestamp
+				buf.WriteUint8(0x01)               // transSeqNum
+				buf.WriteUint8(0x02)               // data length
+				buf.WriteBytes([]byte{0x01, 0x00}) // data
+				return buf.Bytes()
+			}(),
+			wantErr:     false,
+			wantGroup:   0x0000,
+			wantCluster: 0x0006,
+			wantSrcAddr: 0x1234,
 		},
 		{
 			name: "broadcast message",
@@ -529,21 +532,21 @@ func TestParseIncomingMsg(t *testing.T) {
 				buf := NewBuffaloWriter()
 				buf.WriteUint16(0x0000)
 				buf.WriteUint16(0x0006)
-				buf.WriteUint16(0xFFFD)  // broadcast addr
+				buf.WriteUint16(0xFFFD) // broadcast addr
 				buf.WriteUint8(0x01)
 				buf.WriteUint8(0x00)
-				buf.WriteUint8(0x01)     // was broadcast
+				buf.WriteUint8(0x01) // was broadcast
 				buf.WriteUint8(0xFF)
 				buf.WriteUint8(0x00)
 				buf.WriteUint32(12345)
 				buf.WriteUint8(0x01)
-				buf.WriteUint8(0x00)     // no data
+				buf.WriteUint8(0x00) // no data
 				return buf.Bytes()
 			}(),
-			wantErr:      false,
-			wantGroup:    0x0000,
-			wantCluster:  0x0006,
-			wantSrcAddr:  0xFFFD,
+			wantErr:     false,
+			wantGroup:   0x0000,
+			wantCluster: 0x0006,
+			wantSrcAddr: 0xFFFD,
 		},
 		{
 			name: "secure message",
@@ -556,16 +559,16 @@ func TestParseIncomingMsg(t *testing.T) {
 				buf.WriteUint8(0x00)
 				buf.WriteUint8(0x00)
 				buf.WriteUint8(0xFF)
-				buf.WriteUint8(0x01)     // security used
+				buf.WriteUint8(0x01) // security used
 				buf.WriteUint32(12345)
 				buf.WriteUint8(0x01)
 				buf.WriteUint8(0x00)
 				return buf.Bytes()
 			}(),
-			wantErr:      false,
-			wantGroup:    0x0000,
-			wantCluster:  0x0006,
-			wantSrcAddr:  0x1234,
+			wantErr:     false,
+			wantGroup:   0x0000,
+			wantCluster: 0x0006,
+			wantSrcAddr: 0x1234,
 		},
 		{
 			name:    "empty data",
@@ -609,6 +612,7 @@ func TestParseIncomingMsg(t *testing.T) {
 
 // TestIncomingMessage tests IncomingMessage struct fields.
 func TestIncomingMessage(t *testing.T) {
+	//nolint:govet // Test validates struct field access
 	msg := &IncomingMessage{
 		GroupID:      0x0000,
 		ClusterID:    0x0006,
@@ -674,17 +678,16 @@ func TestDataRequestOptions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Just verify the constant is defined and has the expected value
-			if tt.value < 0 || tt.value > 0xFF {
-				t.Errorf("%s = %d, out of valid range", tt.name, tt.value)
-			}
+		t.Run(tt.name, func(_ *testing.T) {
+			// tt.value is uint8, so it's always in valid range [0, 255]
+			_ = tt.value
 		})
 	}
 }
 
 // TestEndpointConfig tests EndpointConfig struct.
 func TestEndpointConfig(t *testing.T) {
+	//nolint:govet // Test validates struct field access
 	config := EndpointConfig{
 		Endpoint:    1,
 		AppProfID:   uint16(ProfileHomeAutomation),

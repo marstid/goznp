@@ -10,6 +10,8 @@ import (
 
 // mockZNP implements a minimal ZNP interface for testing.
 // It allows tests to control responses and errors for various ZNP operations.
+//
+//nolint:unused // Test helper for future use.
 type mockZNP struct {
 	pingResp    *znp.PingCapabilities
 	pingErr     error
@@ -38,64 +40,79 @@ type mockZNP struct {
 	startupFromAppArg uint16
 }
 
-func (m *mockZNP) Open(ctx context.Context) error {
+//nolint:unused // Test helper for future use
+func (m *mockZNP) Open(_ context.Context) error {
 	m.openCalled = true
 	return nil
 }
 
+//nolint:unused // Test helper for future use.
 func (m *mockZNP) Close() error {
 	m.closeCalled = true
 	return nil
 }
 
-func (m *mockZNP) Ping(ctx context.Context) (*znp.PingCapabilities, error) {
+//nolint:unused // Test helper for future use
+func (m *mockZNP) Ping(_ context.Context) (*znp.PingCapabilities, error) {
 	return m.pingResp, m.pingErr
 }
 
-func (m *mockZNP) Version(ctx context.Context) (*znp.VersionInfo, error) {
+//nolint:unused // Test helper for future use
+func (m *mockZNP) Version(_ context.Context) (*znp.VersionInfo, error) {
 	return m.versionResp, m.versionErr
 }
 
-func (m *mockZNP) Reset(ctx context.Context, resetType znp.ResetType) (*znp.ResetIndication, error) {
+//nolint:unused // Test helper for future use
+func (m *mockZNP) Reset(_ context.Context, _ znp.ResetType) (*znp.ResetIndication, error) {
 	return m.resetResp, m.resetErr
 }
 
-func (m *mockZNP) AfRegister(ctx context.Context, config znp.EndpointConfig) (uint8, error) {
+//nolint:unused // Test helper for future use
+func (m *mockZNP) AfRegister(_ context.Context, config znp.EndpointConfig) (uint8, error) {
 	m.afRegisterCalls = append(m.afRegisterCalls, config)
 	return m.afRegStatus, m.afRegErr
 }
 
-func (m *mockZNP) AfDelete(ctx context.Context, endpoint uint8) (uint8, error) {
+//nolint:unused // Test helper for future use
+func (m *mockZNP) AfDelete(_ context.Context, endpoint uint8) (uint8, error) {
 	m.afDeleteCalls = append(m.afDeleteCalls, endpoint)
 	return m.afDelStatus, m.afDelErr
 }
 
-func (m *mockZNP) StartupFromApp(ctx context.Context, startDelay uint16) (uint8, error) {
+//nolint:unused // Test helper for future use
+func (m *mockZNP) StartupFromApp(_ context.Context, startDelay uint16) (uint8, error) {
 	m.startupFromAppArg = startDelay
 	return m.startupResp, m.startupErr
 }
 
+//nolint:unused // Test helper for future use.
 func (m *mockZNP) OnDeviceJoin(handler func(*znp.TcDeviceInd)) {
 	m.onDeviceJoinHandler = handler
 }
 
+//nolint:unused // Test helper for future use.
 func (m *mockZNP) OnDeviceLeave(handler func(*znp.DeviceLeave)) {
 	m.onDeviceLeaveHandler = handler
 }
 
+//nolint:unused // Test helper for future use.
 func (m *mockZNP) OnError(handler func(error)) {
 	m.onHandler = handler
 }
 
+//nolint:unused // Test helper for future use.
 func (m *mockZNP) OnDeviceAnnounce(handler func(*znp.DeviceAnnounce)) {
 	m.onDeviceAnnounceHandler = handler
 }
 
-func (m *mockZNP) OnFrame(handler func(*unpi.Frame)) {
+//nolint:unused // Test helper for future use
+func (m *mockZNP) OnFrame(_ func(*unpi.Frame)) {
 	// Not used in current tests
 }
 
 // Helper to create a successful mock with reasonable defaults
+//
+//nolint:unused // Test helper for future use.
 func newSuccessfulMockZNP() *mockZNP {
 	return &mockZNP{
 		pingResp: &znp.PingCapabilities{
@@ -123,27 +140,34 @@ func newSuccessfulMockZNP() *mockZNP {
 }
 
 // mockPort implements a minimal serial.Port interface for testing
+//
+//nolint:unused // Test helper for future use.
 type mockPort struct {
 	closeCalled bool
 }
 
-func (m *mockPort) Read(p []byte) (n int, err error) {
+//nolint:unused // Test helper for future use.
+func (m *mockPort) Read(_ []byte) (n int, err error) {
 	return 0, nil
 }
 
+//nolint:unused // Test helper for future use.
 func (m *mockPort) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+//nolint:unused // Test helper for future use.
 func (m *mockPort) Close() error {
 	m.closeCalled = true
 	return nil
 }
 
+//nolint:unused // Test helper for future use.
 func (m *mockPort) Flush() error {
 	return nil
 }
 
-func (m *mockPort) SetReadDeadline(t time.Time) error {
+//nolint:unused // Test helper for future use.
+func (m *mockPort) SetReadDeadline(_ time.Time) error {
 	return nil
 }

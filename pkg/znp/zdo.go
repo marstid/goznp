@@ -43,7 +43,7 @@ func (z *ZNP) ExtNwkInfo(ctx context.Context) (*ExtNetworkInfo, error) {
 	}
 
 	// Read PAN ID (uint16)
-	panId, err := buf.ReadUint16()
+	panID, err := buf.ReadUint16()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read PAN ID: %w", err)
 	}
@@ -55,7 +55,7 @@ func (z *ZNP) ExtNwkInfo(ctx context.Context) (*ExtNetworkInfo, error) {
 	}
 
 	// Read extended PAN ID (8 bytes)
-	extendedPanId, err := buf.ReadIEEEAddr()
+	extendedPanID, err := buf.ReadIEEEAddr()
 	if err != nil {
 		return nil, fmt.Errorf("failed to read extended PAN ID: %w", err)
 	}
@@ -75,9 +75,9 @@ func (z *ZNP) ExtNwkInfo(ctx context.Context) (*ExtNetworkInfo, error) {
 	return &ExtNetworkInfo{
 		ShortAddr:     shortAddr,
 		DevState:      devState,
-		PanID:         panId,
+		PanID:         panID,
 		ParentAddr:    parentAddr,
-		ExtendedPanID: extendedPanId,
+		ExtendedPanID: extendedPanID,
 		ParentExtAddr: parentExtAddr,
 		Channel:       channel,
 	}, nil

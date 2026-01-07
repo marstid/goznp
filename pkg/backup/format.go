@@ -30,7 +30,7 @@ type AdapterInfo struct {
 
 // CoordinatorInfo contains coordinator address information.
 type CoordinatorInfo struct {
-	IEEEAddress    string `json:"ieeeAddress"` // Hex string without colons
+	IEEEAddress    string `json:"ieeeAddress"` // Hex string without colons.
 	NetworkAddress uint16 `json:"networkAddress"`
 }
 
@@ -47,9 +47,9 @@ type CoordinatorInfo struct {
 //   - Securely delete backup files when no longer needed
 type NetworkConfig struct {
 	PanID              uint16 `json:"panId"`
-	ExtendedPanID      string `json:"extendedPanId"` // Hex string
+	ExtendedPanID      string `json:"extendedPanId"` // Hex string.
 	Channel            uint8  `json:"channel"`
-	NetworkKey         string `json:"networkKey"` // Hex string (32 chars) - SENSITIVE
+	NetworkKey         string `json:"networkKey"` // Hex string (32 chars) - SENSITIVE.
 	NetworkKeySequence uint8  `json:"networkKeySequence"`
 	SecurityLevel      uint8  `json:"securityLevel"`
 	UpdateID           uint8  `json:"updateId"`
@@ -58,20 +58,20 @@ type NetworkConfig struct {
 // SecurityInfo contains security-related information.
 type SecurityInfo struct {
 	FrameCounter           uint32 `json:"frameCounter"`
-	TrustCenterLinkKeySeed string `json:"trustCenterLinkKeySeed,omitempty"` // Hex string
+	TrustCenterLinkKeySeed string `json:"trustCenterLinkKeySeed,omitempty"` // Hex string.
 }
 
 // DeviceEntry represents a paired device.
 type DeviceEntry struct {
-	IEEEAddress    string   `json:"ieeeAddress"` // Hex string
+	IEEEAddress    string   `json:"ieeeAddress"` // Hex string.
 	NetworkAddress uint16   `json:"networkAddress"`
-	Type           string   `json:"type"` // "router", "endDevice", "unknown"
+	Type           string   `json:"type"` // "router", "endDevice", "unknown".
 	LinkKey        *LinkKey `json:"linkKey,omitempty"`
 }
 
 // LinkKey contains link key information for a device.
 type LinkKey struct {
-	Key       string `json:"key"` // Hex string (32 chars)
+	Key       string `json:"key"` // Hex string (32 chars).
 	TxCounter uint32 `json:"txCounter"`
 	RxCounter uint32 `json:"rxCounter"`
 }

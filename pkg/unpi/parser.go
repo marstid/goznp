@@ -34,7 +34,7 @@ func (p *Parser) Feed(data []byte) {
 		p.errors <- fmt.Errorf("buffer overflow: size %d exceeds limit %d, searching for next frame",
 			len(p.buffer)+len(data), MaxBufferSize)
 
-		// Search for next SOF to preserve potential valid frame
+		// Search for next SOF to preserve potential valid frame.
 		foundSOF := false
 		for i := 1; i < len(p.buffer); i++ {
 			if p.buffer[i] == SOF {
@@ -44,7 +44,7 @@ func (p *Parser) Feed(data []byte) {
 			}
 		}
 
-		// If no SOF found or still too large, clear completely
+		// If no SOF found or still too large, clear completely.
 		if !foundSOF || len(p.buffer) > MaxBufferSize/2 {
 			p.buffer = p.buffer[:0]
 		}
@@ -68,15 +68,15 @@ func (p *Parser) Errors() <-chan error {
 // This method is called recursively to process multiple frames in the buffer.
 func (p *Parser) parseNext() {
 	for {
-		// Need at least MinMessageLength bytes to attempt parsing
+		// Need at least MinMessageLength bytes to attempt parsing.
 		if len(p.buffer) < MinMessageLength {
 			return
 		}
 
-		// Find SOF byte
+		// Find SOF byte.
 		sofIndex := p.findSOF()
 		if sofIndex == -1 {
-			// No SOF found, discard entire buffer
+			// No SOF found, discard entire buffer.
 			if len(p.buffer) > 0 {
 				p.errors <- fmt.Errorf("no SOF found in %d bytes, discarding buffer", len(p.buffer))
 				p.buffer = p.buffer[:0]
@@ -84,43 +84,43 @@ func (p *Parser) parseNext() {
 			return
 		}
 
-		// Discard bytes before SOF if any
+		// Discard bytes before SOF if any.
 		if sofIndex > 0 {
 			p.errors <- fmt.Errorf("skipping %d bytes before SOF", sofIndex)
 			p.buffer = p.buffer[sofIndex:]
 		}
 
-		// Check if we have enough data to read the length field
+		// Check if we have enough data to read the length field.
 		if len(p.buffer) < DataStart {
 			return
 		}
 
-		// Calculate expected frame size
+		// Calculate expected frame size.
 		dataLen := int(p.buffer[PositionDataLength])
 		expectedFrameSize := MinMessageLength + dataLen
 
-		// Wait for complete frame
+		// Wait for complete frame.
 		if len(p.buffer) < expectedFrameSize {
 			return
 		}
 
-		// Extract frame bytes
+		// Extract frame bytes.
 		frameBytes := p.buffer[:expectedFrameSize]
 
-		// Attempt to parse the frame
+		// Attempt to parse the frame.
 		frame, err := ParseFrame(frameBytes)
 		if err != nil {
-			// Parsing failed, skip this SOF and look for the next one
+			// Parsing failed, skip this SOF and look for the next one.
 			p.errors <- fmt.Errorf("frame parse error: %w", err)
-			p.buffer = p.buffer[1:] // Skip the invalid SOF
+			p.buffer = p.buffer[1:] // Skip the invalid SOF.
 			continue
 		}
 
-		// Successfully parsed frame
+		// Successfully parsed frame.
 		p.frames <- frame
 		p.buffer = p.buffer[expectedFrameSize:]
 
-		// Continue parsing if more data is available
+		// Continue parsing if more data is available.
 		if len(p.buffer) < MinMessageLength {
 			return
 		}

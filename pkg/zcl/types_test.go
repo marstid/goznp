@@ -184,13 +184,17 @@ func TestReadValueFloats(t *testing.T) {
 			}
 			if !tt.wantErr {
 				if tt.dataType == TypeSingle {
+					//nolint:errcheck // Test type assertion
 					gotFloat := got.(float32)
+					//nolint:errcheck // Test type assertion
 					wantFloat := tt.want.(float32)
 					if math.Abs(float64(gotFloat-wantFloat)) > 0.0001 {
 						t.Errorf("ReadValue() got = %v, want %v", got, tt.want)
 					}
 				} else {
+					//nolint:errcheck // Test type assertion
 					gotFloat := got.(float64)
+					//nolint:errcheck // Test type assertion
 					wantFloat := tt.want.(float64)
 					if math.Abs(gotFloat-wantFloat) > 0.0000001 {
 						t.Errorf("ReadValue() got = %v, want %v", got, tt.want)
@@ -348,7 +352,7 @@ func TestReadValueArray(t *testing.T) {
 	}{
 		{
 			name:     "array empty",
-			data:     []byte{0x20, 0x00, 0x00}, // TypeUint8, count=0
+			data:     []byte{0x20, 0x00, 0x00}, // TypeUint8, zero count
 			dataType: TypeArray,
 			want:     &ArrayValue{ElementType: TypeUint8, Elements: []interface{}{}},
 			wantN:    3,
@@ -356,7 +360,7 @@ func TestReadValueArray(t *testing.T) {
 		},
 		{
 			name:     "array uint8",
-			data:     []byte{0x20, 0x03, 0x00, 0x01, 0x02, 0x03}, // TypeUint8, count=3, [1,2,3]
+			data:     []byte{0x20, 0x03, 0x00, 0x01, 0x02, 0x03}, // TypeUint8, count=3, values 1,2,3
 			dataType: TypeArray,
 			want:     &ArrayValue{ElementType: TypeUint8, Elements: []interface{}{uint8(0x01), uint8(0x02), uint8(0x03)}},
 			wantN:    6,

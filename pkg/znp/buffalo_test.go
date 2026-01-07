@@ -302,17 +302,20 @@ func TestRemaining(t *testing.T) {
 		t.Errorf("Remaining() = %d, want 5", buf.Remaining())
 	}
 
-	buf.ReadUint8()
+	//nolint:errcheck // Test intentionally consumes data
+	_, _ = buf.ReadUint8()
 	if buf.Remaining() != 4 {
 		t.Errorf("Remaining() = %d, want 4", buf.Remaining())
 	}
 
-	buf.ReadUint16()
+	//nolint:errcheck // Test intentionally consumes data
+	_, _ = buf.ReadUint16()
 	if buf.Remaining() != 2 {
 		t.Errorf("Remaining() = %d, want 2", buf.Remaining())
 	}
 
-	buf.ReadUint16()
+	//nolint:errcheck // Test intentionally consumes data
+	_, _ = buf.ReadUint16()
 	if buf.Remaining() != 0 {
 		t.Errorf("Remaining() = %d, want 0", buf.Remaining())
 	}
@@ -325,12 +328,14 @@ func TestIsEOF(t *testing.T) {
 		t.Error("IsEOF() = true, want false at start")
 	}
 
-	buf.ReadUint8()
+	//nolint:errcheck // Test intentionally consumes data
+	_, _ = buf.ReadUint8()
 	if buf.IsEOF() {
 		t.Error("IsEOF() = true, want false after reading 1 byte")
 	}
 
-	buf.ReadUint8()
+	//nolint:errcheck // Test intentionally consumes data
+	_, _ = buf.ReadUint8()
 	if !buf.IsEOF() {
 		t.Error("IsEOF() = false, want true at end")
 	}
@@ -627,7 +632,8 @@ func TestBufferOverrunErrors(t *testing.T) {
 
 	// Reset buffer
 	buf = NewBuffalo([]byte{0x01, 0x02})
-	buf.ReadUint16() // consume all data
+	//nolint:errcheck // Test intentionally consumes data
+	_, _ = buf.ReadUint16() // consume all data
 
 	_, err = buf.ReadUint8()
 	if !errors.Is(err, ErrBufferOverrun) {
@@ -640,16 +646,19 @@ func TestSequentialReads(t *testing.T) {
 	data := []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}
 	buf := NewBuffalo(data)
 
+	//nolint:errcheck // Test code
 	v1, _ := buf.ReadUint8()
 	if v1 != 0x01 {
 		t.Errorf("First ReadUint8() = 0x%02X, want 0x01", v1)
 	}
 
+	//nolint:errcheck // Test code
 	v2, _ := buf.ReadUint16()
 	if v2 != 0x0302 { // 0x02, 0x03 in little-endian
 		t.Errorf("ReadUint16() = 0x%04X, want 0x0302", v2)
 	}
 
+	//nolint:errcheck // Test code
 	v3, _ := buf.ReadUint8()
 	if v3 != 0x04 {
 		t.Errorf("Second ReadUint8() = 0x%02X, want 0x04", v3)

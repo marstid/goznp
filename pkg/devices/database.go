@@ -2,8 +2,9 @@ package devices
 
 // Grouped by raw manufacturer ID as reported by devices.
 var deviceDatabase = map[Fingerprint]Info{
+	//nolint:godot // Section divider.
 	// ==========================================================================
-	// _TZ3000_* (Tuya Zigbee 3.0 devices)
+	// _TZ3000_* (Tuya Zigbee 3.0 devices).
 	// ==========================================================================
 	{"_TZ3000_266azbg3", "TS011F"}: {"NOUS", "A6Z", "Outdoor smart socket"},
 	{"_TZ3000_w0qqde0g", "TS011F"}: {"Tuya", "TS011F", "Smart plug"},
@@ -32,14 +33,16 @@ var deviceDatabase = map[Fingerprint]Info{
 	{"_TZ3000_mcxw5ehu", "TS0202"}: {"Tuya", "TS0202", "Motion sensor"},
 	{"_TZ3000_6ygjfyll", "TS0202"}: {"Tuya", "TS0202", "Motion sensor"},
 
+	//nolint:godot // Section divider.
 	// ==========================================================================
-	// eWeLink (Sonoff)
+	// eWeLink (Sonoff).
 	// ==========================================================================
 	{"eWeLink", "SA-003-Zigbee"}: {"Sonoff", "SA-003", "Smart switch"},
 	{"eWeLink", "TH01"}:          {"Sonoff", "SNZB-02", "Temperature & humidity sensor"},
 
+	//nolint:godot // Section divider.
 	// ==========================================================================
-	// GLEDOPTO
+	// GLEDOPTO.
 	// ==========================================================================
 	{"GLEDOPTO", "GL-SD-301P"}:  {"GLEDOPTO", "GL-SD-301P", "Zigbee AC dimmer"},
 	{"GLEDOPTO", "GL-C-006"}:    {"GLEDOPTO", "GL-C-006", "Zigbee LED controller RGB+CCT"},
@@ -52,9 +55,9 @@ var deviceDatabase = map[Fingerprint]Info{
 	{"GLEDOPTO", "GL-D-003Z"}:   {"GLEDOPTO", "GL-D-003Z", "Zigbee LED downlight RGB+CCT"},
 	{"GLEDOPTO", "GL-FL-004TZ"}: {"GLEDOPTO", "GL-FL-004TZ", "Zigbee outdoor floodlight"},
 
-	// ==========================================================================
-	// IKEA of Sweden
-	// ==========================================================================
+	// ==========================================================================.
+	// IKEA of Sweden.
+	// ==========================================================================.
 	{"IKEA of Sweden", "TRADFRI bulb E27 WS opal 980lm"}:  {"IKEA", "LED1545G12", "TRADFRI bulb E27 980lm"},
 	{"IKEA of Sweden", "TRADFRI bulb E27 WS opal 1000lm"}: {"IKEA", "LED1732G11", "TRADFRI bulb E27 1000lm"},
 	{"IKEA of Sweden", "TRADFRI bulb E27 CWS opal 600lm"}: {"IKEA", "LED1624G9", "TRADFRI bulb E27 color 600lm"},
@@ -77,9 +80,9 @@ var deviceDatabase = map[Fingerprint]Info{
 	{"IKEA of Sweden", "PARASOLL door/window sensor"}:     {"IKEA", "E2013", "PARASOLL door/window sensor"},
 	{"IKEA of Sweden", "VALLHORN motion sensor"}:          {"IKEA", "E2134", "VALLHORN motion sensor"},
 
-	// ==========================================================================
-	// LUMI (Aqara / Xiaomi)
-	// ==========================================================================
+	// ==========================================================================.
+	// LUMI (Aqara / Xiaomi).
+	// ==========================================================================.
 	{"LUMI", "lumi.sensor_ht"}:         {"Aqara", "WSDCGQ01LM", "Temperature & humidity sensor"},
 	{"LUMI", "lumi.weather"}:           {"Aqara", "WSDCGQ11LM", "Temperature & humidity sensor"},
 	{"LUMI", "lumi.sensor_ht.agl02"}:   {"Aqara", "WSDCGQ12LM", "Temperature & humidity sensor"},
@@ -99,9 +102,9 @@ var deviceDatabase = map[Fingerprint]Info{
 	{"LUMI", "lumi.vibration.aq1"}:     {"Aqara", "DJT11LM", "Vibration sensor"},
 	{"LUMI", "lumi.sensor_water.aq1"}:  {"Aqara", "SJCGQ11LM", "Water leak sensor"},
 
-	// ==========================================================================
-	// Philips
-	// ==========================================================================
+	// ==========================================================================.
+	// Philips.
+	// ==========================================================================.
 	{"Philips", "LWB010"}: {"Philips Hue", "LWB010", "White bulb A19"},
 	{"Philips", "LWB014"}: {"Philips Hue", "LWB014", "White bulb A19"},
 	{"Philips", "LWA001"}: {"Philips Hue", "LWA001", "White bulb A19 800lm"},
@@ -122,14 +125,14 @@ var deviceDatabase = map[Fingerprint]Info{
 	{"Philips", "RWL021"}: {"Philips Hue", "RWL021", "Dimmer switch"},
 	{"Philips", "RWL022"}: {"Philips Hue", "RWL022", "Dimmer switch v2"},
 
-	// ==========================================================================
+	// ==========================================================================.
 	// Signify Netherlands B.V. (Philips Hue)
-	// ==========================================================================
+	// ==========================================================================.
 	{"Signify Netherlands B.V.", ""}: {"Philips Hue", "", "Hue device"},
 
-	// ==========================================================================
+	// ==========================================================================.
 	// SONOFF
-	// ==========================================================================
+	// ==========================================================================.
 	{"SONOFF", "BASICZBR3"}:   {"Sonoff", "BASICZBR3", "Smart switch"},
 	{"SONOFF", "S31 Lite zb"}: {"Sonoff", "S31ZB", "Smart plug"},
 	{"SONOFF", "S26R2ZB"}:     {"Sonoff", "S26R2ZB", "Smart plug"},

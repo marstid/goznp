@@ -19,7 +19,7 @@ func (a *Adapter) CreateBackup(ctx context.Context) (*backup.Backup, error) {
 
 	b := backup.New()
 
-	// 1. Get adapter version info
+	// 1. Get adapter version info.
 	if a.version != nil {
 		b.Adapter = backup.AdapterInfo{
 			ZStackVariant: int(a.version.Product),
@@ -28,7 +28,7 @@ func (a *Adapter) CreateBackup(ctx context.Context) (*backup.Backup, error) {
 		}
 	}
 
-	// 2. Get device info (coordinator address)
+	// 2. Get device info (coordinator address).
 	deviceInfo, err := a.znp.GetDeviceInfo(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting device info: %w", err)
@@ -38,7 +38,7 @@ func (a *Adapter) CreateBackup(ctx context.Context) (*backup.Backup, error) {
 		NetworkAddress: deviceInfo.ShortAddr,
 	}
 
-	// 3. Get network info from ZDO
+	// 3. Get network info from ZDO.
 	extNwkInfo, err := a.znp.ExtNwkInfo(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting network info: %w", err)
@@ -47,7 +47,7 @@ func (a *Adapter) CreateBackup(ctx context.Context) (*backup.Backup, error) {
 	b.Network.ExtendedPanID = backup.EncodeIEEEAddr(extNwkInfo.ExtendedPanID)
 	b.Network.Channel = extNwkInfo.Channel
 
-	// 4. Read NIB for additional network config
+	// 4. Read NIB for additional network config.
 	nibData, err := a.znp.NvReadAll(ctx, znp.NvNIB)
 	if err != nil {
 		return nil, fmt.Errorf("reading NIB: %w", err)
@@ -61,7 +61,7 @@ func (a *Adapter) CreateBackup(ctx context.Context) (*backup.Backup, error) {
 		b.Network.UpdateID = nib.UpdateID
 	}
 
-	// 5. Read network key
+	// 5. Read network key.
 	keyData, err := a.znp.NvReadAll(ctx, znp.NvNwkActiveKeyInfo)
 	if err != nil {
 		return nil, fmt.Errorf("reading network key: %w", err)
@@ -75,13 +75,13 @@ func (a *Adapter) CreateBackup(ctx context.Context) (*backup.Backup, error) {
 		b.Network.NetworkKeySequence = keyDesc.KeySeqNum
 	}
 
-	// 6. Read devices from NVRAM Address Manager table
+	// 6. Read devices from NVRAM Address Manager table.
 	addrMgrEntries, err := a.znp.ReadAddrMgrTable(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("reading address manager table: %w", err)
 	}
 	for _, dev := range addrMgrEntries {
-		// Skip coordinator (address 0x0000)
+		// Skip coordinator (address 0x0000).
 		if dev.NwkAddr == 0x0000 {
 			continue
 		}
@@ -89,7 +89,7 @@ func (a *Adapter) CreateBackup(ctx context.Context) (*backup.Backup, error) {
 		entry := backup.DeviceEntry{
 			IEEEAddress:    backup.EncodeIEEEAddr(dev.ExtAddr),
 			NetworkAddress: dev.NwkAddr,
-			Type:           "EndDevice", // Default type
+			Type:           "EndDevice", // Default type.
 		}
 		b.Devices = append(b.Devices, entry)
 	}
@@ -107,12 +107,12 @@ func (a *Adapter) RestoreBackup(ctx context.Context, b *backup.Backup) error {
 	}
 	a.mu.Unlock()
 
-	// Validate backup
+	// Validate backup.
 	if err := b.Validate(); err != nil {
 		return fmt.Errorf("invalid backup: %w", err)
 	}
 
-	// 1. Write coordinator IEEE address
+	// 1. Write coordinator IEEE address.
 	coordAddr, err := backup.DecodeIEEEAddr(b.Coordinator.IEEEAddress)
 	if err != nil {
 		return fmt.Errorf("decoding coordinator address: %w", err)
@@ -121,7 +121,7 @@ func (a *Adapter) RestoreBackup(ctx context.Context, b *backup.Backup) error {
 		return fmt.Errorf("writing coordinator address: %w", err)
 	}
 
-	// 2. Write network key
+	// 2. Write network key.
 	networkKey, err := backup.DecodeHex(b.Network.NetworkKey)
 	if err != nil {
 		return fmt.Errorf("decoding network key: %w", err)
@@ -141,7 +141,7 @@ func (a *Adapter) RestoreBackup(ctx context.Context, b *backup.Backup) error {
 		return fmt.Errorf("writing alternate key: %w", err)
 	}
 
-	// 3. A full restore would require resetting and reconfiguring the NIB
+	// 3. A full restore would require resetting and reconfiguring the NIB.
 	// This is complex and version-dependent. For now, we restore the key data.
 	// Full NIB restore would be implemented in a future version.
 

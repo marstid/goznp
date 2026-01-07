@@ -255,8 +255,7 @@ func (f *Frame) ToBytes() []byte {
 		result = append(result, manufCode...)
 	}
 
-	result = append(result, f.TransSeqNum)
-	result = append(result, f.CommandID)
+	result = append(result, f.TransSeqNum, f.CommandID)
 	result = append(result, f.Payload...)
 
 	return result

@@ -43,15 +43,17 @@ func (a *Adapter) GetBinaryInput(ctx context.Context, nwkAddr uint16, endpoint u
 
 		switch r.AttributeID {
 		case zcl.AttrBinaryInputPresentValue:
-			if v, ok := r.Value.(bool); ok {
+			switch v := r.Value.(type) {
+			case bool:
 				info.PresentValue = v
-			} else if v, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.PresentValue = v != 0
 			}
 		case zcl.AttrBinaryInputOutOfService:
-			if v, ok := r.Value.(bool); ok {
+			switch v := r.Value.(type) {
+			case bool:
 				info.OutOfService = v
-			} else if v, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.OutOfService = v != 0
 			}
 		case zcl.AttrBinaryInputStatusFlags:
@@ -140,9 +142,10 @@ func (a *Adapter) GetAnalogInput(ctx context.Context, nwkAddr uint16, endpoint u
 				info.PresentValue = val
 			}
 		case zcl.AttrAnalogInputOutOfService:
-			if val, ok := r.Value.(bool); ok {
+			switch val := r.Value.(type) {
+			case bool:
 				info.OutOfService = val
-			} else if val, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.OutOfService = val != 0
 			}
 		case zcl.AttrAnalogInputStatusFlags:
@@ -234,9 +237,10 @@ func (a *Adapter) GetAnalogOutput(ctx context.Context, nwkAddr uint16, endpoint 
 				info.PresentValue = val
 			}
 		case zcl.AttrAnalogOutputOutOfService:
-			if val, ok := r.Value.(bool); ok {
+			switch val := r.Value.(type) {
+			case bool:
 				info.OutOfService = val
-			} else if val, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.OutOfService = val != 0
 			}
 		case zcl.AttrAnalogOutputStatusFlags:
@@ -337,9 +341,10 @@ func (a *Adapter) GetAnalogValue(ctx context.Context, nwkAddr uint16, endpoint u
 				info.PresentValue = val
 			}
 		case zcl.AttrAnalogValueOutOfService:
-			if val, ok := r.Value.(bool); ok {
+			switch val := r.Value.(type) {
+			case bool:
 				info.OutOfService = val
-			} else if val, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.OutOfService = val != 0
 			}
 		case zcl.AttrAnalogValueStatusFlags:
@@ -367,6 +372,7 @@ func (a *Adapter) SetAnalogValue(ctx context.Context, nwkAddr uint16, endpoint u
 	}
 	return a.WriteAttributes(ctx, nwkAddr, endpoint, zcl.ClusterAnalogValue, values)
 }
+
 // BinaryValue Cluster (0x0011)
 
 // BinaryValueInfo contains binary value information.
@@ -402,15 +408,17 @@ func (a *Adapter) GetBinaryValue(ctx context.Context, nwkAddr uint16, endpoint u
 
 		switch r.AttributeID {
 		case zcl.AttrBinaryValuePresentValue:
-			if val, ok := r.Value.(bool); ok {
+			switch val := r.Value.(type) {
+			case bool:
 				info.PresentValue = val
-			} else if val, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.PresentValue = val != 0
 			}
 		case zcl.AttrBinaryValueOutOfService:
-			if val, ok := r.Value.(bool); ok {
+			switch val := r.Value.(type) {
+			case bool:
 				info.OutOfService = val
-			} else if val, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.OutOfService = val != 0
 			}
 		case zcl.AttrBinaryValueStatusFlags:
@@ -484,9 +492,10 @@ func (a *Adapter) GetMultistateInput(ctx context.Context, nwkAddr uint16, endpoi
 				info.NumberOfStates = val
 			}
 		case zcl.AttrMultistateInputOutOfService:
-			if val, ok := r.Value.(bool); ok {
+			switch val := r.Value.(type) {
+			case bool:
 				info.OutOfService = val
-			} else if val, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.OutOfService = val != 0
 			}
 		case zcl.AttrMultistateInputStatusFlags:
@@ -560,15 +569,17 @@ func (a *Adapter) GetBinaryOutput(ctx context.Context, nwkAddr uint16, endpoint 
 
 		switch r.AttributeID {
 		case zcl.AttrBinaryOutputPresentValue:
-			if v, ok := r.Value.(bool); ok {
+			switch v := r.Value.(type) {
+			case bool:
 				info.PresentValue = v
-			} else if v, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.PresentValue = v != 0
 			}
 		case zcl.AttrBinaryOutputOutOfService:
-			if v, ok := r.Value.(bool); ok {
+			switch v := r.Value.(type) {
+			case bool:
 				info.OutOfService = v
-			} else if v, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.OutOfService = v != 0
 			}
 		case zcl.AttrBinaryOutputStatusFlags:
@@ -668,9 +679,10 @@ func (a *Adapter) GetMultistateOutput(ctx context.Context, nwkAddr uint16, endpo
 				info.NumberOfStates = v
 			}
 		case zcl.AttrMultistateOutputOutOfService:
-			if v, ok := r.Value.(bool); ok {
+			switch v := r.Value.(type) {
+			case bool:
 				info.OutOfService = v
-			} else if v, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.OutOfService = v != 0
 			}
 		case zcl.AttrMultistateOutputStatusFlags:
@@ -695,6 +707,7 @@ func (a *Adapter) SetMultistateOutput(ctx context.Context, nwkAddr uint16, endpo
 	}
 	return a.WriteAttributes(ctx, nwkAddr, endpoint, zcl.ClusterMultistateOutput, values)
 }
+
 // MultistateValue Cluster (0x0014)
 
 // MultistateValueInfo contains the status information for a MultistateValue device.
@@ -738,9 +751,10 @@ func (a *Adapter) GetMultistateValue(ctx context.Context, nwkAddr uint16, endpoi
 				info.NumberOfStates = v
 			}
 		case zcl.AttrMultistateValueOutOfService:
-			if v, ok := r.Value.(bool); ok {
+			switch v := r.Value.(type) {
+			case bool:
 				info.OutOfService = v
-			} else if v, ok := r.Value.(uint8); ok {
+			case uint8:
 				info.OutOfService = v != 0
 			}
 		case zcl.AttrMultistateValueStatusFlags:

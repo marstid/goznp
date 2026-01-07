@@ -231,11 +231,11 @@ func (z *ZNP) ReadDeviceNameTable(ctx context.Context) (*DeviceNameTable, error)
 		Entries: []DeviceNameEntry{},
 	}
 
-	// Read entries from Extended NV, iterating through subIds
-	for subId := uint16(0); subId < nvMaxDeviceEntries; subId++ {
-		data, err := z.NvReadEx(ctx, nvSysUser, nvItemDeviceNames, subId, 0, DeviceNameEntrySize)
+	// Read entries from Extended NV, iterating through subIDs
+	for subID := uint16(0); subID < nvMaxDeviceEntries; subID++ {
+		data, err := z.NvReadEx(ctx, nvSysUser, nvItemDeviceNames, subID, 0, DeviceNameEntrySize)
 		if err != nil {
-			return nil, fmt.Errorf("failed to read device name entry %d: %w", subId, err)
+			return nil, fmt.Errorf("failed to read device name entry %d: %w", subID, err)
 		}
 
 		// nil means not found - end of table
@@ -329,13 +329,14 @@ func (z *ZNP) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, comment
 		Comment:  comment,
 	}
 
-	if foundIndex != -1 {
+	switch {
+	case foundIndex != -1:
 		// Update existing entry
 		table.Entries[foundIndex] = newEntry
-	} else if emptyIndex != -1 {
+	case emptyIndex != -1:
 		// Use empty slot
 		table.Entries[emptyIndex] = newEntry
-	} else {
+	default:
 		// Append new entry
 		table.Entries = append(table.Entries, newEntry)
 	}
@@ -360,14 +361,15 @@ func (z *ZNP) DeleteDeviceName(ctx context.Context, ieeeAddr [8]byte) error {
 	// Find the entry
 	found := false
 	for i := range table.Entries {
-		if table.Entries[i].IEEEAddr == ieeeAddr && !table.Entries[i].IsEmpty() {
-			// Mark as empty by zeroing IEEE address
-			table.Entries[i].IEEEAddr = [8]byte{}
-			table.Entries[i].Name = ""
-			table.Entries[i].Comment = ""
-			found = true
-			break
+		if table.Entries[i].IEEEAddr != ieeeAddr || table.Entries[i].IsEmpty() {
+			continue
 		}
+		// Mark as empty by zeroing IEEE address
+		table.Entries[i].IEEEAddr = [8]byte{}
+		table.Entries[i].Name = ""
+		table.Entries[i].Comment = ""
+		found = true
+		break
 	}
 
 	// If not found, nothing to do (not an error)

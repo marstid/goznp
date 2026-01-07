@@ -151,13 +151,6 @@ func (z *ZNP) NvReadAll(ctx context.Context, id NvItemID) ([]byte, error) {
 
 	// Loop reading MaxNvReadSize chunks
 	for bytesRead < int(totalLength) {
-		// Calculate remaining bytes to read
-		remaining := int(totalLength) - bytesRead
-		chunkSize := remaining
-		if chunkSize > MaxNvReadSize {
-			chunkSize = MaxNvReadSize
-		}
-
 		// Call NvRead with current offset
 		chunk, err := z.NvRead(ctx, id, offset)
 		if err != nil {
@@ -261,11 +254,11 @@ const (
 
 // NvLengthEx returns the length of an Extended NV item.
 // Returns 0 if the item doesn't exist.
-func (z *ZNP) NvLengthEx(ctx context.Context, sysId uint8, itemId, subId uint16) (uint8, error) {
+func (z *ZNP) NvLengthEx(ctx context.Context, sysID uint8, itemID, subID uint16) (uint8, error) {
 	writer := NewBuffaloWriter()
-	writer.WriteUint8(sysId)
-	writer.WriteUint16(itemId)
-	writer.WriteUint16(subId)
+	writer.WriteUint8(sysID)
+	writer.WriteUint16(itemID)
+	writer.WriteUint16(subID)
 
 	resp, err := z.Request(ctx, unpi.SYS, CmdSysNvLength, writer.Bytes())
 	if err != nil {
@@ -283,11 +276,11 @@ func (z *ZNP) NvLengthEx(ctx context.Context, sysId uint8, itemId, subId uint16)
 
 // NvReadEx reads data from an Extended NV item.
 // Returns an empty slice if the item doesn't exist.
-func (z *ZNP) NvReadEx(ctx context.Context, sysId uint8, itemId, subId, offset uint16, length uint8) ([]byte, error) {
+func (z *ZNP) NvReadEx(ctx context.Context, sysID uint8, itemID, subID, offset uint16, length uint8) ([]byte, error) {
 	writer := NewBuffaloWriter()
-	writer.WriteUint8(sysId)
-	writer.WriteUint16(itemId)
-	writer.WriteUint16(subId)
+	writer.WriteUint8(sysID)
+	writer.WriteUint16(itemID)
+	writer.WriteUint16(subID)
 	writer.WriteUint16(offset)
 	writer.WriteUint8(length)
 
@@ -325,9 +318,9 @@ func (z *ZNP) NvReadEx(ctx context.Context, sysId uint8, itemId, subId, offset u
 	return value, nil
 }
 
-// NvReadExAll reads an entire Extended NV item at a specific subId.
-func (z *ZNP) NvReadExAll(ctx context.Context, sysId uint8, itemId, subId uint16) ([]byte, error) {
-	length, err := z.NvLengthEx(ctx, sysId, itemId, subId)
+// NvReadExAll reads an entire Extended NV item at a specific subID.
+func (z *ZNP) NvReadExAll(ctx context.Context, sysID uint8, itemID, subID uint16) ([]byte, error) {
+	length, err := z.NvLengthEx(ctx, sysID, itemID, subID)
 	if err != nil {
 		return nil, err
 	}
@@ -336,18 +329,18 @@ func (z *ZNP) NvReadExAll(ctx context.Context, sysId uint8, itemId, subId uint16
 		return nil, nil
 	}
 
-	return z.NvReadEx(ctx, sysId, itemId, subId, 0, length)
+	return z.NvReadEx(ctx, sysID, itemID, subID, 0, length)
 }
 
-// NvReadTable reads all entries from an Extended NV table by iterating through SubIds.
-// Returns entries until a SubId returns "not found".
-func (z *ZNP) NvReadTable(ctx context.Context, sysId uint8, itemId uint16) ([][]byte, error) {
+// NvReadTable reads all entries from an Extended NV table by iterating through SubIDs.
+// Returns entries until a SubID returns "not found".
+func (z *ZNP) NvReadTable(ctx context.Context, sysID uint8, itemID uint16) ([][]byte, error) {
 	var entries [][]byte
 
-	for subId := uint16(0); subId < 1000; subId++ { // Safety limit
-		data, err := z.NvReadExAll(ctx, sysId, itemId, subId)
+	for subID := uint16(0); subID < 1000; subID++ { // Safety limit
+		data, err := z.NvReadExAll(ctx, sysID, itemID, subID)
 		if err != nil {
-			return nil, fmt.Errorf("reading subId %d: %w", subId, err)
+			return nil, fmt.Errorf("reading subID %d: %w", subID, err)
 		}
 
 		// nil means not found - end of table
@@ -362,11 +355,11 @@ func (z *ZNP) NvReadTable(ctx context.Context, sysId uint8, itemId uint16) ([][]
 }
 
 // NvWriteEx writes data to an Extended NV item.
-func (z *ZNP) NvWriteEx(ctx context.Context, sysId uint8, itemId, subId, offset uint16, data []byte) error {
+func (z *ZNP) NvWriteEx(ctx context.Context, sysID uint8, itemID, subID, offset uint16, data []byte) error {
 	writer := NewBuffaloWriter()
-	writer.WriteUint8(sysId)
-	writer.WriteUint16(itemId)
-	writer.WriteUint16(subId)
+	writer.WriteUint8(sysID)
+	writer.WriteUint16(itemID)
+	writer.WriteUint16(subID)
 	writer.WriteUint16(offset)
 	writer.WriteUint8(uint8(len(data)))
 	writer.WriteBytes(data)

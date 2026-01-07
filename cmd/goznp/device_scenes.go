@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/spf13/cobra"
+
+	"github.com/marstid/goznp/pkg/adapter"
 )
 
 var removeAllScenes bool
@@ -36,7 +37,7 @@ Note: The device must be a member of the group before storing a scene.
 
 Examples:
   goznp device scene store --addr 0xBE87 --endpoint 11 --group 1 --scene 1`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceSceneStore(ctx)
 	},
@@ -88,7 +89,7 @@ The device transitions to the saved attribute values for the specified scene.
 Examples:
   goznp device scene recall --addr 0xBE87 --endpoint 11 --group 1 --scene 1
   goznp device scene recall --addr 0xBE87 --endpoint 11 --group 1 --scene 1 --transition 1000`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceSceneRecall(ctx)
 	},
@@ -148,7 +149,7 @@ Use --scene to remove a specific scene, or --all to remove all scenes for the gr
 Examples:
   goznp device scene remove --addr 0xBE87 --endpoint 11 --group 1 --scene 1
   goznp device scene remove --addr 0xBE87 --endpoint 11 --group 1 --all`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceSceneRemove(ctx)
 	},
@@ -207,7 +208,7 @@ var deviceSceneListCmd = &cobra.Command{
 
 Example:
   goznp device scene list --addr 0xBE87 --endpoint 11 --group 1`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceSceneList(ctx)
 	},
@@ -269,16 +270,20 @@ func init() {
 	// Device scene flags
 	for _, cmd := range []*cobra.Command{deviceSceneStoreCmd, deviceSceneRecallCmd, deviceSceneRemoveCmd, deviceSceneListCmd} {
 		cmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
+		//nolint:errcheck // Required flag in init
 		cmd.MarkFlagRequired("addr")
 		cmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
 		cmd.Flags().Uint16Var(&groupID, "group", 0, "Group ID (0 for global scenes)")
+		//nolint:errcheck // Required flag in init
 		cmd.MarkFlagRequired("group")
 		cmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
 		cmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 	}
 	deviceSceneStoreCmd.Flags().Uint8Var(&sceneID, "scene", 0, "Scene ID (0-255)")
+	//nolint:errcheck // Required flag in init
 	deviceSceneStoreCmd.MarkFlagRequired("scene")
 	deviceSceneRecallCmd.Flags().Uint8Var(&sceneID, "scene", 0, "Scene ID (0-255)")
+	//nolint:errcheck // Required flag in init
 	deviceSceneRecallCmd.MarkFlagRequired("scene")
 	deviceSceneRecallCmd.Flags().Uint16Var(&transitionTime, "transition", 0, "Transition time in milliseconds")
 	deviceSceneRemoveCmd.Flags().Uint8Var(&sceneID, "scene", 0, "Scene ID to remove")

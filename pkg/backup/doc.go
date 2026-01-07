@@ -4,11 +4,11 @@
 // The backup format captures all essential information needed to recreate a
 // Zigbee network, including:
 //
-//	• Adapter firmware information (Z-Stack variant, SDK version)
-//	• Coordinator address information
-//	• Network configuration (PAN ID, channel, network key)
-//	• Security settings (frame counters, trust center keys)
-//	• Paired device list (IEEE addresses, network addresses, link keys)
+//   - Adapter firmware information (Z-Stack variant, SDK version)
+//   - Coordinator address information
+//   - Network configuration (PAN ID, channel, network key)
+//   - Security settings (frame counters, trust center keys)
+//   - Paired device list (IEEE addresses, network addresses, link keys)
 //
 // # Backup Format
 //
@@ -104,17 +104,17 @@
 //
 // This package handles sensitive cryptographic material:
 //
-//	• NetworkKey - The Zigbee network encryption key (16 bytes)
-//	• TrustCenterLinkKeySeed - Optional trust center key material
-//	• Device LinkKeys - Per-device encryption keys
+//   - NetworkKey - The Zigbee network encryption key (16 bytes)
+//   - TrustCenterLinkKeySeed - Optional trust center key material
+//   - Device LinkKeys - Per-device encryption keys
 //
 // Best practices for handling backup files:
 //
-//   • Never commit backup files to version control
-//   • Store backup files with restricted file permissions (0600)
-//   • Consider encrypting backup files at rest using tools like gpg
-//   • Securely delete backup files when no longer needed (shred/secure-delete)
-//   • Only restore backups to the same hardware/firmware combination
+//   - Never commit backup files to version control
+//   - Store backup files with restricted file permissions (0600)
+//   - Consider encrypting backup files at rest using tools like gpg
+//   - Securely delete backup files when no longer needed (shred/secure-delete)
+//   - Only restore backups to the same hardware/firmware combination
 //
 // The backup format stores all cryptographic keys in hexadecimal string format
 // for JSON compatibility. These keys can be converted back to bytes using
@@ -124,9 +124,9 @@
 //
 // The package uses hex encoding for binary data in the JSON format:
 //
-//   • NetworkKey, ExtendedPanID - 16-byte keys as 32-character hex strings
-//   • IEEEAddress - 8-byte addresses as 16-character hex strings
-//   • All hex strings are lowercase with no separators
+//   - NetworkKey, ExtendedPanID - 16-byte keys as 32-character hex strings
+//   - IEEEAddress - 8-byte addresses as 16-character hex strings
+//   - All hex strings are lowercase with no separators
 //
 // Use EncodeHex() and DecodeHex() for general hex encoding, or EncodeIEEEAddr()
 // and DecodeIEEEAddr() for Zigbee IEEE addresses specifically.

@@ -151,7 +151,7 @@ func (c ClusterID) String() string {
 // AttributeID type for attribute IDs.
 type AttributeID uint16
 
-// Basic Cluster Attributes (0x0000)
+// Basic Cluster Attributes (0x0000).
 const (
 	AttrBasicZCLVersion                 AttributeID = 0x0000
 	AttrBasicAppVersion                 AttributeID = 0x0001
@@ -176,112 +176,112 @@ const (
 	AttrBasicGenericDeviceType          AttributeID = 0xFFFE
 )
 
-// Basic Cluster Commands (0x0000)
+// Basic Cluster Commands (0x0000).
 const (
-	CmdBasicResetToFactoryDefaults uint8 = 0x00 // Reset all attribute values to factory defaults
+	CmdBasicResetToFactoryDefaults uint8 = 0x00 // Reset all attribute values to factory defaults.
 )
 
-// Power Configuration Attributes (0x0001)
+// Power Configuration Attributes (0x0001).
 const (
-	// Mains Information
-	AttrPowerMainsVoltage             AttributeID = 0x0000 // uint16 in 0.1V
-	AttrPowerMainsFrequency           AttributeID = 0x0001 // uint8 in 2Hz increments
-	AttrPowerMainsAlarmMask           AttributeID = 0x0010 // bitmap8
-	AttrPowerMainsVoltageMinThreshold AttributeID = 0x0011 // uint16
-	AttrPowerMainsVoltageMaxThreshold AttributeID = 0x0012 // uint16
-	AttrPowerMainsVoltageDwellTripPnt AttributeID = 0x0013 // uint16
+	// Mains Information.
+	AttrPowerMainsVoltage             AttributeID = 0x0000 // uint16 in 0.1V.
+	AttrPowerMainsFrequency           AttributeID = 0x0001 // uint8 in 2Hz increments.
+	AttrPowerMainsAlarmMask           AttributeID = 0x0010 // bitmap8.
+	AttrPowerMainsVoltageMinThreshold AttributeID = 0x0011 // uint16.
+	AttrPowerMainsVoltageMaxThreshold AttributeID = 0x0012 // uint16.
+	AttrPowerMainsVoltageDwellTripPnt AttributeID = 0x0013 // uint16.
 
-	// Battery Information Set 1
-	AttrPowerBatteryVoltage                AttributeID = 0x0020 // uint8 in 0.1V
-	AttrPowerBatteryPercentage             AttributeID = 0x0021 // uint8 in 0.5% (0-200)
-	AttrPowerBatteryManufacturer           AttributeID = 0x0030 // string
-	AttrPowerBatterySize                   AttributeID = 0x0031 // enum8
-	AttrPowerBatteryAHrRating              AttributeID = 0x0032 // uint16
-	AttrPowerBatteryQuantity               AttributeID = 0x0033 // uint8
-	AttrPowerBatteryRatedVoltage           AttributeID = 0x0034 // uint8
-	AttrPowerBatteryAlarmMask              AttributeID = 0x0035 // bitmap8
-	AttrPowerBatteryVoltageMinThreshold    AttributeID = 0x0036 // uint8
-	AttrPowerBatteryVoltageThreshold1      AttributeID = 0x0037 // uint8
-	AttrPowerBatteryVoltageThreshold2      AttributeID = 0x0038 // uint8
-	AttrPowerBatteryVoltageThreshold3      AttributeID = 0x0039 // uint8
-	AttrPowerBatteryPercentageMinThreshold AttributeID = 0x003A // uint8
-	AttrPowerBatteryPercentageThreshold1   AttributeID = 0x003B // uint8
-	AttrPowerBatteryPercentageThreshold2   AttributeID = 0x003C // uint8
-	AttrPowerBatteryPercentageThreshold3   AttributeID = 0x003D // uint8
-	AttrPowerBatteryAlarmState             AttributeID = 0x003E // bitmap32
+	// Battery Information Set 1.
+	AttrPowerBatteryVoltage                AttributeID = 0x0020 // uint8 in 0.1V.
+	AttrPowerBatteryPercentage             AttributeID = 0x0021 // uint8 in 0.5% (0-200).
+	AttrPowerBatteryManufacturer           AttributeID = 0x0030 // string.
+	AttrPowerBatterySize                   AttributeID = 0x0031 // enum8.
+	AttrPowerBatteryAHrRating              AttributeID = 0x0032 // uint16.
+	AttrPowerBatteryQuantity               AttributeID = 0x0033 // uint8.
+	AttrPowerBatteryRatedVoltage           AttributeID = 0x0034 // uint8.
+	AttrPowerBatteryAlarmMask              AttributeID = 0x0035 // bitmap8.
+	AttrPowerBatteryVoltageMinThreshold    AttributeID = 0x0036 // uint8.
+	AttrPowerBatteryVoltageThreshold1      AttributeID = 0x0037 // uint8.
+	AttrPowerBatteryVoltageThreshold2      AttributeID = 0x0038 // uint8.
+	AttrPowerBatteryVoltageThreshold3      AttributeID = 0x0039 // uint8.
+	AttrPowerBatteryPercentageMinThreshold AttributeID = 0x003A // uint8.
+	AttrPowerBatteryPercentageThreshold1   AttributeID = 0x003B // uint8.
+	AttrPowerBatteryPercentageThreshold2   AttributeID = 0x003C // uint8.
+	AttrPowerBatteryPercentageThreshold3   AttributeID = 0x003D // uint8.
+	AttrPowerBatteryAlarmState             AttributeID = 0x003E // bitmap32.
 
-	// Battery Information Set 2
-	AttrPowerBattery2Voltage                AttributeID = 0x0040 // uint8 in 0.1V
-	AttrPowerBattery2Percentage             AttributeID = 0x0041 // uint8 in 0.5% (0-200)
-	AttrPowerBattery2Manufacturer           AttributeID = 0x0050 // string
-	AttrPowerBattery2Size                   AttributeID = 0x0051 // enum8
-	AttrPowerBattery2AHrRating              AttributeID = 0x0052 // uint16
-	AttrPowerBattery2Quantity               AttributeID = 0x0053 // uint8
-	AttrPowerBattery2RatedVoltage           AttributeID = 0x0054 // uint8
-	AttrPowerBattery2AlarmMask              AttributeID = 0x0055 // bitmap8
-	AttrPowerBattery2VoltageMinThreshold    AttributeID = 0x0056 // uint8
-	AttrPowerBattery2VoltageThreshold1      AttributeID = 0x0057 // uint8
-	AttrPowerBattery2VoltageThreshold2      AttributeID = 0x0058 // uint8
-	AttrPowerBattery2VoltageThreshold3      AttributeID = 0x0059 // uint8
-	AttrPowerBattery2PercentageMinThreshold AttributeID = 0x005A // uint8
-	AttrPowerBattery2PercentageThreshold1   AttributeID = 0x005B // uint8
-	AttrPowerBattery2PercentageThreshold2   AttributeID = 0x005C // uint8
-	AttrPowerBattery2PercentageThreshold3   AttributeID = 0x005D // uint8
-	AttrPowerBattery2AlarmState             AttributeID = 0x005E // bitmap32
+	// Battery Information Set 2.
+	AttrPowerBattery2Voltage                AttributeID = 0x0040 // uint8 in 0.1V.
+	AttrPowerBattery2Percentage             AttributeID = 0x0041 // uint8 in 0.5% (0-200).
+	AttrPowerBattery2Manufacturer           AttributeID = 0x0050 // string.
+	AttrPowerBattery2Size                   AttributeID = 0x0051 // enum8.
+	AttrPowerBattery2AHrRating              AttributeID = 0x0052 // uint16.
+	AttrPowerBattery2Quantity               AttributeID = 0x0053 // uint8.
+	AttrPowerBattery2RatedVoltage           AttributeID = 0x0054 // uint8.
+	AttrPowerBattery2AlarmMask              AttributeID = 0x0055 // bitmap8.
+	AttrPowerBattery2VoltageMinThreshold    AttributeID = 0x0056 // uint8.
+	AttrPowerBattery2VoltageThreshold1      AttributeID = 0x0057 // uint8.
+	AttrPowerBattery2VoltageThreshold2      AttributeID = 0x0058 // uint8.
+	AttrPowerBattery2VoltageThreshold3      AttributeID = 0x0059 // uint8.
+	AttrPowerBattery2PercentageMinThreshold AttributeID = 0x005A // uint8.
+	AttrPowerBattery2PercentageThreshold1   AttributeID = 0x005B // uint8.
+	AttrPowerBattery2PercentageThreshold2   AttributeID = 0x005C // uint8.
+	AttrPowerBattery2PercentageThreshold3   AttributeID = 0x005D // uint8.
+	AttrPowerBattery2AlarmState             AttributeID = 0x005E // bitmap32.
 
-	// Battery Information Set 3
-	AttrPowerBattery3Voltage                AttributeID = 0x0060 // uint8 in 0.1V
-	AttrPowerBattery3Percentage             AttributeID = 0x0061 // uint8 in 0.5% (0-200)
-	AttrPowerBattery3Manufacturer           AttributeID = 0x0070 // string
-	AttrPowerBattery3Size                   AttributeID = 0x0071 // enum8
-	AttrPowerBattery3AHrRating              AttributeID = 0x0072 // uint16
-	AttrPowerBattery3Quantity               AttributeID = 0x0073 // uint8
-	AttrPowerBattery3RatedVoltage           AttributeID = 0x0074 // uint8
-	AttrPowerBattery3AlarmMask              AttributeID = 0x0075 // bitmap8
-	AttrPowerBattery3VoltageMinThreshold    AttributeID = 0x0076 // uint8
-	AttrPowerBattery3VoltageThreshold1      AttributeID = 0x0077 // uint8
-	AttrPowerBattery3VoltageThreshold2      AttributeID = 0x0078 // uint8
-	AttrPowerBattery3VoltageThreshold3      AttributeID = 0x0079 // uint8
-	AttrPowerBattery3PercentageMinThreshold AttributeID = 0x007A // uint8
-	AttrPowerBattery3PercentageThreshold1   AttributeID = 0x007B // uint8
-	AttrPowerBattery3PercentageThreshold2   AttributeID = 0x007C // uint8
-	AttrPowerBattery3PercentageThreshold3   AttributeID = 0x007D // uint8
-	AttrPowerBattery3AlarmState             AttributeID = 0x007E // bitmap32
+	// Battery Information Set 3.
+	AttrPowerBattery3Voltage                AttributeID = 0x0060 // uint8 in 0.1V.
+	AttrPowerBattery3Percentage             AttributeID = 0x0061 // uint8 in 0.5% (0-200).
+	AttrPowerBattery3Manufacturer           AttributeID = 0x0070 // string.
+	AttrPowerBattery3Size                   AttributeID = 0x0071 // enum8.
+	AttrPowerBattery3AHrRating              AttributeID = 0x0072 // uint16.
+	AttrPowerBattery3Quantity               AttributeID = 0x0073 // uint8.
+	AttrPowerBattery3RatedVoltage           AttributeID = 0x0074 // uint8.
+	AttrPowerBattery3AlarmMask              AttributeID = 0x0075 // bitmap8.
+	AttrPowerBattery3VoltageMinThreshold    AttributeID = 0x0076 // uint8.
+	AttrPowerBattery3VoltageThreshold1      AttributeID = 0x0077 // uint8.
+	AttrPowerBattery3VoltageThreshold2      AttributeID = 0x0078 // uint8.
+	AttrPowerBattery3VoltageThreshold3      AttributeID = 0x0079 // uint8.
+	AttrPowerBattery3PercentageMinThreshold AttributeID = 0x007A // uint8.
+	AttrPowerBattery3PercentageThreshold1   AttributeID = 0x007B // uint8.
+	AttrPowerBattery3PercentageThreshold2   AttributeID = 0x007C // uint8.
+	AttrPowerBattery3PercentageThreshold3   AttributeID = 0x007D // uint8.
+	AttrPowerBattery3AlarmState             AttributeID = 0x007E // bitmap32.
 )
 
-// Identify Cluster Attributes (0x0003)
+// Identify Cluster Attributes (0x0003).
 const (
-	AttrIdentifyTime AttributeID = 0x0000 // Time remaining in identify mode (seconds)
+	AttrIdentifyTime AttributeID = 0x0000 // Time remaining in identify mode (seconds).
 )
 
-// Identify Cluster Commands (0x0003)
+// Identify Cluster Commands (0x0003).
 const (
-	CmdIdentify      uint8 = 0x00 // Start identifying for N seconds
-	CmdIdentifyQuery uint8 = 0x01 // Query if device is identifying
-	CmdTriggerEffect uint8 = 0x40 // Trigger a specific effect (ZCL 6+)
+	CmdIdentify      uint8 = 0x00 // Start identifying for N seconds.
+	CmdIdentifyQuery uint8 = 0x01 // Query if device is identifying.
+	CmdTriggerEffect uint8 = 0x40 // Trigger a specific effect (ZCL 6+).
 )
 
-// Identify Effect IDs for TriggerEffect command
+// Identify Effect IDs for TriggerEffect command.
 const (
-	IdentifyEffectBlink        uint8 = 0x00 // Light flashes on/off once
-	IdentifyEffectBreathe      uint8 = 0x01 // Light fades in and out
-	IdentifyEffectOkay         uint8 = 0x02 // Brief green flash (color lights)
-	IdentifyEffectChannelChg   uint8 = 0x0B // Brief orange flash (color lights)
-	IdentifyEffectFinishEffect uint8 = 0xFE // Complete current effect gracefully
-	IdentifyEffectStopEffect   uint8 = 0xFF // Stop immediately
+	IdentifyEffectBlink        uint8 = 0x00 // Light flashes on/off once.
+	IdentifyEffectBreathe      uint8 = 0x01 // Light fades in and out.
+	IdentifyEffectOkay         uint8 = 0x02 // Brief green flash (color lights).
+	IdentifyEffectChannelChg   uint8 = 0x0B // Brief orange flash (color lights).
+	IdentifyEffectFinishEffect uint8 = 0xFE // Complete current effect gracefully.
+	IdentifyEffectStopEffect   uint8 = 0xFF // Stop immediately.
 )
 
-// Groups Cluster Commands (0x0004)
+// Groups Cluster Commands (0x0004).
 const (
-	CmdGroupsAdd              uint8 = 0x00 // Add group membership
-	CmdGroupsView             uint8 = 0x01 // View group info
-	CmdGroupsGetMembership    uint8 = 0x02 // Get list of groups device belongs to
-	CmdGroupsRemove           uint8 = 0x03 // Remove from a group
-	CmdGroupsRemoveAll        uint8 = 0x04 // Remove from all groups
-	CmdGroupsAddIfIdentifying uint8 = 0x05 // Add to group only if device is identifying
+	CmdGroupsAdd              uint8 = 0x00 // Add group membership.
+	CmdGroupsView             uint8 = 0x01 // View group info.
+	CmdGroupsGetMembership    uint8 = 0x02 // Get list of groups device belongs to.
+	CmdGroupsRemove           uint8 = 0x03 // Remove from a group.
+	CmdGroupsRemoveAll        uint8 = 0x04 // Remove from all groups.
+	CmdGroupsAddIfIdentifying uint8 = 0x05 // Add to group only if device is identifying.
 )
 
-// Groups Cluster Response Commands (0x0004)
+// Groups Cluster Response Commands (0x0004).
 const (
 	CmdGroupsAddResponse           uint8 = 0x00
 	CmdGroupsViewResponse          uint8 = 0x01
@@ -289,28 +289,28 @@ const (
 	CmdGroupsRemoveResponse        uint8 = 0x03
 )
 
-// Scenes Cluster Attributes (0x0005)
+// Scenes Cluster Attributes (0x0005).
 const (
-	AttrScenesSceneCount   AttributeID = 0x0000 // Number of scenes stored
-	AttrScenesCurrentScene AttributeID = 0x0001 // Currently active scene ID
-	AttrScenesCurrentGroup AttributeID = 0x0002 // Currently active group ID
-	AttrScenesSceneValid   AttributeID = 0x0003 // Whether current scene is valid
-	AttrScenesNameSupport  AttributeID = 0x0004 // Whether scene names are supported
+	AttrScenesSceneCount   AttributeID = 0x0000 // Number of scenes stored.
+	AttrScenesCurrentScene AttributeID = 0x0001 // Currently active scene ID.
+	AttrScenesCurrentGroup AttributeID = 0x0002 // Currently active group ID.
+	AttrScenesSceneValid   AttributeID = 0x0003 // Whether current scene is valid.
+	AttrScenesNameSupport  AttributeID = 0x0004 // Whether scene names are supported.
 )
 
-// Scenes Cluster Commands (0x0005)
+// Scenes Cluster Commands (0x0005).
 const (
-	CmdScenesAdd           uint8 = 0x00 // Add a scene with explicit attribute values
-	CmdScenesView          uint8 = 0x01 // View scene details
-	CmdScenesRemove        uint8 = 0x02 // Remove a scene
-	CmdScenesRemoveAll     uint8 = 0x03 // Remove all scenes for a group
-	CmdScenesStore         uint8 = 0x04 // Store current state as a scene
-	CmdScenesRecall        uint8 = 0x05 // Recall/activate a scene
-	CmdScenesGetMembership uint8 = 0x06 // Get list of scenes for a group
-	CmdScenesCopy          uint8 = 0x42 // Copy scenes between groups (ZCL 7+)
+	CmdScenesAdd           uint8 = 0x00 // Add a scene with explicit attribute values.
+	CmdScenesView          uint8 = 0x01 // View scene details.
+	CmdScenesRemove        uint8 = 0x02 // Remove a scene.
+	CmdScenesRemoveAll     uint8 = 0x03 // Remove all scenes for a group.
+	CmdScenesStore         uint8 = 0x04 // Store current state as a scene.
+	CmdScenesRecall        uint8 = 0x05 // Recall/activate a scene.
+	CmdScenesGetMembership uint8 = 0x06 // Get list of scenes for a group.
+	CmdScenesCopy          uint8 = 0x42 // Copy scenes between groups (ZCL 7+).
 )
 
-// Scenes Cluster Response Commands (0x0005)
+// Scenes Cluster Response Commands (0x0005).
 const (
 	CmdScenesAddResponse           uint8 = 0x00
 	CmdScenesViewResponse          uint8 = 0x01
@@ -320,31 +320,31 @@ const (
 	CmdScenesGetMembershipResponse uint8 = 0x06
 )
 
-// PollControl Cluster Attributes (0x0020)
+// PollControl Cluster Attributes (0x0020).
 const (
-	AttrPollControlCheckInInterval     AttributeID = 0x0000 // uint32: check-in interval in quarter seconds
-	AttrPollControlLongPollInterval    AttributeID = 0x0001 // uint32: long poll interval in quarter seconds
-	AttrPollControlShortPollInterval   AttributeID = 0x0002 // uint16: short poll interval in quarter seconds
-	AttrPollControlFastPollTimeout     AttributeID = 0x0003 // uint16: fast poll timeout in quarter seconds
-	AttrPollControlCheckInIntervalMin  AttributeID = 0x0004 // uint32: minimum check-in interval
-	AttrPollControlLongPollIntervalMin AttributeID = 0x0005 // uint32: minimum long poll interval
-	AttrPollControlFastPollTimeoutMax  AttributeID = 0x0006 // uint16: maximum fast poll timeout
+	AttrPollControlCheckInInterval     AttributeID = 0x0000 // uint32: check-in interval in quarter seconds.
+	AttrPollControlLongPollInterval    AttributeID = 0x0001 // uint32: long poll interval in quarter seconds.
+	AttrPollControlShortPollInterval   AttributeID = 0x0002 // uint16: short poll interval in quarter seconds.
+	AttrPollControlFastPollTimeout     AttributeID = 0x0003 // uint16: fast poll timeout in quarter seconds.
+	AttrPollControlCheckInIntervalMin  AttributeID = 0x0004 // uint32: minimum check-in interval.
+	AttrPollControlLongPollIntervalMin AttributeID = 0x0005 // uint32: minimum long poll interval.
+	AttrPollControlFastPollTimeoutMax  AttributeID = 0x0006 // uint16: maximum fast poll timeout.
 )
 
-// PollControl Cluster Commands - Server to Client (from sleepy device)
+// PollControl Cluster Commands - Server to Client (from sleepy device).
 const (
-	CmdPollControlCheckIn uint8 = 0x00 // Device check-in notification
+	CmdPollControlCheckIn uint8 = 0x00 // Device check-in notification.
 )
 
-// PollControl Cluster Commands - Client to Server (to sleepy device)
+// PollControl Cluster Commands - Client to Server (to sleepy device).
 const (
-	CmdPollControlCheckInResponse      uint8 = 0x00 // Response to check-in
-	CmdPollControlFastPollStop         uint8 = 0x01 // Stop fast polling
-	CmdPollControlSetLongPollInterval  uint8 = 0x02 // Set long poll interval
-	CmdPollControlSetShortPollInterval uint8 = 0x03 // Set short poll interval
+	CmdPollControlCheckInResponse      uint8 = 0x00 // Response to check-in.
+	CmdPollControlFastPollStop         uint8 = 0x01 // Stop fast polling.
+	CmdPollControlSetLongPollInterval  uint8 = 0x02 // Set long poll interval.
+	CmdPollControlSetShortPollInterval uint8 = 0x03 // Set short poll interval.
 )
 
-// On/Off Cluster Attributes (0x0006)
+// On/Off Cluster Attributes (0x0006).
 const (
 	AttrOnOff           AttributeID = 0x0000
 	AttrGlobalSceneCtrl AttributeID = 0x4000
@@ -353,30 +353,30 @@ const (
 	AttrStartUpOnOff    AttributeID = 0x4003
 )
 
-// Level Control Cluster Attributes (0x0008)
+// Level Control Cluster Attributes (0x0008).
 const (
-	AttrLevelCurrentLevel     AttributeID = 0x0000 // Current brightness level (0-254)
-	AttrLevelRemainingTime    AttributeID = 0x0001 // Time remaining in transition (1/10s)
-	AttrLevelMinLevel         AttributeID = 0x0002 // Minimum allowed level
-	AttrLevelMaxLevel         AttributeID = 0x0003 // Maximum allowed level
-	AttrLevelCurrentFrequency AttributeID = 0x0004 // Current frequency (Hz)
-	AttrLevelMinFrequency     AttributeID = 0x0005 // Minimum frequency (Hz)
-	AttrLevelMaxFrequency     AttributeID = 0x0006 // Maximum frequency (Hz)
-	AttrLevelOptions          AttributeID = 0x000F // Behavior options bitmap
-	AttrLevelOnOffTransTime   AttributeID = 0x0010 // Transition time for On/Off (1/10s)
-	AttrLevelOnLevel          AttributeID = 0x0011 // Level when turned on (0xFF=restore)
-	AttrLevelOnTransTime      AttributeID = 0x0012 // Transition time for on (1/10s)
-	AttrLevelOffTransTime     AttributeID = 0x0013 // Transition time for off (1/10s)
-	AttrLevelDefaultMoveRate  AttributeID = 0x0014 // Default rate for Move command
-	AttrLevelStartupLevel     AttributeID = 0x4000 // Level on power-up (0xFF=previous)
+	AttrLevelCurrentLevel     AttributeID = 0x0000 // Current brightness level (0-254).
+	AttrLevelRemainingTime    AttributeID = 0x0001 // Time remaining in transition (1/10s).
+	AttrLevelMinLevel         AttributeID = 0x0002 // Minimum allowed level.
+	AttrLevelMaxLevel         AttributeID = 0x0003 // Maximum allowed level.
+	AttrLevelCurrentFrequency AttributeID = 0x0004 // Current frequency (Hz).
+	AttrLevelMinFrequency     AttributeID = 0x0005 // Minimum frequency (Hz).
+	AttrLevelMaxFrequency     AttributeID = 0x0006 // Maximum frequency (Hz).
+	AttrLevelOptions          AttributeID = 0x000F // Behavior options bitmap.
+	AttrLevelOnOffTransTime   AttributeID = 0x0010 // Transition time for On/Off (1/10s).
+	AttrLevelOnLevel          AttributeID = 0x0011 // Level when turned on (0xFF=restore).
+	AttrLevelOnTransTime      AttributeID = 0x0012 // Transition time for on (1/10s).
+	AttrLevelOffTransTime     AttributeID = 0x0013 // Transition time for off (1/10s).
+	AttrLevelDefaultMoveRate  AttributeID = 0x0014 // Default rate for Move command.
+	AttrLevelStartupLevel     AttributeID = 0x4000 // Level on power-up (0xFF=previous).
 )
 
 // MoveMode defines the direction for Move and Step commands.
 type MoveMode uint8
 
 const (
-	MoveModeUp   MoveMode = 0x00 // Increase level
-	MoveModeDown MoveMode = 0x01 // Decrease level
+	MoveModeUp   MoveMode = 0x00 // Increase level.
+	MoveModeDown MoveMode = 0x01 // Decrease level.
 )
 
 // String returns human-readable move mode name.
@@ -395,8 +395,8 @@ func (m MoveMode) String() string {
 type StepMode uint8
 
 const (
-	StepModeUp   StepMode = 0x00 // Increase level by step
-	StepModeDown StepMode = 0x01 // Decrease level by step
+	StepModeUp   StepMode = 0x00 // Increase level by step.
+	StepModeDown StepMode = 0x01 // Decrease level by step.
 )
 
 // String returns human-readable step mode name.
@@ -411,60 +411,60 @@ func (s StepMode) String() string {
 	}
 }
 
-// Alarms Cluster Attributes (0x0009)
+// Alarms Cluster Attributes (0x0009).
 const (
-	AttrAlarmCount AttributeID = 0x0000 // Number of alarm entries currently in the alarm log (uint16)
+	AttrAlarmCount AttributeID = 0x0000 // Number of alarm entries currently in the alarm log (uint16).
 )
 
-// Alarms Cluster Commands - Client to Server (0x0009)
+// Alarms Cluster Commands - Client to Server (0x0009).
 const (
-	CmdAlarmsResetAlarm     uint8 = 0x00 // Reset a specific alarm
-	CmdAlarmsResetAllAlarms uint8 = 0x01 // Reset all alarms
-	CmdAlarmsGetAlarm       uint8 = 0x02 // Get an alarm entry from the log
-	CmdAlarmsResetAlarmLog  uint8 = 0x03 // Reset the alarm log
+	CmdAlarmsResetAlarm     uint8 = 0x00 // Reset a specific alarm.
+	CmdAlarmsResetAllAlarms uint8 = 0x01 // Reset all alarms.
+	CmdAlarmsGetAlarm       uint8 = 0x02 // Get an alarm entry from the log.
+	CmdAlarmsResetAlarmLog  uint8 = 0x03 // Reset the alarm log.
 )
 
-// Alarms Cluster Commands - Server to Client (0x0009)
+// Alarms Cluster Commands - Server to Client (0x0009).
 const (
-	CmdAlarmsAlarm            uint8 = 0x00 // Alarm notification from device
-	CmdAlarmsGetAlarmResponse uint8 = 0x01 // Response to GetAlarm command
+	CmdAlarmsAlarm            uint8 = 0x00 // Alarm notification from device.
+	CmdAlarmsGetAlarmResponse uint8 = 0x01 // Response to GetAlarm command.
 )
 
-// DoorLock Cluster Attributes (0x0101)
+// DoorLock Cluster Attributes (0x0101).
 const (
-	// Lock Information
-	AttrDoorLockState            AttributeID = 0x0000 // enum8 (locked, unlocked, etc.)
-	AttrDoorLockType             AttributeID = 0x0001 // enum8
-	AttrDoorLockActuatorEnabled  AttributeID = 0x0002 // boolean
-	AttrDoorLockDoorState        AttributeID = 0x0003 // enum8 (open, closed)
-	AttrDoorLockDoorOpenEvents   AttributeID = 0x0004 // uint32
-	AttrDoorLockDoorClosedEvents AttributeID = 0x0005 // uint32
-	AttrDoorLockOpenPeriod       AttributeID = 0x0006 // uint16
+	// Lock Information.
+	AttrDoorLockState            AttributeID = 0x0000 // enum8 (locked, unlocked, etc.).
+	AttrDoorLockType             AttributeID = 0x0001 // enum8.
+	AttrDoorLockActuatorEnabled  AttributeID = 0x0002 // boolean.
+	AttrDoorLockDoorState        AttributeID = 0x0003 // enum8 (open, closed).
+	AttrDoorLockDoorOpenEvents   AttributeID = 0x0004 // uint32.
+	AttrDoorLockDoorClosedEvents AttributeID = 0x0005 // uint32.
+	AttrDoorLockOpenPeriod       AttributeID = 0x0006 // uint16.
 
-	// User Settings
-	AttrDoorLockNumLogRecords AttributeID = 0x0010 // uint16
-	AttrDoorLockNumTotalUsers AttributeID = 0x0011 // uint16
-	AttrDoorLockNumPINUsers   AttributeID = 0x0012 // uint16
-	AttrDoorLockNumRFIDUsers  AttributeID = 0x0013 // uint16
-	AttrDoorLockMaxPINLen     AttributeID = 0x0017 // uint8
-	AttrDoorLockMinPINLen     AttributeID = 0x0018 // uint8
-	AttrDoorLockMaxRFIDLen    AttributeID = 0x0019 // uint8
-	AttrDoorLockMinRFIDLen    AttributeID = 0x001A // uint8
+	// User Settings.
+	AttrDoorLockNumLogRecords AttributeID = 0x0010 // uint16.
+	AttrDoorLockNumTotalUsers AttributeID = 0x0011 // uint16.
+	AttrDoorLockNumPINUsers   AttributeID = 0x0012 // uint16.
+	AttrDoorLockNumRFIDUsers  AttributeID = 0x0013 // uint16.
+	AttrDoorLockMaxPINLen     AttributeID = 0x0017 // uint8.
+	AttrDoorLockMinPINLen     AttributeID = 0x0018 // uint8.
+	AttrDoorLockMaxRFIDLen    AttributeID = 0x0019 // uint8.
+	AttrDoorLockMinRFIDLen    AttributeID = 0x001A // uint8.
 
-	// Operating Settings
-	AttrDoorLockEnableLogging         AttributeID = 0x0020 // boolean
-	AttrDoorLockLanguage              AttributeID = 0x0021 // string
-	AttrDoorLockLEDSettings           AttributeID = 0x0022 // uint8
-	AttrDoorLockAutoRelockTime        AttributeID = 0x0023 // uint32
-	AttrDoorLockSoundVolume           AttributeID = 0x0024 // uint8
-	AttrDoorLockOperatingMode         AttributeID = 0x0025 // enum8
-	AttrDoorLockSupportedModes        AttributeID = 0x0026 // bitmap16
-	AttrDoorLockDefaultConfigReg      AttributeID = 0x0027 // bitmap16
-	AttrDoorLockEnableLocalProg       AttributeID = 0x0028 // boolean
-	AttrDoorLockEnableOneTouchLocking AttributeID = 0x0029 // boolean
-	AttrDoorLockEnablePrivacyButton   AttributeID = 0x002B // boolean
-	AttrDoorLockWrongCodeEntryLimit   AttributeID = 0x0030 // uint8
-	AttrDoorLockUserCodeTempDisable   AttributeID = 0x0031 // uint8
+	// Operating Settings.
+	AttrDoorLockEnableLogging         AttributeID = 0x0020 // boolean.
+	AttrDoorLockLanguage              AttributeID = 0x0021 // string.
+	AttrDoorLockLEDSettings           AttributeID = 0x0022 // uint8.
+	AttrDoorLockAutoRelockTime        AttributeID = 0x0023 // uint32.
+	AttrDoorLockSoundVolume           AttributeID = 0x0024 // uint8.
+	AttrDoorLockOperatingMode         AttributeID = 0x0025 // enum8.
+	AttrDoorLockSupportedModes        AttributeID = 0x0026 // bitmap16.
+	AttrDoorLockDefaultConfigReg      AttributeID = 0x0027 // bitmap16.
+	AttrDoorLockEnableLocalProg       AttributeID = 0x0028 // boolean.
+	AttrDoorLockEnableOneTouchLocking AttributeID = 0x0029 // boolean.
+	AttrDoorLockEnablePrivacyButton   AttributeID = 0x002B // boolean.
+	AttrDoorLockWrongCodeEntryLimit   AttributeID = 0x0030 // uint8.
+	AttrDoorLockUserCodeTempDisable   AttributeID = 0x0031 // uint8.
 	AttrDoorLockSendPINOverTheAir     AttributeID = 0x0032 // boolean
 	AttrDoorLockRequirePINForRF       AttributeID = 0x0033 // boolean
 )
@@ -540,13 +540,13 @@ const (
 // WindowCovering Cluster Attributes (0x0102)
 const (
 	// Information Attributes
-	AttrWindowCoveringType                       AttributeID = 0x0000 // enum8
-	AttrWindowCoveringPhysicalClosedLimitLift    AttributeID = 0x0001 // uint16
-	AttrWindowCoveringPhysicalClosedLimitTilt    AttributeID = 0x0002 // uint16
-	AttrWindowCoveringCurrentPositionLift        AttributeID = 0x0003 // uint16
-	AttrWindowCoveringCurrentPositionTilt        AttributeID = 0x0004 // uint16
-	AttrWindowCoveringNumActuationsLift          AttributeID = 0x0005 // uint16
-	AttrWindowCoveringNumActuationsTilt          AttributeID = 0x0006 // uint16
+	AttrWindowCoveringType                       AttributeID = 0x0000 // enum8.
+	AttrWindowCoveringPhysicalClosedLimitLift    AttributeID = 0x0001 // uint16.
+	AttrWindowCoveringPhysicalClosedLimitTilt    AttributeID = 0x0002 // uint16.
+	AttrWindowCoveringCurrentPositionLift        AttributeID = 0x0003 // uint16.
+	AttrWindowCoveringCurrentPositionTilt        AttributeID = 0x0004 // uint16.
+	AttrWindowCoveringNumActuationsLift          AttributeID = 0x0005 // uint16.
+	AttrWindowCoveringNumActuationsTilt          AttributeID = 0x0006 // uint16.
 	AttrWindowCoveringConfigStatus               AttributeID = 0x0007 // bitmap8: Configuration status
 	AttrWindowCoveringCurrentPositionLiftPercent AttributeID = 0x0008 // uint8 (0-100%)
 	AttrWindowCoveringCurrentPositionTiltPercent AttributeID = 0x0009 // uint8 (0-100%)
@@ -555,13 +555,13 @@ const (
 	AttrWindowCoveringTargetPositionTiltPct      AttributeID = 0x000C // uint8: Target tilt position %
 
 	// Settings Attributes
-	AttrWindowCoveringInstalledOpenLimitLift    AttributeID = 0x0010 // uint16
-	AttrWindowCoveringInstalledClosedLimitLift  AttributeID = 0x0011 // uint16
-	AttrWindowCoveringInstalledOpenLimitTilt    AttributeID = 0x0012 // uint16
-	AttrWindowCoveringInstalledClosedLimitTilt  AttributeID = 0x0013 // uint16
-	AttrWindowCoveringVelocityLift              AttributeID = 0x0014 // uint16
-	AttrWindowCoveringAccelerationTimeLift      AttributeID = 0x0015 // uint16
-	AttrWindowCoveringDecelerationTimeLift      AttributeID = 0x0016 // uint16
+	AttrWindowCoveringInstalledOpenLimitLift    AttributeID = 0x0010 // uint16.
+	AttrWindowCoveringInstalledClosedLimitLift  AttributeID = 0x0011 // uint16.
+	AttrWindowCoveringInstalledOpenLimitTilt    AttributeID = 0x0012 // uint16.
+	AttrWindowCoveringInstalledClosedLimitTilt  AttributeID = 0x0013 // uint16.
+	AttrWindowCoveringVelocityLift              AttributeID = 0x0014 // uint16.
+	AttrWindowCoveringAccelerationTimeLift      AttributeID = 0x0015 // uint16.
+	AttrWindowCoveringDecelerationTimeLift      AttributeID = 0x0016 // uint16.
 	AttrWindowCoveringMode                      AttributeID = 0x0017 // bitmap8: Mode
 	AttrWindowCoveringIntermediateSetpointsLift AttributeID = 0x0018 // octet string
 	AttrWindowCoveringIntermediateSetpointsTilt AttributeID = 0x0019 // octet string
@@ -597,8 +597,8 @@ const (
 	AttrColorColorLoopActive            AttributeID = 0x4002 // uint8: Color loop active
 	AttrColorColorLoopDirection         AttributeID = 0x4003 // uint8: Color loop direction
 	AttrColorColorLoopTime              AttributeID = 0x4004 // uint16: Color loop time
-	AttrColorColorLoopStartEnhancedHue  AttributeID = 0x4005 // uint16
-	AttrColorColorLoopStoredEnhancedHue AttributeID = 0x4006 // uint16
+	AttrColorColorLoopStartEnhancedHue  AttributeID = 0x4005 // uint16.
+	AttrColorColorLoopStoredEnhancedHue AttributeID = 0x4006 // uint16.
 )
 
 // Color Control Cluster Commands (0x0300)
@@ -640,7 +640,7 @@ const (
 	// Thermostat Information Set
 	AttrThermostatLocalTemp          AttributeID = 0x0000 // int16 in 0.01°C
 	AttrThermostatOutdoorTemp        AttributeID = 0x0001 // int16 in 0.01°C
-	AttrThermostatOccupancy          AttributeID = 0x0002 // bitmap8
+	AttrThermostatOccupancy          AttributeID = 0x0002 // bitmap8.
 	AttrThermostatAbsMinHeatSetpoint AttributeID = 0x0003 // int16 in 0.01°C
 	AttrThermostatAbsMaxHeatSetpoint AttributeID = 0x0004 // int16 in 0.01°C
 	AttrThermostatAbsMinCoolSetpoint AttributeID = 0x0005 // int16 in 0.01°C
@@ -659,9 +659,9 @@ const (
 	AttrThermostatMinCoolSetpointLimit      AttributeID = 0x0017 // int16 in 0.01°C
 	AttrThermostatMaxCoolSetpointLimit      AttributeID = 0x0018 // int16 in 0.01°C
 	AttrThermostatMinSetpointDeadBand       AttributeID = 0x0019 // int8
-	AttrThermostatControlSeqOfOper          AttributeID = 0x001B // enum8
-	AttrThermostatSystemMode                AttributeID = 0x001C // enum8
-	AttrThermostatRunningMode               AttributeID = 0x001E // enum8
+	AttrThermostatControlSeqOfOper          AttributeID = 0x001B // enum8.
+	AttrThermostatSystemMode                AttributeID = 0x001C // enum8.
+	AttrThermostatRunningMode               AttributeID = 0x001E // enum8.
 	AttrThermostatRunningState              AttributeID = 0x0029 // bitmap16
 )
 
@@ -1319,7 +1319,7 @@ const (
 	DRLCDeviceClassPoolPump         uint16 = 1 << 3  // Pool pump/spa/jacuzzi
 	DRLCDeviceClassSmartAppliance   uint16 = 1 << 4  // Smart appliance
 	DRLCDeviceClassIrrigation       uint16 = 1 << 5  // Irrigation pump
-	DRLCDeviceClassManagedC_I       uint16 = 1 << 6  // Managed commercial & industrial loads
+	DRLCDeviceClassManagedCI        uint16 = 1 << 6  // Managed commercial & industrial loads
 	DRLCDeviceClassSimpleMiscLoads  uint16 = 1 << 7  // Simple misc loads
 	DRLCDeviceClassExteriorLighting uint16 = 1 << 8  // Exterior lighting
 	DRLCDeviceClassInteriorLighting uint16 = 1 << 9  // Interior lighting

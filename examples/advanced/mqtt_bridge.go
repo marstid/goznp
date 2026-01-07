@@ -45,14 +45,14 @@ var (
 	// var mqttClient mqtt.Client
 
 	topics = struct {
-		DeviceState    string
-		DeviceAction   string
-		Network        string
-		GroupAction    string
-		ZHAReceive     string
-		Availability   string
-		DeviceJoined   string
-		DeviceLeft     string
+		DeviceState  string
+		DeviceAction string
+		Network      string
+		GroupAction  string
+		ZHAReceive   string
+		Availability string
+		DeviceJoined string
+		DeviceLeft   string
 	}{
 		DeviceState:  "zigbee2mqtt/+/availability",
 		DeviceAction: "zigbee2mqtt/+/set",

@@ -132,7 +132,7 @@ func (a *Adapter) GetPressure(ctx context.Context, nwkAddr uint16, endpoint uint
 	}
 
 	// Check if we have a scale attribute for scaled values
-	var scale int8 = 0
+	var scale int8
 	hasScale := false
 	if scaledErr == nil {
 		for _, r := range scaledResults {
@@ -375,7 +375,7 @@ func (a *Adapter) WaitForSensorReport(ctx context.Context, timeout time.Duration
 		}
 
 		// Store cluster and endpoint for debugging
-		report.ClusterID = uint16(msg.ClusterID)
+		report.ClusterID = msg.ClusterID
 		report.Endpoint = msg.SrcEndpoint
 
 		// Store raw attributes for debugging

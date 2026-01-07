@@ -9,13 +9,13 @@ import (
 // This is a simplified version with the fields we need for backup.
 type NIB struct {
 	// Offset 0-3: Various config bytes we don't need
-	_reserved1 [4]byte
+	_reserved1 [4]byte //nolint:unused // Required for binary data alignment
 	// Offset 4-5: Sequence number
 	SequenceNum uint16
 	// Offset 6-9: Passive ack timeout and other settings
-	_reserved2 [4]byte
+	_reserved2 [4]byte //nolint:unused // Required for binary data alignment
 	// Offset 10: Max broadcast retries
-	_reserved3 [1]byte
+	_reserved3 [1]byte //nolint:unused // Required for binary data alignment
 	// Offset 11: Max children
 	MaxChildren uint8
 	// Offset 12: Max depth
@@ -23,15 +23,15 @@ type NIB struct {
 	// Offset 13: Max routers
 	MaxRouters uint8
 	// Offset 14: Dummy neighbor table
-	_reserved4 [1]byte
+	_reserved4 [1]byte //nolint:unused // Required for binary data alignment
 	// Offset 15-16: Broadcast delivery time
-	_reserved5 [2]byte
+	_reserved5 [2]byte //nolint:unused // Required for binary data alignment
 	// Offset 17: Report constant cost
-	_reserved6 [1]byte
+	_reserved6 [1]byte //nolint:unused // Required for binary data alignment
 	// Offset 18: Route discovery retries
-	_reserved7 [1]byte
+	_reserved7 [1]byte //nolint:unused // Required for binary data alignment
 	// Offset 19: Reserved
-	_reserved8 [1]byte
+	_reserved8 [1]byte //nolint:unused // Required for binary data alignment
 	// Offset 20: Security level
 	SecurityLevel uint8
 	// Offset 21-28: Extended PAN ID (8 bytes, reversed)
@@ -39,17 +39,17 @@ type NIB struct {
 	// Offset 29-32: Channel list (bit mask)
 	ChannelList uint32
 	// Offset 33-36: Stack profile and other settings
-	_reserved9 [4]byte
+	_reserved9 [4]byte //nolint:unused // Required for binary data alignment
 	// Offset 37: Network key switch
-	_reserved10 [1]byte
+	_reserved10 [1]byte //nolint:unused // Required for binary data alignment
 	// Offset 38-39: PAN ID
 	PanID uint16
 	// Offset 40-41: Network manager address
-	_reserved11 [2]byte
+	_reserved11 [2]byte //nolint:unused // Required for binary data alignment
 	// Offset 42: Logical channel
 	LogicalChannel uint8
 	// Offset 43-90: More reserved fields
-	_reserved12 [48]byte
+	_reserved12 [48]byte //nolint:unused // Required for binary data alignment
 	// Offset 91: Network update ID
 	UpdateID uint8
 	// Remaining bytes vary by version
@@ -105,7 +105,7 @@ type ApsLinkKeyEntry struct {
 // SecurityManagerEntry maps address index to key NV ID.
 type SecurityManagerEntry struct {
 	Ami     uint16 // Address manager index
-	KeyNvId uint16 // NV ID of the key data
+	KeyNvID uint16 // NV ID of the key data
 }
 
 // ParseNIB parses a NIB structure from raw NV data.

@@ -7,9 +7,10 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	"github.com/marstid/goznp/pkg/znp"
-	"github.com/spf13/cobra"
 )
 
 // Device Name Commands
@@ -33,7 +34,7 @@ IEEE address. This name persists across network restarts.
 Examples:
   goznp device name set --ieee 00:11:22:33:44:55:66:77 --name "Living Room Light"
   goznp device name set --ieee 00:11:22:33:44:55:66:77 --name "Kitchen Sensor" --comment "Temperature and humidity sensor"`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceNameSet(ctx)
 	},
@@ -93,7 +94,7 @@ var deviceNameGetCmd = &cobra.Command{
 
 Example:
   goznp device name get --ieee 00:11:22:33:44:55:66:77`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceNameGet(ctx)
 	},
@@ -154,7 +155,7 @@ var deviceNameListCmd = &cobra.Command{
 
 Example:
   goznp device name list`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceNameList(ctx)
 	},
@@ -221,7 +222,7 @@ var deviceNameDeleteCmd = &cobra.Command{
 
 Example:
   goznp device name delete --ieee 00:11:22:33:44:55:66:77`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceNameDelete(ctx)
 	},
@@ -269,15 +270,19 @@ func runDeviceNameDelete(ctx context.Context) error {
 func init() {
 	// Device name flags
 	deviceNameSetCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+	//nolint:errcheck // Required flag in init
 	deviceNameSetCmd.MarkFlagRequired("ieee")
 	deviceNameSetCmd.Flags().StringVar(&deviceName, "name", "", "Custom device name")
+	//nolint:errcheck // Required flag in init
 	deviceNameSetCmd.MarkFlagRequired("name")
 	deviceNameSetCmd.Flags().StringVar(&deviceComment, "comment", "", "Optional device comment")
 
 	deviceNameGetCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+	//nolint:errcheck // Required flag in init
 	deviceNameGetCmd.MarkFlagRequired("ieee")
 
 	deviceNameDeleteCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
+	//nolint:errcheck // Required flag in init
 	deviceNameDeleteCmd.MarkFlagRequired("ieee")
 
 	// Build name subcommand hierarchy

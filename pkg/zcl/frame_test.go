@@ -334,22 +334,22 @@ func TestBuildWriteAttributesRequest(t *testing.T) {
 			attrID := AttributeID(binary.LittleEndian.Uint16(data[offset : offset+2]))
 			dataType := DataType(data[offset+2])
 
-			if attrID == AttributeID(0x0000) && dataType == TypeBoolean {
+			switch {
+			case attrID == AttributeID(0x0000) && dataType == TypeBoolean:
 				if data[offset+3] != 1 {
 					t.Errorf("wrong boolean value: got %d, want 1", data[offset+3])
 				}
 				foundBoolean = true
 				offset += 4
-			} else if attrID == AttributeID(0x0001) && dataType == TypeUint16 {
+			case attrID == AttributeID(0x0001) && dataType == TypeUint16:
 				val := binary.LittleEndian.Uint16(data[offset+3 : offset+5])
 				if val != 0x1234 {
 					t.Errorf("wrong uint16 value: got 0x%04X, want 0x1234", val)
 				}
 				foundUint16 = true
 				offset += 5
-			} else {
+			default:
 				t.Errorf("unexpected attribute: ID=0x%04X, type=0x%02X", attrID, dataType)
-				break
 			}
 		}
 

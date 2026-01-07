@@ -24,11 +24,11 @@ type EndpointDef struct {
 // Each endpoint is registered with a specific Application Profile to enable
 // communication with devices using that profile.
 var CoordinatorEndpoints = []EndpointDef{
-	// Endpoint 1: Home Automation (0x0104) - Primary endpoint
+	// Endpoint 1: Home Automation (0x0104) - Primary endpoint.
 	{
 		Endpoint:  1,
 		ProfileID: znp.ProfileHomeAutomation,
-		DeviceID:  0x0005, // Configuration Tool
+		DeviceID:  0x0005, // Configuration Tool.
 		InClusters: []uint16{
 			uint16(zcl.ClusterBasic),
 		},
@@ -40,7 +40,7 @@ var CoordinatorEndpoints = []EndpointDef{
 			uint16(zcl.ClusterPowerConfig),
 		},
 	},
-	// Endpoint 2: Smart Energy (0x0109)
+	// Endpoint 2: Smart Energy (0x0109).
 	{
 		Endpoint:  2,
 		ProfileID: znp.ProfileSmartEnergy,
@@ -52,7 +52,7 @@ var CoordinatorEndpoints = []EndpointDef{
 			uint16(zcl.ClusterBasic),
 		},
 	},
-	// Endpoint 3: Green Power (0xA1E0)
+	// Endpoint 3: Green Power (0xA1E0).
 	{
 		Endpoint:  3,
 		ProfileID: znp.ProfileGreenPower,
@@ -64,19 +64,19 @@ var CoordinatorEndpoints = []EndpointDef{
 			uint16(zcl.ClusterBasic),
 		},
 	},
-	// Endpoint 11: Green Power Proxy (standard GP endpoint)
+	// Endpoint 11: Green Power Proxy (standard GP endpoint).
 	{
 		Endpoint:  11,
 		ProfileID: znp.ProfileGreenPower,
-		DeviceID:  0x0066, // GP Proxy
+		DeviceID:  0x0066, // GP Proxy.
 		InClusters: []uint16{
-			0x0021, // Green Power cluster
+			0x0021, // Green Power cluster.
 		},
 		OutClusters: []uint16{
 			0x0021,
 		},
 	},
-	// Endpoint 110: ZLL/Touchlink (0xC05E)
+	// Endpoint 110: ZLL/Touchlink (0xC05E).
 	{
 		Endpoint:  110,
 		ProfileID: znp.ProfileLightLink,
@@ -91,11 +91,11 @@ var CoordinatorEndpoints = []EndpointDef{
 			uint16(zcl.ClusterColorControl),
 		},
 	},
-	// Endpoint 242: Green Power Sink
+	// Endpoint 242: Green Power Sink.
 	{
 		Endpoint:  242,
 		ProfileID: znp.ProfileGreenPower,
-		DeviceID:  0x0061, // GP Target
+		DeviceID:  0x0061, // GP Target.
 		InClusters: []uint16{
 			0x0021,
 		},
@@ -119,7 +119,7 @@ func GetEndpointForProfile(profile znp.ApplicationProfile) uint8 {
 	if ep, ok := ProfileToEndpoint[profile]; ok {
 		return ep
 	}
-	return 1 // Default to HA endpoint
+	return 1 // Default to HA endpoint.
 }
 
 // RegisteredEndpoints holds the list of successfully registered endpoints.

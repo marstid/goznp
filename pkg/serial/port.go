@@ -29,20 +29,20 @@ type Port interface {
 
 // Config holds serial port configuration.
 type Config struct {
-	Path        string        // Device path (e.g., /dev/ttyUSB0, COM3)
-	BaudRate    int           // Baud rate (default 115200)
-	ReadTimeout time.Duration // Read timeout (default 100ms)
-	RTSCTSFlow  bool          // Enable RTS/CTS hardware flow control
+	Path        string        // Device path (e.g., /dev/ttyUSB0, COM3).
+	BaudRate    int           // Baud rate (default 115200).
+	ReadTimeout time.Duration // Read timeout (default 100ms).
+	RTSCTSFlow  bool          // Enable RTS/CTS hardware flow control.
 }
 
 // USBPortInfo contains detailed information about a USB serial port.
 type USBPortInfo struct {
-	Name         string // Port name (e.g., /dev/ttyUSB0)
-	IsUSB        bool   // Whether this is a USB port
-	VID          string // USB Vendor ID (hex string)
-	PID          string // USB Product ID (hex string)
-	SerialNumber string // USB serial number
-	Product      string // Product description
+	Name         string // Port name (e.g., /dev/ttyUSB0).
+	IsUSB        bool   // Whether this is a USB port.
+	VID          string // USB Vendor ID (hex string).
+	PID          string // USB Product ID (hex string).
+	SerialNumber string // USB serial number.
+	Product      string // Product description.
 }
 
 // serialPort wraps go.bug.st/serial.Port to implement our Port interface.
@@ -67,12 +67,12 @@ func Open(cfg Config) (Port, error) {
 		return nil, fmt.Errorf("serial: port path is required")
 	}
 
-	// Validate port path for security
+	// Validate port path for security.
 	if err := validatePortPath(cfg.Path); err != nil {
 		return nil, fmt.Errorf("serial: %w: %s", ErrInvalidPortPath, err)
 	}
 
-	// Apply defaults if not set
+	// Apply defaults if not set.
 	if cfg.BaudRate == 0 {
 		cfg.BaudRate = 115200
 	}
@@ -92,7 +92,7 @@ func Open(cfg Config) (Port, error) {
 		return nil, fmt.Errorf("serial: failed to open port %s: %w", cfg.Path, err)
 	}
 
-	// Set read timeout
+	// Set read timeout.
 	if err := port.SetReadTimeout(cfg.ReadTimeout); err != nil {
 		port.Close()
 		return nil, fmt.Errorf("serial: failed to set read timeout: %w", err)
@@ -103,7 +103,7 @@ func Open(cfg Config) (Port, error) {
 		readTimeout: cfg.ReadTimeout,
 	}
 
-	// Set DTR and RTS high by default
+	// Set DTR and RTS high by default.
 	if err := sp.SetDTR(true); err != nil {
 		port.Close()
 		return nil, fmt.Errorf("serial: failed to set DTR: %w", err)
@@ -208,16 +208,16 @@ func IsCC2652Adapter(info USBPortInfo) bool {
 		return false
 	}
 
-	// Normalize VID/PID to uppercase for comparison
+	// Normalize VID/PID to uppercase for comparison.
 	vid := toUpperHex(info.VID)
 	pid := toUpperHex(info.PID)
 
-	// CH340 adapter
+	// CH340 adapter.
 	if vid == "1A86" && pid == "55D4" {
 		return true
 	}
 
-	// CP2102 adapter
+	// CP2102 adapter.
 	if vid == "10C4" && pid == "EA60" {
 		return true
 	}
@@ -248,7 +248,7 @@ func toUpperHex(s string) string {
 	for i := 0; i < len(s); i++ {
 		c := s[i]
 		if c >= 'a' && c <= 'f' {
-			result[i] = c - 32 // Convert to uppercase
+			result[i] = c - 32 // Convert to uppercase.
 		} else {
 			result[i] = c
 		}
@@ -259,18 +259,18 @@ func toUpperHex(s string) string {
 // validatePortPath validates that a port path is safe and appears to be a valid serial port.
 // It checks for path traversal attacks and verifies the path format matches expected serial port patterns.
 func validatePortPath(path string) error {
-	// Clean the path to normalize it
+	// Clean the path to normalize it.
 	cleaned := filepath.Clean(path)
 
-	// Check for path traversal
+	// Check for path traversal.
 	if strings.Contains(cleaned, "..") {
 		return fmt.Errorf("path contains traversal sequence")
 	}
 
-	// Platform-specific validation
+	// Platform-specific validation.
 	switch runtime.GOOS {
 	case "windows":
-		// Windows: COM1, COM2, etc. or \\.\COM1 format
+		// Windows: COM1, COM2, etc. or \\.\COM1 format.
 		upper := strings.ToUpper(cleaned)
 		if strings.HasPrefix(upper, "COM") || strings.HasPrefix(upper, "\\\\.\\COM") {
 			return nil
@@ -278,14 +278,14 @@ func validatePortPath(path string) error {
 		return fmt.Errorf("expected COM port format (e.g., COM1, \\\\.\\COM1)")
 
 	case "darwin":
-		// macOS: /dev/tty.* or /dev/cu.*
+		// macOS: /dev/tty.* or /dev/cu.*.
 		if strings.HasPrefix(cleaned, "/dev/tty.") || strings.HasPrefix(cleaned, "/dev/cu.") {
 			return nil
 		}
 		return fmt.Errorf("expected /dev/tty.* or /dev/cu.* format")
 
 	default:
-		// Linux and other Unix: /dev/ttyUSB*, /dev/ttyACM*, /dev/ttyS*, /dev/serial/*
+		// Linux and other Unix: /dev/ttyUSB*, /dev/ttyACM*, /dev/ttyS*, /dev/serial/*.
 		validPrefixes := []string{
 			"/dev/ttyUSB",
 			"/dev/ttyACM",

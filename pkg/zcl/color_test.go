@@ -401,11 +401,11 @@ func absDiffUint8(a, b uint8) uint8 {
 }
 
 func maxUint8(values ...uint8) uint8 {
-	max := values[0]
+	maxVal := values[0]
 	for _, v := range values[1:] {
-		if v > max {
-			max = v
+		if v > maxVal {
+			maxVal = v
 		}
 	}
-	return max
+	return maxVal
 }

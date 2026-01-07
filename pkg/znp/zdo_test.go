@@ -13,6 +13,7 @@ import (
 func TestExtNwkInfo(t *testing.T) {
 	mock := &mockPort{}
 	z := New(mock)
+	//nolint:errcheck // Test setup
 	z.Open(context.Background())
 
 	// Simulate a response after the request
@@ -20,13 +21,13 @@ func TestExtNwkInfo(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 		// Build response: shortAddr, deviceState, panId, parentAddr, extendedPanId, parentExtAddr, channel
 		buf := NewBuffaloWriter()
-		buf.WriteUint16(0x0000)  // shortAddr
-		buf.WriteUint8(9)          // deviceState: Coordinator
-		buf.WriteUint16(0x1234)    // panId
-		buf.WriteUint16(0xFFFF)    // parentAddr (none for coordinator)
+		buf.WriteUint16(0x0000)                                                    // shortAddr
+		buf.WriteUint8(9)                                                          // deviceState: Coordinator
+		buf.WriteUint16(0x1234)                                                    // panId
+		buf.WriteUint16(0xFFFF)                                                    // parentAddr (none for coordinator)
 		buf.WriteIEEEAddr([8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}) // extendedPanId
 		buf.WriteIEEEAddr([8]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}) // parentExtAddr
-		buf.WriteUint8(15)         // channel
+		buf.WriteUint8(15)                                                         // channel
 
 		responseFrame := &unpi.Frame{
 			Type:      unpi.SRSP,
@@ -104,6 +105,7 @@ func TestStartupFromApp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -188,6 +190,7 @@ func TestMgmtNwkUpdateReq(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -251,6 +254,9 @@ func TestExtNetworkInfo(t *testing.T) {
 	}
 	if info.PanID != 0x1234 {
 		t.Errorf("ExtNetworkInfo.PanID = 0x%04X, want 0x1234", info.PanID)
+	}
+	if info.ParentAddr != 0xFFFF {
+		t.Errorf("ExtNetworkInfo.ParentAddr = 0x%04X, want 0xFFFF", info.ParentAddr)
 	}
 	if info.Channel != 15 {
 		t.Errorf("ExtNetworkInfo.Channel = %d, want 15", info.Channel)

@@ -21,7 +21,7 @@ func NewRegistry() *Registry {
 
 // Register adds a quirk to the registry.
 func (r *Registry) Register(quirk *DeviceQuirk) error {
-	// Compile matcher patterns
+	// Compile matcher patterns.
 	if err := quirk.Matcher.Compile(); err != nil {
 		return err
 	}
@@ -69,18 +69,18 @@ func (r *Registry) GetAppliedQuirks(nwkAddr uint16, ieeeAddr [8]byte, info Devic
 		EnergyResetMethods: make([]EnergyResetMethod, 0),
 	}
 
-	// Consolidate all quirks
+	// Consolidate all quirks.
 	for _, q := range quirks {
-		// Attribute overrides
+		// Attribute overrides.
 		for _, ao := range q.AttributeOverrides {
 			if applied.AttributeOverrides[ao.ClusterID] == nil {
 				applied.AttributeOverrides[ao.ClusterID] = make(map[zcl.AttributeID]*AttributeOverride)
 			}
-			aoCopy := ao // Create a copy to take address
+			aoCopy := ao // Create a copy to take address.
 			applied.AttributeOverrides[ao.ClusterID][ao.AttributeID] = &aoCopy
 		}
 
-		// Response overrides
+		// Response overrides.
 		for _, ro := range q.ResponseOverrides {
 			if applied.ResponseOverrides[ro.ClusterID] == nil {
 				applied.ResponseOverrides[ro.ClusterID] = make(map[uint8][]uint8)
@@ -88,10 +88,10 @@ func (r *Registry) GetAppliedQuirks(nwkAddr uint16, ieeeAddr [8]byte, info Devic
 			applied.ResponseOverrides[ro.ClusterID][ro.ExpectedCommand] = ro.AcceptCommands
 		}
 
-		// Energy reset methods
+		// Energy reset methods.
 		applied.EnergyResetMethods = append(applied.EnergyResetMethods, q.EnergyResetMethods...)
 
-		// Timing override (last one wins)
+		// Timing override (last one wins).
 		if q.TimingOverride != nil {
 			applied.TimingOverride = q.TimingOverride
 		}
@@ -162,17 +162,17 @@ func (a *AppliedQuirks) ApplyAttributeOverride(clusterID zcl.ClusterID, attrID z
 
 	result := value
 
-	// Apply multiplier first
+	// Apply multiplier first.
 	if override.Multiplier != nil {
 		result *= *override.Multiplier
 	}
 
-	// Then divisor
+	// Then divisor.
 	if override.Divisor != nil && *override.Divisor != 0 {
 		result /= *override.Divisor
 	}
 
-	// Then offset
+	// Then offset.
 	if override.Offset != nil {
 		result += *override.Offset
 	}
@@ -182,7 +182,7 @@ func (a *AppliedQuirks) ApplyAttributeOverride(clusterID zcl.ClusterID, attrID z
 
 // IsAcceptableResponse checks if the given command is acceptable for the expected one.
 func (a *AppliedQuirks) IsAcceptableResponse(clusterID zcl.ClusterID, expected, actual uint8) bool {
-	// Always accept exact match
+	// Always accept exact match.
 	if expected == actual {
 		return true
 	}

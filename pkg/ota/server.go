@@ -13,16 +13,16 @@ import (
 // It serves firmware images and tracks upgrade progress.
 type Server struct {
 	mu           sync.RWMutex
-	images       map[string]*Image        // Indexed by manufacturer:imageType
-	progress     map[string]*UpgradeProgress // Indexed by IEEE address
-	imagesDir    string                     // Directory containing OTA files
-	maxBlockSize uint8                      // Maximum block size to serve
-	serverAddr   [8]byte                    // IEEE address of this OTA server
+	images       map[string]*Image           // Indexed by manufacturer:imageType.
+	progress     map[string]*UpgradeProgress // Indexed by IEEE address.
+	imagesDir    string                      // Directory containing OTA files.
+	maxBlockSize uint8                       // Maximum block size to serve.
+	serverAddr   [8]byte                     // IEEE address of this OTA server.
 
-	// Callbacks for progress updates
-	OnProgress  func(ProgressUpdate)
-	OnComplete  func(device string, fileVersion uint32)
-	OnError     func(device string, err error)
+	// Callbacks for progress updates.
+	OnProgress func(ProgressUpdate)
+	OnComplete func(device string, fileVersion uint32)
+	OnError    func(device string, err error)
 }
 
 // ServerConfig holds configuration for the OTA server.
@@ -42,10 +42,10 @@ type ServerConfig struct {
 	// ServerAddr is the IEEE address of the OTA server (defaults to coordinator address).
 	ServerAddr [8]byte
 
-	// Progress callbacks
-	OnProgress  func(ProgressUpdate)
-	OnComplete  func(device string, fileVersion uint32)
-	OnError     func(device string, err error)
+	// Progress callbacks.
+	OnProgress func(ProgressUpdate)
+	OnComplete func(device string, fileVersion uint32)
+	OnError    func(device string, err error)
 }
 
 // NewServer creates a new OTA server with the given configuration.
@@ -75,7 +75,7 @@ func NewServer(config ServerConfig) (*Server, error) {
 		OnError:      config.OnError,
 	}
 
-	// Load images from directory
+	// Load images from directory.
 	if err := s.loadImages(); err != nil {
 		return nil, fmt.Errorf("ota: failed to load images: %w", err)
 	}
@@ -95,12 +95,12 @@ func (s *Server) loadImages() error {
 			return err
 		}
 
-		// Skip directories
+		// Skip directories.
 		if d.IsDir() {
 			return nil
 		}
 
-		// Skip hidden files and common non-OTA files
+		// Skip hidden files and common non-OTA files.
 		name := d.Name()
 		if name[0] == '.' {
 			return nil
@@ -109,15 +109,15 @@ func (s *Server) loadImages() error {
 			return nil
 		}
 
-		// Parse the OTA file
+		// Parse the OTA file.
 		img, err := ParseFile(path)
 		if err != nil {
-			// Log error but continue loading other files
+			// Log error but continue loading other files.
 			fmt.Printf("ota: failed to parse %s: %v\n", path, err)
 			return nil
 		}
 
-		// Index the image
+		// Index the image.
 		key := imageKey(img.ManufacturerCode, img.ImageType, img.FileVersion)
 		s.images[key] = img
 
@@ -143,7 +143,7 @@ func (s *Server) AddImage(img *Image) {
 	defer s.mu.Unlock()
 
 	key := imageKey(img.ManufacturerCode, img.ImageType, img.FileVersion)
-	img.Path = "" // Clear path if loaded from bytes
+	img.Path = "" // Clear path if loaded from bytes.
 	s.images[key] = img
 }
 
@@ -163,7 +163,7 @@ func (s *Server) GetImage(manufacturer uint16, imageType uint16, fileVersion uin
 	defer s.mu.RUnlock()
 
 	if fileVersion != 0 {
-		// Looking for specific version
+		// Looking for specific version.
 		key := imageKey(manufacturer, imageType, fileVersion)
 		img, ok := s.images[key]
 		if !ok {
@@ -173,7 +173,7 @@ func (s *Server) GetImage(manufacturer uint16, imageType uint16, fileVersion uin
 		return img, nil
 	}
 
-	// Find latest version
+	// Find latest version.
 	var latest *Image
 	var latestVersion uint32
 
@@ -208,37 +208,37 @@ func (s *Server) ListImages() []*Image {
 
 // QueryImage handles a Query Image command from a device.
 // Returns the appropriate Query Image Response.
-func (s *Server) QueryImage(ctx context.Context, req QueryImageCommand, deviceAddr string) (*QueryImageResponse, error) {
-	// Determine which version to provide
+func (s *Server) QueryImage(_ context.Context, req QueryImageCommand, _ string) (*QueryImageResponse, error) {
+	// Determine which version to provide.
 	fileVersion := req.FileVersion
 	if req.FieldControl&0x01 == 0 {
-		// Current version not provided, use latest
+		// Current version not provided, use latest.
 		fileVersion = 0
 	}
 
-	// Find matching image
+	// Find matching image.
 	img, err := s.GetImage(req.ManufacturerCode, req.ImageType, fileVersion)
 	if err != nil {
-		// No image available
+		// No image available.
 		return &QueryImageResponse{
-			Status:            uint8(StatusNoImageAvailable),
-			ManufacturerCode:  req.ManufacturerCode,
-			ImageType:         req.ImageType,
-			ServerAddress:     s.serverAddr,
+			Status:           uint8(StatusNoImageAvailable),
+			ManufacturerCode: req.ManufacturerCode,
+			ImageType:        req.ImageType,
+			ServerAddress:    s.serverAddr,
 		}, nil
 	}
 
-	// Check compatibility
+	// Check compatibility.
 	if !img.IsCompatible(req.ManufacturerCode, req.ImageType, req.FileVersion) {
 		return &QueryImageResponse{
-			Status:            uint8(StatusNoImageAvailable),
-			ManufacturerCode:  req.ManufacturerCode,
-			ImageType:         req.ImageType,
-			ServerAddress:     s.serverAddr,
+			Status:           uint8(StatusNoImageAvailable),
+			ManufacturerCode: req.ManufacturerCode,
+			ImageType:        req.ImageType,
+			ServerAddress:    s.serverAddr,
 		}, nil
 	}
 
-	// Return available image info
+	// Return available image info.
 	return &QueryImageResponse{
 		Status:            uint8(StatusSuccess),
 		ManufacturerCode:  img.ManufacturerCode,
@@ -246,26 +246,26 @@ func (s *Server) QueryImage(ctx context.Context, req QueryImageCommand, deviceAd
 		FileVersion:       img.FileVersion,
 		ImageSize:         img.ImageSize,
 		ServerAddress:     s.serverAddr,
-		MinimumBlockDelay: 0, // Will be set by adapter
-		MaximumBlockDelay: 0, // Will be set by adapter
+		MinimumBlockDelay: 0, // Will be set by adapter.
+		MaximumBlockDelay: 0, // Will be set by adapter.
 	}, nil
 }
 
 // ImageBlock handles an Image Block request from a device.
 // Returns the appropriate Image Block Response.
-func (s *Server) ImageBlock(ctx context.Context, req ImageBlockRequest, deviceAddr string) (*ImageBlockResponse, error) {
-	// Find the image
+func (s *Server) ImageBlock(_ context.Context, req ImageBlockRequest, deviceAddr string) (*ImageBlockResponse, error) {
+	// Find the image.
 	img, err := s.GetImage(req.ManufacturerCode, req.ImageType, req.FileVersion)
 	if err != nil {
 		return nil, fmt.Errorf("ota: image not found: %w", err)
 	}
 
-	// Validate offset
+	// Validate offset.
 	if req.FileOffset >= img.ImageSize {
 		return nil, fmt.Errorf("ota: invalid offset %d, image size is %d", req.FileOffset, img.ImageSize)
 	}
 
-	// Calculate data size
+	// Calculate data size.
 	dataSize := req.MaximumDataSize
 	if dataSize > s.maxBlockSize {
 		dataSize = s.maxBlockSize
@@ -274,7 +274,7 @@ func (s *Server) ImageBlock(ctx context.Context, req ImageBlockRequest, deviceAd
 		dataSize = uint8(len(img.ImageData) - int(req.FileOffset))
 	}
 
-	// Extract data block
+	// Extract data block.
 	dataOffset := req.FileOffset
 	dataEnd := dataOffset + uint32(dataSize)
 	if int(dataEnd) > len(img.ImageData) {
@@ -283,54 +283,54 @@ func (s *Server) ImageBlock(ctx context.Context, req ImageBlockRequest, deviceAd
 	data := make([]byte, dataEnd-dataOffset)
 	copy(data, img.ImageData[dataOffset:dataEnd])
 
-	// Update progress tracking
-	s.updateProgress(deviceAddr, req.FileVersion, uint32(dataOffset), img.ImageSize)
+	// Update progress tracking.
+	s.updateProgress(deviceAddr, req.FileVersion, dataOffset, img.ImageSize)
 
-	// Return block response
+	// Return block response.
 	return &ImageBlockResponse{
-		Status:            uint8(StatusSuccess),
-		ManufacturerCode:  img.ManufacturerCode,
-		ImageType:         img.ImageType,
-		FileVersion:       req.FileVersion,
-		FileOffset:        req.FileOffset,
-		DataSize:          dataSize,
-		Data:              data,
+		Status:           uint8(StatusSuccess),
+		ManufacturerCode: img.ManufacturerCode,
+		ImageType:        img.ImageType,
+		FileVersion:      req.FileVersion,
+		FileOffset:       req.FileOffset,
+		DataSize:         dataSize,
+		Data:             data,
 	}, nil
 }
 
 // UpgradeEnd handles an Upgrade End request from a device.
 // Returns the appropriate Upgrade End Response.
-func (s *Server) UpgradeEnd(ctx context.Context, req UpgradeEndRequest, deviceAddr string) (*UpgradeEndResponse, error) {
+func (s *Server) UpgradeEnd(_ context.Context, req UpgradeEndRequest, deviceAddr string) (*UpgradeEndResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Determine applicability
+	// Determine applicability.
 	var applicability uint8
 	if req.Status == uint8(StatusSuccess) {
 		_, err := s.GetImage(req.ManufacturerCode, req.ImageType, req.FileVersion)
 		if err == nil {
-			// We'd need to track previous version to determine this accurately
-			// For now, assume upgrade (most common case)
-			applicability = 0x03 // Upgraded
+			// We'd need to track previous version to determine this accurately.
+			// For now, assume upgrade (most common case).
+			applicability = 0x03 // Upgraded.
 		} else {
-			applicability = 0x01 // Downgraded (error case)
+			applicability = 0x01 // Downgraded (error case).
 		}
 
-		// Notify completion callback
+		// Notify completion callback.
 		if s.OnComplete != nil {
 			s.OnComplete(deviceAddr, req.FileVersion)
 		}
 	} else {
-		// Device reported failure
-		applicability = 0x01 // Not applicable
+		// Device reported failure.
+		applicability = 0x01 // Not applicable.
 
-		// Notify error callback
+		// Notify error callback.
 		if s.OnError != nil {
 			s.OnError(deviceAddr, fmt.Errorf("upgrade failed with status 0x%02X", req.Status))
 		}
 	}
 
-	// Clean up progress tracking
+	// Clean up progress tracking.
 	delete(s.progress, deviceAddr)
 
 	return &UpgradeEndResponse{
@@ -363,7 +363,7 @@ func (s *Server) updateProgress(deviceAddr string, fileVersion uint32, offset ui
 	prog.DownloadedSize = offset
 	prog.Percentage = float64(offset) / float64(totalSize) * 100.0
 
-	// Send progress update if callback registered
+	// Send progress update if callback registered.
 	if s.OnProgress != nil {
 		update := ProgressUpdate{
 			Device:      deviceAddr,
@@ -376,7 +376,7 @@ func (s *Server) updateProgress(deviceAddr string, fileVersion uint32, offset ui
 		s.OnProgress(update)
 	}
 
-	// Check for completion
+	// Check for completion.
 	if offset >= totalSize {
 		prog.Percentage = 100.0
 		if s.OnProgress != nil {
@@ -415,10 +415,10 @@ func (s *Server) MonitorProgress(ctx context.Context, deviceAddr string) (<-chan
 		return nil, fmt.Errorf("ota: no active upgrade for device %s", deviceAddr)
 	}
 
-	// Create a buffered channel for updates
+	// Create a buffered channel for updates.
 	updates := make(chan ProgressUpdate, 100)
 
-	// Start goroutine to forward progress updates
+	// Start goroutine to forward progress updates.
 	go func() {
 		defer close(updates)
 
@@ -434,7 +434,7 @@ func (s *Server) MonitorProgress(ctx context.Context, deviceAddr string) (<-chan
 			case <-ticker.C:
 				s.mu.RLock()
 				if currentProg, found := s.progress[deviceAddr]; found {
-					// Send update if percentage changed
+					// Send update if percentage changed.
 					if currentProg.Percentage != lastPercentage {
 						updates <- ProgressUpdate{
 							Device:      deviceAddr,
@@ -447,7 +447,7 @@ func (s *Server) MonitorProgress(ctx context.Context, deviceAddr string) (<-chan
 						lastPercentage = currentProg.Percentage
 					}
 				} else {
-					// Device no longer has active upgrade
+					// Device no longer has active upgrade.
 					return
 				}
 				s.mu.RUnlock()

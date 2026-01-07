@@ -17,10 +17,10 @@ type WeakLink struct {
 type TopologyNode struct {
 	NwkAddr    uint16
 	IEEEAddr   [8]byte
-	DeviceType uint8  // 0=Coordinator, 1=Router, 2=EndDevice
-	ParentAddr uint16 // Network address of parent
+	DeviceType uint8  // 0=Coordinator, 1=Router, 2=EndDevice.
+	ParentAddr uint16 // Network address of parent.
 	Depth      uint8
-	LQI        uint8 // LQI to parent
+	LQI        uint8 // LQI to parent.
 	Children   []uint16
 }
 
@@ -35,7 +35,7 @@ type NetworkHealth struct {
 	AverageLQI     uint8
 	MinLQI         uint8
 	MaxLQI         uint8
-	WeakLinks      []WeakLink // LQI < 100
+	WeakLinks      []WeakLink // LQI < 100.
 	Topology       []TopologyNode
 }
 
@@ -54,7 +54,7 @@ type DeviceHealth struct {
 // RoutingInfo contains routing table information from a device.
 type RoutingInfo struct {
 	DstAddr      uint16
-	Status       uint8 // 0=Active, 1=Discovery, 2=Failed, 3=Inactive, 4=Validation
+	Status       uint8 // 0=Active, 1=Discovery, 2=Failed, 3=Inactive, 4=Validation.
 	NextHop      uint16
 	Concentrator bool
 	RouteRecord  bool
@@ -102,13 +102,13 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 	}
 	a.mu.Unlock()
 
-	// Get network info (channel, PAN ID)
+	// Get network info (channel, PAN ID).
 	netInfo, err := a.GetNetworkInfo(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting network info: %w", err)
 	}
 
-	// Get all devices from NVRAM
+	// Get all devices from NVRAM.
 	devices, err := a.GetDevices(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting devices: %w", err)
@@ -129,25 +129,25 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 		return health, nil
 	}
 
-	// Build topology by querying neighbor tables
-	// We'll also collect LQI statistics
+	// Build topology by querying neighbor tables.
+	// We'll also collect LQI statistics.
 	var totalLQI int
 	var lqiCount int
 
-	// Query coordinator's neighbor table first
+	// Query coordinator's neighbor table first.
 	coordNeighbors, err := a.GetNeighborTable(ctx, 0x0000)
 	if err == nil {
 		coordNode := TopologyNode{
 			NwkAddr:    0x0000,
 			IEEEAddr:   netInfo.IEEEAddr,
-			DeviceType: 0, // Coordinator
+			DeviceType: 0, // Coordinator.
 			ParentAddr: 0xFFFF,
 			Depth:      0,
 			LQI:        255,
 			Children:   make([]uint16, 0),
 		}
 
-		// Process coordinator's neighbors
+		// Process coordinator's neighbors.
 		for _, n := range coordNeighbors {
 			totalLQI += int(n.LQI)
 			lqiCount++
@@ -167,8 +167,8 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 				})
 			}
 
-			// Track children
-			if n.Relation == 1 { // Child relationship
+			// Track children..
+			if n.Relation == 1 { // Child relationship..
 				coordNode.Children = append(coordNode.Children, n.NwkAddr)
 			}
 		}
@@ -176,18 +176,18 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 		health.Topology = append(health.Topology, coordNode)
 	}
 
-	// Query each device
+	// Query each device.
 	for _, dev := range devices {
-		// Try to determine if device is a router by querying neighbor table
-		// End devices typically don't respond or timeout
+		// Try to determine if device is a router by querying neighbor table.
+		// End devices typically don't respond or timeout.
 		queryCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		neighbors, err := a.GetNeighborTable(queryCtx, dev.NwkAddr)
 		cancel()
 
 		isRouter := (err == nil)
-		deviceType := uint8(2) // EndDevice
+		deviceType := uint8(2) // EndDevice.
 		if isRouter {
-			deviceType = 1 // Router
+			deviceType = 1 // Router.
 			health.RouterCount++
 		} else {
 			health.EndDeviceCount++
@@ -197,13 +197,13 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 			NwkAddr:    dev.NwkAddr,
 			IEEEAddr:   dev.IEEEAddr,
 			DeviceType: deviceType,
-			ParentAddr: 0xFFFF, // Unknown by default
+			ParentAddr: 0xFFFF, // Unknown by default.
 			Depth:      0,
 			LQI:        0,
 			Children:   make([]uint16, 0),
 		}
 
-		// Process neighbors if this is a router
+		// Process neighbors if this is a router.
 		if isRouter {
 			for _, n := range neighbors {
 				totalLQI += int(n.LQI)
@@ -224,15 +224,15 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 					})
 				}
 
-				// Determine parent (relation 0 = parent)
+				// Determine parent (relation 0 = parent).
 				if n.Relation == 0 {
 					node.ParentAddr = n.NwkAddr
 					node.LQI = n.LQI
 					node.Depth = n.Depth + 1
 				}
 
-				// Track children
-				if n.Relation == 1 { // Child relationship
+				// Track children.
+				if n.Relation == 1 { // Child relationship.
 					node.Children = append(node.Children, n.NwkAddr)
 				}
 			}
@@ -241,12 +241,12 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 		health.Topology = append(health.Topology, node)
 	}
 
-	// Calculate average LQI
+	// Calculate average LQI.
 	if lqiCount > 0 {
 		health.AverageLQI = uint8(totalLQI / lqiCount)
 	}
 
-	// If no LQI data collected, reset min to 0
+	// If no LQI data collected, reset min to 0.
 	if lqiCount == 0 {
 		health.MinLQI = 0
 	}
@@ -263,7 +263,7 @@ func (a *Adapter) GetDeviceHealth(ctx context.Context, nwkAddr uint16) (*DeviceH
 	}
 	a.mu.Unlock()
 
-	// Try to get device from NVRAM
+	// Try to get device from NVRAM.
 	devices, err := a.GetDevices(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting devices: %w", err)
@@ -290,14 +290,14 @@ func (a *Adapter) GetDeviceHealth(ctx context.Context, nwkAddr uint16) (*DeviceH
 	if foundDevice != nil {
 		health.IEEEAddr = foundDevice.IEEEAddr
 	} else if nwkAddr == 0x0000 {
-		// Special case for coordinator
+		// Special case for coordinator.
 		netInfo, err := a.GetNetworkInfo(ctx)
 		if err == nil {
 			health.IEEEAddr = netInfo.IEEEAddr
 		}
 	}
 
-	// Try to query neighbor table (only routers and coordinator respond)
+	// Try to query neighbor table (only routers and coordinator respond).
 	queryCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	neighbors, err := a.GetNeighborTable(queryCtx, nwkAddr)
 	cancel()
@@ -306,9 +306,9 @@ func (a *Adapter) GetDeviceHealth(ctx context.Context, nwkAddr uint16) (*DeviceH
 		health.IsReachable = true
 		health.NeighborCount = len(neighbors)
 
-		// Find parent and get LQI
+		// Find parent and get LQI.
 		for _, n := range neighbors {
-			if n.Relation == 0 { // Parent
+			if n.Relation == 0 { // Parent.
 				health.LQI = n.LQI
 				health.Depth = n.Depth + 1
 				break
@@ -316,7 +316,7 @@ func (a *Adapter) GetDeviceHealth(ctx context.Context, nwkAddr uint16) (*DeviceH
 		}
 	}
 
-	// Try to get routing table count
+	// Try to get routing table count.
 	routeCtx, routeCancel := context.WithTimeout(ctx, 3*time.Second)
 	routes, err := a.GetRoutingTable(routeCtx, nwkAddr)
 	routeCancel()

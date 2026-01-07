@@ -159,15 +159,13 @@ func TestNvSystemIDConstants(t *testing.T) {
 		name string
 		id   NvSystemID
 	}{
-		{"NvSysIdZStack", NvSysIdZStack},
+		{"NvSysIDZStack", NvSysIDZStack},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Just verify the constant is defined correctly
-			if tt.id > 255 {
-				t.Errorf("%s value out of range: %d", tt.name, tt.id)
-			}
+		t.Run(tt.name, func(_ *testing.T) {
+			// Just verify the constant is defined (value is uint8, always valid)
+			_ = tt.id
 		})
 	}
 }
@@ -215,11 +213,9 @@ func TestBdbCommissioningModeConstants(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Just verify the constant is defined correctly
-			if tt.mode > 255 {
-				t.Errorf("%s value out of range: %d", tt.name, tt.mode)
-			}
+		t.Run(tt.name, func(_ *testing.T) {
+			// tt.mode is uint8, so it's always in valid range [0, 255]
+			_ = tt.mode
 		})
 	}
 }
@@ -277,7 +273,7 @@ func TestDeviceInfoFields(t *testing.T) {
 	info := &DeviceInfo{
 		IEEEAddr:        [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
 		ShortAddr:       0x1234,
-		DeviceType:      uint8(DeviceTypeCoordinator),
+		DeviceType:      DeviceTypeCoordinator,
 		DeviceState:     uint8(DevStateZbCoord),
 		NumAssocDevices: 5,
 		AssocDevices:    []uint16{0x1001, 0x1002, 0x1003, 0x1004, 0x1005},
@@ -287,8 +283,14 @@ func TestDeviceInfoFields(t *testing.T) {
 	if info.ShortAddr != 0x1234 {
 		t.Errorf("DeviceInfo.ShortAddr = %d, want 0x1234", info.ShortAddr)
 	}
-	if info.DeviceType != uint8(DeviceTypeCoordinator) {
+	if info.DeviceType != DeviceTypeCoordinator {
 		t.Errorf("DeviceInfo.DeviceType = %d, want %d", info.DeviceType, DeviceTypeCoordinator)
+	}
+	if info.DeviceState != uint8(DevStateZbCoord) {
+		t.Errorf("DeviceInfo.DeviceState = %d, want %d", info.DeviceState, DevStateZbCoord)
+	}
+	if info.NumAssocDevices != 5 {
+		t.Errorf("DeviceInfo.NumAssocDevices = %d, want 5", info.NumAssocDevices)
 	}
 	if len(info.AssocDevices) != 5 {
 		t.Errorf("DeviceInfo.AssocDevices length = %d, want 5", len(info.AssocDevices))
@@ -342,6 +344,7 @@ func TestAssocDeviceFields(t *testing.T) {
 func TestGetDeviceInfo(t *testing.T) {
 	mock := &mockPort{}
 	z := New(mock)
+	//nolint:errcheck // Test setup
 	z.Open(context.Background())
 
 	// Simulate a response after the request
@@ -352,9 +355,9 @@ func TestGetDeviceInfo(t *testing.T) {
 		buf.WriteUint8(0) // status success
 		buf.WriteIEEEAddr([8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08})
 		buf.WriteUint16(0x0000) // shortAddr
-		buf.WriteUint8(0) // deviceType: Coordinator
-		buf.WriteUint8(9) // deviceState: Coordinator
-		buf.WriteUint8(3) // numAssocDevices
+		buf.WriteUint8(0)       // deviceType: Coordinator
+		buf.WriteUint8(9)       // deviceState: Coordinator
+		buf.WriteUint8(3)       // numAssocDevices
 		buf.WriteUint16(0x1000)
 		buf.WriteUint16(0x1001)
 		buf.WriteUint16(0x1002)
@@ -419,6 +422,7 @@ func TestGetAssocCount(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -453,6 +457,7 @@ func TestGetAssocCount(t *testing.T) {
 func TestGetAssocDevice(t *testing.T) {
 	mock := &mockPort{}
 	z := New(mock)
+	//nolint:errcheck // Test setup
 	z.Open(context.Background())
 
 	// Simulate a response after the request
@@ -460,18 +465,18 @@ func TestGetAssocDevice(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 		buf := NewBuffaloWriter()
 		// shortAddr, addrIdx, nodeRelation, devStatus, assocCnt, age
-		buf.WriteUint16(0x1000)        // shortAddr
-		buf.WriteUint16(0)            // addrIdx
-		buf.WriteUint8(2)             // nodeRelation
-		buf.WriteUint8(0)             // devStatus
-		buf.WriteUint8(1)             // assocCnt
-		buf.WriteUint8(10)            // age
+		buf.WriteUint16(0x1000) // shortAddr
+		buf.WriteUint16(0)      // addrIdx
+		buf.WriteUint8(2)       // nodeRelation
+		buf.WriteUint8(0)       // devStatus
+		buf.WriteUint8(1)       // assocCnt
+		buf.WriteUint8(10)      // age
 		// linkInfo: txCounter, txCost, rxLqi, inKeySeqNum, inFrmCntrHigh
-		buf.WriteUint8(5)             // txCounter
-		buf.WriteUint8(10)            // txCost
-		buf.WriteUint8(255)           // rxLqi
-		buf.WriteUint8(0)             // inKeySeqNum
-		buf.WriteUint16(1234)         // inFrmCntrHigh
+		buf.WriteUint8(5)     // txCounter
+		buf.WriteUint8(10)    // txCost
+		buf.WriteUint8(255)   // rxLqi
+		buf.WriteUint8(0)     // inKeySeqNum
+		buf.WriteUint16(1234) // inFrmCntrHigh
 		// ieeeAddr
 		buf.WriteIEEEAddr([8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08})
 
@@ -518,7 +523,7 @@ func TestSetChannels(t *testing.T) {
 		{"single channel 15", 1 << 15, 0, false},
 		{"single channel 20", 1 << 20, 0, false},
 		{"all channels 11-26", 0x07FFF800, 0, false},
-		{"multiple channels", (1<<11)|(1<<15)|(1<<20), 0, false},
+		{"multiple channels", (1 << 11) | (1 << 15) | (1 << 20), 0, false},
 		{"zero mask", 0, 0, false},
 	}
 
@@ -526,6 +531,7 @@ func TestSetChannels(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockPort{}
 			z := New(mock)
+			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
 			// Simulate a response after the request
@@ -571,7 +577,19 @@ func TestResetIndicationFields(t *testing.T) {
 	if ind.Reason != 1 {
 		t.Errorf("ResetIndication.Reason = %d, want 1", ind.Reason)
 	}
+	if ind.TransportRev != 2 {
+		t.Errorf("ResetIndication.TransportRev = %d, want 2", ind.TransportRev)
+	}
 	if ind.Product != 1 {
 		t.Errorf("ResetIndication.Product = %d, want 1", ind.Product)
+	}
+	if ind.MajorRel != 3 {
+		t.Errorf("ResetIndication.MajorRel = %d, want 3", ind.MajorRel)
+	}
+	if ind.MinorRel != 0 {
+		t.Errorf("ResetIndication.MinorRel = %d, want 0", ind.MinorRel)
+	}
+	if ind.MaintRel != 2 {
+		t.Errorf("ResetIndication.MaintRel = %d, want 2", ind.MaintRel)
 	}
 }
