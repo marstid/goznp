@@ -74,6 +74,7 @@ func init() {
 	rootCmd.AddCommand(backupCmd)
 	rootCmd.AddCommand(networkCmd)
 	rootCmd.AddCommand(deviceCmd)
+	rootCmd.AddCommand(quirksCmd)
 
 	// Add factory-reset as subcommand of reset
 	resetCmd.AddCommand(resetFactoryCmd)

@@ -519,6 +519,226 @@ func runResetFactory(ctx context.Context) error {
 	return nil
 }
 
+var networkHealthCmd = &cobra.Command{
+	Use:   "health",
+	Short: "Show overall network health",
+	Long: `Show comprehensive network health information including:
+- Network statistics (device count, router/end device breakdown)
+- Signal quality metrics (LQI statistics)
+- Weak links identification (LQI < 100)
+- Network topology
+
+This command queries all routers to gather mesh topology data.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := setupSignalHandler()
+		if err := runNetworkHealth(ctx); err != nil {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
+		}
+	},
+}
+
+func runNetworkHealth(ctx context.Context) error {
+	port, err := getPortPath()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
+	defer cancel()
+
+	a := adapter.New(
+		adapter.WithSerialPath(port),
+		adapter.WithBaudRate(baudRate),
+	)
+
+	if err := a.Open(ctx); err != nil {
+		return fmt.Errorf("failed to open adapter: %w", err)
+	}
+	defer a.Close()
+
+	fmt.Println("Gathering network health information...")
+	fmt.Println()
+
+	health, err := a.GetNetworkHealth(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get network health: %w", err)
+	}
+
+	// Display network overview
+	fmt.Println("Network Overview")
+	fmt.Println("================")
+	fmt.Printf("  Channel:         %d\n", health.Channel)
+	fmt.Printf("  PAN ID:          0x%04X\n", health.PanID)
+	fmt.Printf("  Devices:         %d\n", health.DeviceCount)
+	fmt.Printf("    Routers:       %d\n", health.RouterCount)
+	fmt.Printf("    End Devices:   %d\n", health.EndDeviceCount)
+	fmt.Println()
+
+	// Display signal quality
+	fmt.Println("Signal Quality")
+	fmt.Println("==============")
+	if health.DeviceCount > 0 {
+		fmt.Printf("  Average LQI:     %d/255 (%d%%)\n", health.AverageLQI, int(health.AverageLQI)*100/255)
+		fmt.Printf("  Min LQI:         %d/255 (%d%%)\n", health.MinLQI, int(health.MinLQI)*100/255)
+		fmt.Printf("  Max LQI:         %d/255 (%d%%)\n", health.MaxLQI, int(health.MaxLQI)*100/255)
+	} else {
+		fmt.Println("  No devices paired")
+	}
+	fmt.Println()
+
+	// Display weak links
+	if len(health.WeakLinks) > 0 {
+		fmt.Println("Weak Links (LQI < 100)")
+		fmt.Println("======================")
+		for _, wl := range health.WeakLinks {
+			lqiPercent := int(wl.LQI) * 100 / 255
+			fmt.Printf("  0x%04X -> 0x%04X  LQI: %d/255 (%d%%)\n", wl.FromAddr, wl.ToAddr, wl.LQI, lqiPercent)
+		}
+		fmt.Println()
+	}
+
+	// Display topology summary
+	if len(health.Topology) > 0 {
+		fmt.Println("Topology Summary")
+		fmt.Println("================")
+		for _, node := range health.Topology {
+			nodeType := "EndDevice"
+			if node.DeviceType == 0 {
+				nodeType = "Coordinator"
+			} else if node.DeviceType == 1 {
+				nodeType = "Router"
+			}
+
+			fmt.Printf("  0x%04X [%s] %s\n", node.NwkAddr, nodeType, znp.FormatIEEEAddr(node.IEEEAddr))
+			if node.ParentAddr != 0xFFFF {
+				lqiPercent := int(node.LQI) * 100 / 255
+				fmt.Printf("    Parent: 0x%04X, LQI: %d%%, Depth: %d\n", node.ParentAddr, lqiPercent, node.Depth)
+			}
+			if len(node.Children) > 0 {
+				fmt.Printf("    Children: %d devices\n", len(node.Children))
+			}
+		}
+		fmt.Println()
+	}
+
+	fmt.Printf("Scan completed at: %s\n", health.Timestamp.Format("2006-01-02 15:04:05"))
+
+	return nil
+}
+
+var networkRoutesCmd = &cobra.Command{
+	Use:   "routes [address]",
+	Short: "Show routing table",
+	Long: `Show routing table from a router or coordinator.
+Address is optional and defaults to 0x0000 (coordinator).
+Provide address in hex format: 0xABCD
+
+Only routers and coordinators maintain routing tables.
+End devices will return an error.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		ctx := setupSignalHandler()
+		if err := runNetworkRoutes(ctx, args); err != nil {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
+		}
+	},
+}
+
+func runNetworkRoutes(ctx context.Context, args []string) error {
+	port, err := getPortPath()
+	if err != nil {
+		return err
+	}
+
+	// Parse target address (default to coordinator)
+	targetAddr := uint16(0x0000)
+	if len(args) > 0 {
+		var addr uint64
+		_, err := fmt.Sscanf(args[0], "0x%x", &addr)
+		if err != nil {
+			_, err = fmt.Sscanf(args[0], "%d", &addr)
+			if err != nil {
+				return fmt.Errorf("invalid address format: %s (use 0xABCD or decimal)", args[0])
+			}
+		}
+		targetAddr = uint16(addr)
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	a := adapter.New(
+		adapter.WithSerialPath(port),
+		adapter.WithBaudRate(baudRate),
+	)
+
+	if err := a.Open(ctx); err != nil {
+		return fmt.Errorf("failed to open adapter: %w", err)
+	}
+	defer a.Close()
+
+	fmt.Printf("Querying routing table from device 0x%04X...\n", targetAddr)
+	fmt.Println()
+
+	routes, err := a.GetRoutingTable(ctx, targetAddr)
+	if err != nil {
+		return fmt.Errorf("failed to get routing table: %w", err)
+	}
+
+	if len(routes) == 0 {
+		fmt.Println("Routing table is empty")
+		return nil
+	}
+
+	fmt.Printf("Routing Table (%d entries)\n", len(routes))
+	fmt.Println("================================")
+	fmt.Printf("%-10s  %-10s  %-10s  %-12s\n", "Dest", "NextHop", "Status", "Flags")
+	fmt.Println("--------------------------------")
+
+	for _, route := range routes {
+		status := formatRouteStatus(route.Status)
+		flags := formatRouteFlags(route.Concentrator, route.RouteRecord, route.ManyToOne)
+		fmt.Printf("0x%04X      0x%04X      %-10s  %s\n", route.DstAddr, route.NextHop, status, flags)
+	}
+
+	return nil
+}
+
+func formatRouteStatus(status uint8) string {
+	switch status {
+	case 0:
+		return "Active"
+	case 1:
+		return "Discovery"
+	case 2:
+		return "Failed"
+	case 3:
+		return "Inactive"
+	case 4:
+		return "Validation"
+	default:
+		return fmt.Sprintf("Unknown(%d)", status)
+	}
+}
+
+func formatRouteFlags(concentrator, routeRecord, manyToOne bool) string {
+	flags := ""
+	if concentrator {
+		flags += "C"
+	}
+	if routeRecord {
+		flags += "R"
+	}
+	if manyToOne {
+		flags += "M"
+	}
+	if flags == "" {
+		flags = "-"
+	}
+	return flags
+}
+
 func init() {
 	// Network form flags
 	networkFormCmd.Flags().Uint8Var(&networkChannel, "channel", 0, "Zigbee channel (11-26, default: 15)")
@@ -538,7 +758,7 @@ func init() {
 	networkProfileCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 
 	// Add port/baud flags to network commands (except profile which has special handling)
-	for _, cmd := range []*cobra.Command{networkFormCmd, networkChannelCmd, networkPowerCmd, resetFactoryCmd, networkTopologyCmd} {
+	for _, cmd := range []*cobra.Command{networkFormCmd, networkChannelCmd, networkPowerCmd, resetFactoryCmd, networkTopologyCmd, networkHealthCmd, networkRoutesCmd} {
 		cmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
 		cmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 	}
@@ -549,4 +769,6 @@ func init() {
 	networkCmd.AddCommand(networkPowerCmd)
 	networkCmd.AddCommand(networkProfileCmd)
 	networkCmd.AddCommand(networkTopologyCmd)
+	networkCmd.AddCommand(networkHealthCmd)
+	networkCmd.AddCommand(networkRoutesCmd)
 }
