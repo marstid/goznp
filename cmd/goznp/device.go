@@ -624,7 +624,13 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 	fmt.Println("============================")
 
 	for _, r := range results {
-		fmt.Printf("\nDevice 0x%04X %s\n", r.NwkAddr, r.IEEEAddrString())
+		// Get custom name for this device.
+		name := namesByIEEE[r.IEEEAddr]
+		if name != "" {
+			fmt.Printf("\nDevice 0x%04X %s (%s)\n", r.NwkAddr, r.IEEEAddrString(), name)
+		} else {
+			fmt.Printf("\nDevice 0x%04X %s\n", r.NwkAddr, r.IEEEAddrString())
+		}
 
 		if !r.Success {
 			fmt.Println("  Status: FAILED")
@@ -643,6 +649,9 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 		}
 
 		// Mandatory fields - always shown
+		if name != "" {
+			fmt.Printf("  Name:         %s\n", name)
+		}
 		fmt.Printf("  Type:         %s\n", r.DeviceType)
 
 		// Try to look up friendly device name

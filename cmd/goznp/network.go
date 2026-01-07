@@ -551,6 +551,14 @@ func runNetworkHealth(ctx context.Context) error {
 		return fmt.Errorf("failed to get network health: %w", err)
 	}
 
+	// Fetch custom device names for topology display.
+	//nolint:errcheck // Names are optional, errors intentionally ignored
+	deviceNames, _ := a.ListDeviceNames(ctx)
+	namesByIEEE := make(map[[8]byte]string)
+	for _, dn := range deviceNames {
+		namesByIEEE[dn.IEEEAddr] = dn.Name
+	}
+
 	// Display network overview
 	fmt.Println("Network Overview")
 	fmt.Println("================")
@@ -596,7 +604,12 @@ func runNetworkHealth(ctx context.Context) error {
 				nodeType = "Router"
 			}
 
-			fmt.Printf("  0x%04X [%s] %s\n", node.NwkAddr, nodeType, znp.FormatIEEEAddr(node.IEEEAddr))
+			name := namesByIEEE[node.IEEEAddr]
+			if name != "" {
+				fmt.Printf("  0x%04X [%s] %s (%s)\n", node.NwkAddr, nodeType, znp.FormatIEEEAddr(node.IEEEAddr), name)
+			} else {
+				fmt.Printf("  0x%04X [%s] %s\n", node.NwkAddr, nodeType, znp.FormatIEEEAddr(node.IEEEAddr))
+			}
 			if node.ParentAddr != 0xFFFF {
 				lqiPercent := int(node.LQI) * 100 / 255
 				fmt.Printf("    Parent: 0x%04X, LQI: %d%%, Depth: %d\n", node.ParentAddr, lqiPercent, node.Depth)
