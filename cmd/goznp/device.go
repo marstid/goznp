@@ -10,11 +10,12 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/spf13/cobra"
+
 	"github.com/marstid/goznp/pkg/adapter"
 	devicedb "github.com/marstid/goznp/pkg/devices"
 	"github.com/marstid/goznp/pkg/zcl"
 	"github.com/marstid/goznp/pkg/znp"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -27,29 +28,25 @@ var (
 	interviewDevices bool
 	deviceForce      bool
 
-	// Brightness/level control flags
+	// Brightness/level control flags.
 	brightnessLevel uint8
 	transitionTime  uint16
 
-	// Color temperature flags
-	colorTempKelvin uint16
-	colorTempMireds uint16
-
-	// Identify flags
+	// Identify flags.
 	identifyDuration uint16
 	identifyEffect   string
 
-	// Group flags
+	// Group flags.
 	groupID   uint16
 	groupName string
 
-	// Scene flags
+	// Scene flags.
 	sceneID uint8
 
-	// Device name flags
+	// Device name flags.
 	deviceName       string
 	deviceComment    string
-	deviceNameLookup string // For --name flag
+	deviceNameLookup string // For --name flag.
 )
 
 var deviceCmd = &cobra.Command{
@@ -58,12 +55,12 @@ var deviceCmd = &cobra.Command{
 	Long:  "Commands for managing paired Zigbee devices",
 }
 
-// goznp device permit -p <port> [--duration <seconds>]
+// goznp device permit -p <port> [--duration <seconds>].
 var devicePermitCmd = &cobra.Command{
 	Use:   "permit",
 	Short: "Open network for device pairing",
 	Long:  "Open the network for devices to join (default 60 seconds)",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDevicePermit(ctx)
 	},
@@ -88,11 +85,12 @@ func runDevicePermit(ctx context.Context) error {
 	}
 	defer a.Close()
 
-	if permitDuration == 0 {
+	switch permitDuration {
+	case 0:
 		fmt.Println("Closing network for pairing...")
-	} else if permitDuration == 255 {
+	case 255:
 		fmt.Println("Opening network for pairing (always open)...")
-	} else {
+	default:
 		fmt.Printf("Opening network for pairing (%d seconds)...\n", permitDuration)
 	}
 
@@ -110,7 +108,7 @@ func runDevicePermit(ctx context.Context) error {
 	return nil
 }
 
-// goznp device pair -p <port> [--timeout <seconds>] [--nobind]
+// goznp device pair -p <port> [--timeout <seconds>] [--nobind].
 var devicePairCmd = &cobra.Command{
 	Use:   "pair",
 	Short: "Pair a new device",
@@ -124,7 +122,7 @@ After pairing, each device is automatically interviewed and its clusters are
 bound to the coordinator so it can send reports. Use --nobind to skip binding.
 
 Put your device in pairing mode before running this command.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDevicePair(ctx)
 	},
@@ -136,9 +134,9 @@ func runDevicePair(ctx context.Context) error {
 		return err
 	}
 
-	// Create timeout context
+	// Create timeout context.
 	timeout := time.Duration(pairTimeout) * time.Second
-	pairCtx, cancel := context.WithTimeout(ctx, timeout+60*time.Second) // Extra time for interview/bind
+	pairCtx, cancel := context.WithTimeout(ctx, timeout+60*time.Second) // Extra time for interview/bind.
 	defer cancel()
 
 	a := adapter.New(
@@ -151,7 +149,7 @@ func runDevicePair(ctx context.Context) error {
 	}
 	defer a.Close()
 
-	// Get coordinator IEEE for binding (do this once upfront)
+	// Get coordinator IEEE for binding (do this once upfront).
 	var coordIEEE [8]byte
 	var coordErr error
 	if !pairNoBind {
@@ -162,7 +160,7 @@ func runDevicePair(ctx context.Context) error {
 		}
 	}
 
-	// Track results
+	// Track results.
 	var resultsMu sync.Mutex
 	type pairResult struct {
 		device      *adapter.Device
@@ -174,11 +172,11 @@ func runDevicePair(ctx context.Context) error {
 	results := make([]pairResult, 0)
 
 	// Deduplication: track recently-seen IEEE addresses to avoid processing
-	// duplicate join events (devices can send multiple TcDeviceInd messages)
+	// duplicate join events (devices can send multiple TcDeviceInd messages).
 	const deduplicationCooldown = 10 * time.Second
 	recentJoins := make(map[[8]byte]time.Time)
 
-	// Set up device event handler - interview and bind IMMEDIATELY on join
+	// Set up device event handler - interview and bind IMMEDIATELY on join.
 	a.OnDeviceEvent(func(event adapter.DeviceEvent) {
 		if event.Type != adapter.DeviceEventJoined || event.Device == nil {
 			return
@@ -187,12 +185,12 @@ func runDevicePair(ctx context.Context) error {
 		dev := event.Device
 		now := time.Now()
 
-		// Check for duplicate join event (same IEEE address within cooldown period)
+		// Check for duplicate join event (same IEEE address within cooldown period).
 		resultsMu.Lock()
 		if lastSeen, exists := recentJoins[dev.IEEEAddr]; exists {
 			if now.Sub(lastSeen) < deduplicationCooldown {
 				resultsMu.Unlock()
-				// Silently ignore duplicate - already being processed
+				// Silently ignore duplicate - already being processed.
 				return
 			}
 		}
@@ -208,17 +206,17 @@ func runDevicePair(ctx context.Context) error {
 
 		result := pairResult{device: dev}
 
-		// Brief delay to let device fully initialize after joining
-		// Some devices send TcDeviceInd before they're ready to respond to ZDO queries
+		// Brief delay to let device fully initialize after joining.
+		// Some devices send TcDeviceInd before they're ready to respond to ZDO queries.
 		time.Sleep(2 * time.Second)
 
-		// Interview while device is still awake
+		// Interview while device is still awake.
 		fmt.Printf("  Interviewing (device must stay awake)...\n")
 		interviewCtx, interviewCancel := context.WithTimeout(context.Background(), 15*time.Second)
 		interview, err := a.InterviewDeviceWithAddr(interviewCtx, dev.NwkAddr, dev.IEEEAddr)
 		interviewCancel()
 
-		// Retry once if no endpoints discovered (device may need more init time)
+		// Retry once if no endpoints discovered (device may need more init time).
 		if err == nil && len(interview.Endpoints) == 0 {
 			fmt.Printf("  No endpoints yet, retrying in 3s...\n")
 			time.Sleep(3 * time.Second)
@@ -227,6 +225,7 @@ func runDevicePair(ctx context.Context) error {
 			interviewCancel()
 		}
 
+		//nolint:gocritic // Complex interview logic with multiple conditions best expressed as if-else
 		if err != nil {
 			result.errors = append(result.errors, fmt.Sprintf("interview: %v", err))
 			fmt.Printf("  Interview FAILED: %v\n", err)
@@ -239,7 +238,7 @@ func runDevicePair(ctx context.Context) error {
 				fmt.Printf("  Device: %s %s (%s)\n", interview.Manufacturer, interview.Model, interview.PowerSource)
 			}
 
-			// IMMEDIATELY bind while device is still awake
+			// IMMEDIATELY bind while device is still awake.
 			if !pairNoBind && coordErr == nil {
 				for _, ep := range interview.Endpoints {
 					for _, clusterID := range ep.InClusters {
@@ -259,8 +258,8 @@ func runDevicePair(ctx context.Context) error {
 							result.bound++
 							fmt.Printf("  Bind %s: OK\n", clusterName)
 
-							// Configure reporting immediately while device is awake
-							// Only for clusters that support attribute reporting
+							// Configure reporting immediately while device is awake.
+							// Only for clusters that support attribute reporting.
 							if shouldConfigureReporting(clusterID) {
 								configCtx, configCancel := context.WithTimeout(context.Background(), 5*time.Second)
 								configErr := configureSensorReporting(configCtx, a, dev.NwkAddr, ep.Endpoint, clusterID)
@@ -280,7 +279,7 @@ func runDevicePair(ctx context.Context) error {
 		}
 
 		resultsMu.Lock()
-		// Replace existing entry for same IEEE address (device may rejoin with new nwk addr)
+		// Replace existing entry for same IEEE address (device may rejoin with new nwk addr).
 		replaced := false
 		for i, r := range results {
 			if r.device.IEEEAddr == dev.IEEEAddr {
@@ -297,19 +296,20 @@ func runDevicePair(ctx context.Context) error {
 		fmt.Printf("  Done! Waiting for more devices...\n")
 	})
 
-	// Open permit join
+	// Open permit join.
 	fmt.Printf("Opening network for pairing (%d seconds)...\n", pairTimeout)
 	fmt.Println("Waiting for devices to join... (Ctrl+C to stop early)")
-	if pairNoBind {
+	switch {
+	case pairNoBind:
 		fmt.Println("Auto-bind: DISABLED (--nobind)")
-	} else if coordErr != nil {
+	case coordErr != nil:
 		fmt.Println("Auto-bind: DISABLED (coordinator error)")
-	} else {
+	default:
 		fmt.Println("Auto-bind: ENABLED (interview & bind immediately on join)")
 	}
 	fmt.Println()
 
-	// Calculate permit duration (max 254 for permit join command)
+	// Calculate permit duration (max 254 for permit join command).
 	permitDur := uint8(254)
 	if pairTimeout < 254 {
 		permitDur = uint8(pairTimeout)
@@ -319,11 +319,11 @@ func runDevicePair(ctx context.Context) error {
 		return fmt.Errorf("failed to open network: %w", err)
 	}
 
-	// Create timer for the pairing window
+	// Create timer for the pairing window.
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 
-	// Wait for timeout or context cancellation
+	// Wait for timeout or context cancellation.
 	select {
 	case <-timer.C:
 		fmt.Println("\n\nPairing window closed (timeout)")
@@ -331,12 +331,13 @@ func runDevicePair(ctx context.Context) error {
 		fmt.Println("\n\nPairing interrupted by user")
 	}
 
-	// Close permit join
+	// Close permit join.
 	closeCtx, closeCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer closeCancel()
+	//nolint:errcheck // Best effort cleanup
 	_ = a.PermitJoin(closeCtx, 0)
 
-	// Summary
+	// Summary.
 	resultsMu.Lock()
 	defer resultsMu.Unlock()
 
@@ -377,18 +378,18 @@ func runDevicePair(ctx context.Context) error {
 // These are clusters that typically send reports we want to receive.
 func shouldBindCluster(clusterID uint16) bool {
 	switch zcl.ClusterID(clusterID) {
-	case zcl.ClusterOnOff, // Switch state
-		zcl.ClusterLevelControl,     // Dimmer level
-		zcl.ClusterColorControl,     // Color/temperature
-		zcl.ClusterTempMeasurement,  // Temperature sensor
-		zcl.ClusterHumidityMeas,     // Humidity sensor
-		zcl.ClusterPressureMeas,     // Pressure sensor
-		zcl.ClusterIlluminanceMeas,  // Light sensor
-		zcl.ClusterOccupancySensing, // Motion sensor
-		zcl.ClusterElectricalMeas,   // Power monitoring
-		zcl.ClusterMeteringSimple,   // Energy metering
-		zcl.ClusterPowerConfig,      // Battery level
-		zcl.ClusterIASZone:          // Security sensors
+	case zcl.ClusterOnOff, // Switch state.
+		zcl.ClusterLevelControl,     // Dimmer level.
+		zcl.ClusterColorControl,     // Color/temperature.
+		zcl.ClusterTempMeasurement,  // Temperature sensor.
+		zcl.ClusterHumidityMeas,     // Humidity sensor.
+		zcl.ClusterPressureMeas,     // Pressure sensor.
+		zcl.ClusterIlluminanceMeas,  // Light sensor.
+		zcl.ClusterOccupancySensing, // Motion sensor.
+		zcl.ClusterElectricalMeas,   // Power monitoring.
+		zcl.ClusterMeteringSimple,   // Energy metering.
+		zcl.ClusterPowerConfig,      // Battery level.
+		zcl.ClusterIASZone:          // Security sensors.
 		return true
 	}
 	return false
@@ -413,17 +414,17 @@ func shouldConfigureReporting(clusterID uint16) bool {
 func configureSensorReporting(ctx context.Context, a *adapter.Adapter, nwkAddr uint16, endpoint uint8, clusterID uint16) error {
 	switch zcl.ClusterID(clusterID) {
 	case zcl.ClusterTempMeasurement:
-		// Temperature: report every 30-3600s or on 0.2°C change
+		// Temperature: report every 30-3600s or on 0.2°C change.
 		return a.ConfigureReporting(ctx, nwkAddr, endpoint, zcl.ClusterID(clusterID),
 			zcl.AttrTempMeasuredValue, zcl.TypeInt16, 30, 3600, int16(20))
 
 	case zcl.ClusterHumidityMeas:
-		// Humidity: report every 30-3600s or on 1% change
+		// Humidity: report every 30-3600s or on 1% change.
 		return a.ConfigureReporting(ctx, nwkAddr, endpoint, zcl.ClusterID(clusterID),
 			zcl.AttrHumidityMeasuredValue, zcl.TypeUint16, 30, 3600, uint16(100))
 
 	case zcl.ClusterPowerConfig:
-		// Battery: report every 3600-65000s (battery changes slowly)
+		// Battery: report every 3600-65000s (battery changes slowly).
 		return a.ConfigureReporting(ctx, nwkAddr, endpoint, zcl.ClusterID(clusterID),
 			zcl.AttrPowerBatteryPercentage, zcl.TypeUint8, 3600, 65000, uint8(10))
 
@@ -451,7 +452,7 @@ var deviceListCmd = &cobra.Command{
 
 Use --interview to perform full device discovery including manufacturer,
 model, power source, and supported clusters for each device.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceList(ctx)
 	},
@@ -501,7 +502,8 @@ func runDeviceListQuick(ctx context.Context, a *adapter.Adapter, devices []*adap
 	fmt.Printf("\nFound %d device(s):\n\n", len(devices))
 
 	// Fetch custom device names
-	deviceNames, _ := a.ListDeviceNames(ctx) // Ignore errors - names are optional
+	//nolint:errcheck // Names are optional, errors intentionally ignored
+	deviceNames, _ := a.ListDeviceNames(ctx)
 	namesByIEEE := make(map[[8]byte]string)
 	for _, dn := range deviceNames {
 		namesByIEEE[dn.IEEEAddr] = dn.Name
@@ -524,7 +526,9 @@ func runDeviceListQuick(ctx context.Context, a *adapter.Adapter, devices []*adap
 		)
 	}
 
-	w.Flush()
+	if err := w.Flush(); err != nil {
+		return fmt.Errorf("failed to flush output: %w", err)
+	}
 
 	fmt.Println("\nTip: Use --interview for detailed device information (manufacturer, model, clusters)")
 
@@ -535,7 +539,8 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 	fmt.Printf("Interviewing %d device(s)...\n\n", len(devices))
 
 	// Fetch custom device names
-	deviceNames, _ := a.ListDeviceNames(ctx) // Ignore errors - names are optional
+	//nolint:errcheck // Names are optional, errors intentionally ignored
+	deviceNames, _ := a.ListDeviceNames(ctx)
 	namesByIEEE := make(map[[8]byte]string)
 	for _, dn := range deviceNames {
 		namesByIEEE[dn.IEEEAddr] = dn.Name
@@ -548,7 +553,8 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 
 		// Use InterviewDeviceWithAddr to skip IeeeAddrReq (we already have it from NVRAM)
 		result, err := a.InterviewDeviceWithAddr(ctx, dev.NwkAddr, dev.IEEEAddr)
-		if err != nil {
+		switch {
+		case err != nil:
 			fmt.Printf(" FAILED: %v\n", err)
 			// Create a placeholder result for failed interviews
 			result = &adapter.InterviewResult{
@@ -557,9 +563,9 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 				Success:  false,
 				Errors:   []string{err.Error()},
 			}
-		} else if result.Success {
+		case result.Success:
 			fmt.Printf(" OK (%s %s)\n", result.Manufacturer, result.Model)
-		} else {
+		default:
 			fmt.Printf(" partial (errors: %d)\n", len(result.Errors))
 		}
 
@@ -709,7 +715,7 @@ func runDeviceListWithInterview(ctx context.Context, a *adapter.Adapter, devices
 		}
 	}
 
-	return nil
+	return ctx.Err()
 }
 
 // goznp device watch -p <port>
@@ -717,7 +723,7 @@ var deviceWatchCmd = &cobra.Command{
 	Use:   "watch",
 	Short: "Watch for device events",
 	Long:  "Monitor device join/leave events in real-time until Ctrl+C",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceWatch(ctx)
 	},
@@ -758,15 +764,16 @@ func runDeviceWatch(ctx context.Context) error {
 	fmt.Println("Watching for device events... (Ctrl+C to exit)")
 	fmt.Println()
 
-	// Watch for events until context is cancelled
+	// Watch for events until context is canceled.
 	for {
 		select {
 		case <-ctx.Done():
 			fmt.Println("\nShutting down...")
 			// Close permit join on exit
 			closeCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
+			//nolint:errcheck // Best effort cleanup
 			_ = a.PermitJoin(closeCtx, 0)
+			cancel()
 			return nil
 
 		case event := <-eventChan:
@@ -793,7 +800,7 @@ var deviceStatusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Query device status",
 	Long:  "Read status attributes from a device (manufacturer, model, on/off, battery)",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceStatus(ctx)
 	},
@@ -830,6 +837,7 @@ func runDeviceStatus(ctx context.Context) error {
 		for _, dev := range devices {
 			if dev.NwkAddr == nwkAddr {
 				// Get custom name if set
+				//nolint:errcheck // Name is optional, errors intentionally ignored
 				nameInfo, _ := a.GetDeviceName(ctx, dev.IEEEAddr)
 				if nameInfo != nil && nameInfo.Name != "" {
 					customName = nameInfo.Name
@@ -922,7 +930,7 @@ You can specify the device by either:
 Note: Battery-powered devices may be asleep and not respond immediately.
 For sleepy devices, you may need to wake them up (e.g., press a button)
 or use --force to remove them from the coordinator's device list.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceRemove(ctx)
 	},
