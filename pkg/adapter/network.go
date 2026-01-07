@@ -2,14 +2,10 @@ package adapter
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/marstid/goznp/pkg/znp"
 )
-
-// ErrNotOpen is returned when an operation is attempted on a closed adapter.
-var ErrNotOpen = errors.New("adapter not open")
 
 // NetworkInfo contains comprehensive network information.
 type NetworkInfo struct {
