@@ -3,3 +3,9 @@ goznp
 scratch.md
 AGENTS.md
 !/cmd/goznp
+
+# Build artifacts
+dist/
+
+# Test coverage
+coverage.out
