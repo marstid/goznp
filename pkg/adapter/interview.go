@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/marstid/goznp/pkg/zcl"
+	"github.com/marstid/goznp/pkg/znp"
 )
 
 // DeviceType represents the logical type of a Zigbee device.
@@ -112,6 +113,8 @@ type InterviewResult struct {
 }
 
 // IEEEAddrString returns the IEEE address as a hex string.
+// IEEE addresses are stored in little-endian format (low byte first in memory),
+// but displayed in big-endian format (high byte first) for human readability.
 func (r *InterviewResult) IEEEAddrString() string {
 	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		r.IEEEAddr[7], r.IEEEAddr[6], r.IEEEAddr[5], r.IEEEAddr[4],
@@ -168,6 +171,33 @@ func (a *Adapter) InterviewDeviceWithAddr(ctx context.Context, nwkAddr uint16, i
 	return a.interviewDeviceInternal(ctx, nwkAddr, ieeeAddr, DefaultInterviewOptions())
 }
 
+// retryableZDORequest executes a ZDO request with retries.
+func retryableZDORequest[T any](ctx context.Context, opts InterviewOptions, fn func(context.Context) (T, error)) (T, error) {
+	var result T
+	var lastErr error
+
+	for attempt := 0; attempt <= opts.Retries; attempt++ {
+		reqCtx, cancel := context.WithTimeout(ctx, opts.RequestTimeout)
+		result, lastErr = fn(reqCtx)
+		cancel()
+
+		if lastErr == nil {
+			return result, nil
+		}
+
+		// Don't sleep after last attempt
+		if attempt < opts.Retries {
+			select {
+			case <-ctx.Done():
+				return result, ctx.Err()
+			case <-time.After(500 * time.Millisecond):
+			}
+		}
+	}
+
+	return result, lastErr
+}
+
 // interviewDeviceInternal is the core interview implementation.
 func (a *Adapter) interviewDeviceInternal(ctx context.Context, nwkAddr uint16, knownIEEE [8]byte, opts InterviewOptions) (*InterviewResult, error) {
 	a.mu.Lock()
@@ -189,21 +219,13 @@ func (a *Adapter) interviewDeviceInternal(ctx context.Context, nwkAddr uint16, k
 		result.Errors = append(result.Errors, msg)
 	}
 
-	// Helper for request with timeout
-	reqCtx := func() (context.Context, context.CancelFunc) {
-		if opts.RequestTimeout > 0 {
-			return context.WithTimeout(ctx, opts.RequestTimeout)
-		}
-		return ctx, func() {}
-	}
-
 	// Step 1: Get IEEE address
 	// If we have a known IEEE address, use it as fallback if the request fails
 	// (sleeping devices won't respond, but routers will)
 	var emptyIEEE [8]byte
-	rctx, cancel := reqCtx()
-	ieeeAddr, err := znpClient.IeeeAddrReq(rctx, nwkAddr)
-	cancel()
+	ieeeAddr, err := retryableZDORequest(ctx, opts, func(rctx context.Context) ([8]byte, error) {
+		return znpClient.IeeeAddrReq(rctx, nwkAddr)
+	})
 	if err != nil {
 		if knownIEEE != emptyIEEE {
 			// Use the known address as fallback
@@ -218,9 +240,9 @@ func (a *Adapter) interviewDeviceInternal(ctx context.Context, nwkAddr uint16, k
 	}
 
 	// Step 2: Get node descriptor (for device type and manufacturer code)
-	rctx, cancel = reqCtx()
-	nodeDesc, err := znpClient.NodeDescReq(rctx, nwkAddr)
-	cancel()
+	nodeDesc, err := retryableZDORequest(ctx, opts, func(rctx context.Context) (*znp.NodeDescriptor, error) {
+		return znpClient.NodeDescReq(rctx, nwkAddr)
+	})
 	if err != nil {
 		addError(fmt.Sprintf("node descriptor: %v", err))
 	} else {
@@ -229,9 +251,9 @@ func (a *Adapter) interviewDeviceInternal(ctx context.Context, nwkAddr uint16, k
 	}
 
 	// Step 3: Get active endpoints
-	rctx, cancel = reqCtx()
-	activeEp, err := znpClient.ActiveEpReq(rctx, nwkAddr)
-	cancel()
+	activeEp, err := retryableZDORequest(ctx, opts, func(rctx context.Context) (*znp.ActiveEndpoints, error) {
+		return znpClient.ActiveEpReq(rctx, nwkAddr)
+	})
 	if err != nil {
 		addError(fmt.Sprintf("active endpoints: %v", err))
 		// No endpoints means we can't continue with cluster discovery
@@ -247,9 +269,9 @@ func (a *Adapter) interviewDeviceInternal(ctx context.Context, nwkAddr uint16, k
 
 	// Step 4: Get simple descriptor for each endpoint
 	for _, ep := range activeEp.Endpoints {
-		rctx, cancel = reqCtx()
-		desc, err := znpClient.SimpleDescReq(rctx, nwkAddr, ep)
-		cancel()
+		desc, err := retryableZDORequest(ctx, opts, func(rctx context.Context) (*znp.SimpleDescriptor, error) {
+			return znpClient.SimpleDescReq(rctx, nwkAddr, ep)
+		})
 		if err != nil {
 			addError(fmt.Sprintf("endpoint %d simple desc: %v", ep, err))
 			continue
@@ -376,9 +398,7 @@ func (a *Adapter) InterviewDeviceByIEEE(ctx context.Context, ieeeAddr [8]byte) (
 	// Try to find device in manager
 	dev := a.deviceMgr.getDevice(ieeeAddr)
 	if dev == nil {
-		return nil, fmt.Errorf("device %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x not found",
-			ieeeAddr[7], ieeeAddr[6], ieeeAddr[5], ieeeAddr[4],
-			ieeeAddr[3], ieeeAddr[2], ieeeAddr[1], ieeeAddr[0])
+		return nil, ErrDeviceNotFound
 	}
 
 	return a.InterviewDevice(ctx, dev.NwkAddr)
