@@ -52,8 +52,9 @@ type ZNP struct {
 	onError func(error)
 
 	// Device event callbacks
-	onDeviceJoin  func(*TcDeviceInd)
-	onDeviceLeave func(*DeviceLeave)
+	onDeviceJoin     func(*TcDeviceInd)
+	onDeviceLeave    func(*DeviceLeave)
+	onDeviceAnnounce func(*DeviceAnnounce)
 
 	// stopReader signals the read/frame loops to stop.
 	stopReader chan struct{}
@@ -226,6 +227,14 @@ func (z *ZNP) OnDeviceLeave(handler func(*DeviceLeave)) {
 	z.onDeviceLeave = handler
 }
 
+// OnDeviceAnnounce sets a callback for device announcement events (endDeviceAnnceInd).
+// This is triggered when a device announces itself on the network (join or rejoin).
+func (z *ZNP) OnDeviceAnnounce(handler func(*DeviceAnnounce)) {
+	z.mu.Lock()
+	defer z.mu.Unlock()
+	z.onDeviceAnnounce = handler
+}
+
 // OnError sets a callback for error events from the parser and read operations.
 // This is useful for logging and monitoring errors that would otherwise be lost.
 func (z *ZNP) OnError(handler func(error)) {
@@ -307,7 +316,7 @@ func (z *ZNP) frameLoop() {
 	}
 }
 
-// handleDeviceEvents checks for and dispatches device join/leave events.
+// handleDeviceEvents checks for and dispatches device join/leave/announce events.
 func (z *ZNP) handleDeviceEvents(frame *unpi.Frame) {
 	// Only handle ZDO AREQ frames
 	if frame.Type != unpi.AREQ || frame.Subsystem != unpi.ZDO {
@@ -317,6 +326,7 @@ func (z *ZNP) handleDeviceEvents(frame *unpi.Frame) {
 	z.mu.Lock()
 	joinHandler := z.onDeviceJoin
 	leaveHandler := z.onDeviceLeave
+	announceHandler := z.onDeviceAnnounce
 	z.mu.Unlock()
 
 	switch frame.CommandID {
@@ -330,6 +340,12 @@ func (z *ZNP) handleDeviceEvents(frame *unpi.Frame) {
 		if leaveHandler != nil {
 			if ind, err := ParseLeaveInd(frame.Data); err == nil {
 				go leaveHandler(ind)
+			}
+		}
+	case CmdZdoEndDeviceAnnceInd.ID:
+		if announceHandler != nil {
+			if ind, err := ParseEndDeviceAnnceInd(frame.Data); err == nil {
+				go announceHandler(ind)
 			}
 		}
 	}

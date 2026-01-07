@@ -9,8 +9,8 @@ import (
 const (
 	// DeviceNameMaxName is the maximum length of a device name.
 	DeviceNameMaxName = 32
-	// DeviceNameMaxDescription is the maximum length of a device description.
-	DeviceNameMaxDescription = 64
+	// DeviceNameMaxComment is the maximum length of a device comment.
+	DeviceNameMaxComment = 64
 	// DeviceNameEntrySize is the size of each device name entry in bytes.
 	// Layout: IEEE(8) + NameLen(1) + Name(32) + DescLen(1) + Desc(64) + Reserved(2)
 	DeviceNameEntrySize = 108
@@ -27,11 +27,11 @@ const (
 	nvMaxDeviceEntries        = 200    // Max entries to iterate
 )
 
-// DeviceNameEntry represents a custom name and description for a Zigbee device.
+// DeviceNameEntry represents a custom name and comment for a Zigbee device.
 type DeviceNameEntry struct {
-	IEEEAddr    [8]byte // Device IEEE address
-	Name        string  // Custom name (max 32 bytes UTF-8)
-	Description string  // Custom description (max 64 bytes UTF-8)
+	IEEEAddr [8]byte // Device IEEE address
+	Name     string  // Custom name (max 32 bytes UTF-8)
+	Comment  string  // Custom comment (max 64 bytes UTF-8)
 }
 
 // IsEmpty returns true if the entry is empty (all IEEE address bytes are zero).
@@ -55,8 +55,8 @@ type DeviceNameTable struct {
 // - Offset 0: IEEE Address (8 bytes)
 // - Offset 8: Name length (1 byte, 0-32)
 // - Offset 9: Name (32 bytes, UTF-8, null-padded)
-// - Offset 41: Description length (1 byte, 0-64)
-// - Offset 42: Description (64 bytes, UTF-8, null-padded)
+// - Offset 41: Comment length (1 byte, 0-64)
+// - Offset 42: Comment (64 bytes, UTF-8, null-padded)
 // - Offset 106: Reserved (2 bytes)
 func SerializeDeviceNameEntry(entry *DeviceNameEntry) []byte {
 	writer := NewBuffaloWriter()
@@ -78,17 +78,17 @@ func SerializeDeviceNameEntry(entry *DeviceNameEntry) []byte {
 		writer.WriteUint8(0)
 	}
 
-	// Description field: length byte + 64-byte buffer
-	descBytes := []byte(entry.Description)
-	descLen := len(descBytes)
-	if descLen > DeviceNameMaxDescription {
-		descLen = DeviceNameMaxDescription
+	// Comment field: length byte + 64-byte buffer
+	commentBytes := []byte(entry.Comment)
+	commentLen := len(commentBytes)
+	if commentLen > DeviceNameMaxComment {
+		commentLen = DeviceNameMaxComment
 	}
-	writer.WriteUint8(uint8(descLen))
-	// Write description bytes (up to 64)
-	writer.WriteBytes(descBytes[:descLen])
+	writer.WriteUint8(uint8(commentLen))
+	// Write comment bytes (up to 64)
+	writer.WriteBytes(commentBytes[:commentLen])
 	// Pad to 64 bytes
-	for i := descLen; i < DeviceNameMaxDescription; i++ {
+	for i := commentLen; i < DeviceNameMaxComment; i++ {
 		writer.WriteUint8(0)
 	}
 
@@ -127,19 +127,19 @@ func ParseDeviceNameEntry(data []byte) (*DeviceNameEntry, error) {
 	}
 	name := string(nameBytes[:nameLen])
 
-	// Description field: length byte + 64-byte buffer
-	descLen, err := buf.ReadUint8()
+	// Comment field: length byte + 64-byte buffer
+	commentLen, err := buf.ReadUint8()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read description length: %w", err)
+		return nil, fmt.Errorf("failed to read comment length: %w", err)
 	}
-	if descLen > DeviceNameMaxDescription {
-		descLen = DeviceNameMaxDescription
+	if commentLen > DeviceNameMaxComment {
+		commentLen = DeviceNameMaxComment
 	}
-	descBytes, err := buf.ReadBytes(DeviceNameMaxDescription)
+	commentBytes, err := buf.ReadBytes(DeviceNameMaxComment)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read description bytes: %w", err)
+		return nil, fmt.Errorf("failed to read comment bytes: %w", err)
 	}
-	description := string(descBytes[:descLen])
+	comment := string(commentBytes[:commentLen])
 
 	// Reserved (2 bytes) - skip
 	_, err = buf.ReadUint16()
@@ -148,9 +148,9 @@ func ParseDeviceNameEntry(data []byte) (*DeviceNameEntry, error) {
 	}
 
 	return &DeviceNameEntry{
-		IEEEAddr:    ieeeAddr,
-		Name:        name,
-		Description: description,
+		IEEEAddr: ieeeAddr,
+		Name:     name,
+		Comment:  comment,
 	}, nil
 }
 
@@ -269,7 +269,7 @@ func (z *ZNP) WriteDeviceNameTable(ctx context.Context, table *DeviceNameTable) 
 	return nil
 }
 
-// GetDeviceName retrieves the name and description for a specific device.
+// GetDeviceName retrieves the name and comment for a specific device.
 // Returns nil if the device is not found in the table.
 func (z *ZNP) GetDeviceName(ctx context.Context, ieeeAddr [8]byte) (*DeviceNameEntry, error) {
 	// Read the table
@@ -289,15 +289,15 @@ func (z *ZNP) GetDeviceName(ctx context.Context, ieeeAddr [8]byte) (*DeviceNameE
 	return nil, nil
 }
 
-// SetDeviceName sets or updates the name and description for a specific device.
+// SetDeviceName sets or updates the name and comment for a specific device.
 // If the device already has an entry, it's updated. Otherwise, a new entry is added.
-func (z *ZNP) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, description string) error {
-	// Validate name and description lengths
+func (z *ZNP) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, comment string) error {
+	// Validate name and comment lengths
 	if len(name) > DeviceNameMaxName {
 		return fmt.Errorf("name too long: %d bytes (max %d)", len(name), DeviceNameMaxName)
 	}
-	if len(description) > DeviceNameMaxDescription {
-		return fmt.Errorf("description too long: %d bytes (max %d)", len(description), DeviceNameMaxDescription)
+	if len(comment) > DeviceNameMaxComment {
+		return fmt.Errorf("comment too long: %d bytes (max %d)", len(comment), DeviceNameMaxComment)
 	}
 
 	// Read the current table
@@ -324,9 +324,9 @@ func (z *ZNP) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, descrip
 
 	// Create the new entry
 	newEntry := DeviceNameEntry{
-		IEEEAddr:    ieeeAddr,
-		Name:        name,
-		Description: description,
+		IEEEAddr: ieeeAddr,
+		Name:     name,
+		Comment:  comment,
 	}
 
 	if foundIndex != -1 {
@@ -348,7 +348,7 @@ func (z *ZNP) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, descrip
 	return nil
 }
 
-// DeleteDeviceName removes the name and description for a specific device.
+// DeleteDeviceName removes the name and comment for a specific device.
 // The entry is marked as empty by zeroing out the IEEE address.
 func (z *ZNP) DeleteDeviceName(ctx context.Context, ieeeAddr [8]byte) error {
 	// Read the current table
@@ -364,7 +364,7 @@ func (z *ZNP) DeleteDeviceName(ctx context.Context, ieeeAddr [8]byte) error {
 			// Mark as empty by zeroing IEEE address
 			table.Entries[i].IEEEAddr = [8]byte{}
 			table.Entries[i].Name = ""
-			table.Entries[i].Description = ""
+			table.Entries[i].Comment = ""
 			found = true
 			break
 		}

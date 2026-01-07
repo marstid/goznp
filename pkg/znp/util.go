@@ -236,12 +236,16 @@ func (z *ZNP) GetAssocDevice(ctx context.Context, index uint8) (*AssocDevice, er
 }
 
 // FormatIEEEAddr formats an IEEE address as a colon-separated hex string.
+// IEEE addresses are stored in little-endian format (low byte first in memory),
+// but displayed in big-endian format (high byte first) for human readability.
 func FormatIEEEAddr(addr [8]byte) string {
-	return fmt.Sprintf("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
-		addr[0], addr[1], addr[2], addr[3], addr[4], addr[5], addr[6], addr[7])
+	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+		addr[7], addr[6], addr[5], addr[4], addr[3], addr[2], addr[1], addr[0])
 }
 
 // ParseIEEEAddr parses a colon-separated hex string into an IEEE address.
+// Input is expected in big-endian display format (high byte first),
+// and is stored in little-endian format (low byte first in memory).
 func ParseIEEEAddr(s string) ([8]byte, error) {
 	var addr [8]byte
 
@@ -251,12 +255,13 @@ func ParseIEEEAddr(s string) ([8]byte, error) {
 		return addr, fmt.Errorf("invalid IEEE address length: %s", s)
 	}
 
+	// Parse big-endian input and store in little-endian format
 	for i := 0; i < 8; i++ {
 		b, err := strconv.ParseUint(s[i*2:i*2+2], 16, 8)
 		if err != nil {
 			return addr, fmt.Errorf("invalid hex byte in IEEE address: %w", err)
 		}
-		addr[i] = uint8(b)
+		addr[7-i] = uint8(b) // Reverse: input[0] goes to addr[7]
 	}
 
 	return addr, nil

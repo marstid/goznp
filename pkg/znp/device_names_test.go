@@ -6,9 +6,9 @@ import (
 
 func TestSerializeDeviceNameEntry(t *testing.T) {
 	entry := &DeviceNameEntry{
-		IEEEAddr:    [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		Name:        "Living Room Light",
-		Description: "Main ceiling light in the living room",
+		IEEEAddr: [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+		Name:     "Living Room Light",
+		Comment:  "Main ceiling light in the living room",
 	}
 
 	data := SerializeDeviceNameEntry(entry)
@@ -29,8 +29,8 @@ func TestSerializeDeviceNameEntry(t *testing.T) {
 	if parsed.Name != entry.Name {
 		t.Errorf("name mismatch: expected %q, got %q", entry.Name, parsed.Name)
 	}
-	if parsed.Description != entry.Description {
-		t.Errorf("description mismatch: expected %q, got %q", entry.Description, parsed.Description)
+	if parsed.Comment != entry.Comment {
+		t.Errorf("comment mismatch: expected %q, got %q", entry.Comment, parsed.Comment)
 	}
 }
 
@@ -39,14 +39,14 @@ func TestSerializeDeviceNameTable(t *testing.T) {
 		Version: DeviceNameTableVersion,
 		Entries: []DeviceNameEntry{
 			{
-				IEEEAddr:    [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-				Name:        "Device 1",
-				Description: "First device",
+				IEEEAddr: [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+				Name:     "Device 1",
+				Comment:  "First device",
 			},
 			{
-				IEEEAddr:    [8]byte{0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18},
-				Name:        "Device 2",
-				Description: "Second device",
+				IEEEAddr: [8]byte{0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18},
+				Name:     "Device 2",
+				Comment:  "Second device",
 			},
 		},
 	}
@@ -78,8 +78,8 @@ func TestSerializeDeviceNameTable(t *testing.T) {
 		if parsed.Entries[i].Name != table.Entries[i].Name {
 			t.Errorf("entry %d name mismatch: expected %q, got %q", i, table.Entries[i].Name, parsed.Entries[i].Name)
 		}
-		if parsed.Entries[i].Description != table.Entries[i].Description {
-			t.Errorf("entry %d description mismatch", i)
+		if parsed.Entries[i].Comment != table.Entries[i].Comment {
+			t.Errorf("entry %d comment mismatch", i)
 		}
 	}
 }
@@ -119,9 +119,9 @@ func TestDeviceNameEntry_IsEmpty(t *testing.T) {
 		{
 			name: "fully populated entry",
 			entry: DeviceNameEntry{
-				IEEEAddr:    [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-				Name:        "Test Device",
-				Description: "A test device",
+				IEEEAddr: [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+				Name:     "Test Device",
+				Comment:  "A test device",
 			},
 			expected: false,
 		},
@@ -140,9 +140,9 @@ func TestDeviceNameEntry_IsEmpty(t *testing.T) {
 func TestSerializeDeviceNameEntry_TruncatesLongName(t *testing.T) {
 	longName := "This is a very long name that exceeds the 32 character limit for device names"
 	entry := &DeviceNameEntry{
-		IEEEAddr:    [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		Name:        longName,
-		Description: "Short desc",
+		IEEEAddr: [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+		Name:     longName,
+		Comment:  "Short comment",
 	}
 
 	data := SerializeDeviceNameEntry(entry)
@@ -159,12 +159,12 @@ func TestSerializeDeviceNameEntry_TruncatesLongName(t *testing.T) {
 	}
 }
 
-func TestSerializeDeviceNameEntry_TruncatesLongDescription(t *testing.T) {
-	longDesc := "This is a very long description that exceeds the 64 character limit for device descriptions in the NVRAM storage"
+func TestSerializeDeviceNameEntry_TruncatesLongComment(t *testing.T) {
+	longComment := "This is a very long comment that exceeds the 64 character limit for device comments in the NVRAM storage"
 	entry := &DeviceNameEntry{
-		IEEEAddr:    [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		Name:        "Short name",
-		Description: longDesc,
+		IEEEAddr: [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+		Name:     "Short name",
+		Comment:  longComment,
 	}
 
 	data := SerializeDeviceNameEntry(entry)
@@ -173,11 +173,11 @@ func TestSerializeDeviceNameEntry_TruncatesLongDescription(t *testing.T) {
 		t.Fatalf("failed to parse entry: %v", err)
 	}
 
-	if len(parsed.Description) != DeviceNameMaxDescription {
-		t.Errorf("expected truncated description length %d, got %d", DeviceNameMaxDescription, len(parsed.Description))
+	if len(parsed.Comment) != DeviceNameMaxComment {
+		t.Errorf("expected truncated comment length %d, got %d", DeviceNameMaxComment, len(parsed.Comment))
 	}
-	if parsed.Description != longDesc[:DeviceNameMaxDescription] {
-		t.Errorf("description not truncated correctly")
+	if parsed.Comment != longComment[:DeviceNameMaxComment] {
+		t.Errorf("comment not truncated correctly")
 	}
 }
 
@@ -213,9 +213,9 @@ func TestParseDeviceNameTable_ErrorOnInsufficientEntryData(t *testing.T) {
 
 func TestSerializeDeviceNameEntry_EmptyStrings(t *testing.T) {
 	entry := &DeviceNameEntry{
-		IEEEAddr:    [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
-		Name:        "",
-		Description: "",
+		IEEEAddr: [8]byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+		Name:     "",
+		Comment:  "",
 	}
 
 	data := SerializeDeviceNameEntry(entry)
@@ -227,8 +227,8 @@ func TestSerializeDeviceNameEntry_EmptyStrings(t *testing.T) {
 	if parsed.Name != "" {
 		t.Errorf("expected empty name, got %q", parsed.Name)
 	}
-	if parsed.Description != "" {
-		t.Errorf("expected empty description, got %q", parsed.Description)
+	if parsed.Comment != "" {
+		t.Errorf("expected empty comment, got %q", parsed.Comment)
 	}
 }
 

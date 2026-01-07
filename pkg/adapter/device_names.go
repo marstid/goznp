@@ -7,33 +7,32 @@ import (
 	"github.com/marstid/goznp/pkg/znp"
 )
 
-// DeviceNameInfo contains the custom name and description for a device.
+// DeviceNameInfo contains the custom name and comment for a device.
 type DeviceNameInfo struct {
-	IEEEAddr    [8]byte
-	Name        string
-	Description string
+	IEEEAddr [8]byte
+	Name     string
+	Comment  string
 }
 
 // IEEEAddrString formats the IEEE address as a hex string.
-// Returns format: "00:11:22:33:44:55:66:77" (reversed byte order, high byte first in display).
+// IEEE addresses are stored in little-endian format (low byte first in memory),
+// but displayed in big-endian format (high byte first) for human readability.
 func (d *DeviceNameInfo) IEEEAddrString() string {
-	// IEEE addresses are stored in little-endian format (low byte first)
-	// Display in big-endian format (high byte first) for human readability
-	return fmt.Sprintf("%02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X",
+	return fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		d.IEEEAddr[7], d.IEEEAddr[6], d.IEEEAddr[5], d.IEEEAddr[4],
 		d.IEEEAddr[3], d.IEEEAddr[2], d.IEEEAddr[1], d.IEEEAddr[0])
 }
 
-// SetDeviceName sets a custom name and description for a device.
-// Name is limited to 32 characters, description to 64 characters.
+// SetDeviceName sets a custom name and comment for a device.
+// Name is limited to 32 characters, comment to 64 characters.
 // Names are stored in NVRAM and persist across restarts.
-func (a *Adapter) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, description string) error {
-	// Validate name and description length
+func (a *Adapter) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, comment string) error {
+	// Validate name and comment length
 	if len(name) > znp.DeviceNameMaxName {
 		return fmt.Errorf("name too long: %d bytes (max %d)", len(name), znp.DeviceNameMaxName)
 	}
-	if len(description) > znp.DeviceNameMaxDescription {
-		return fmt.Errorf("description too long: %d bytes (max %d)", len(description), znp.DeviceNameMaxDescription)
+	if len(comment) > znp.DeviceNameMaxComment {
+		return fmt.Errorf("comment too long: %d bytes (max %d)", len(comment), znp.DeviceNameMaxComment)
 	}
 
 	a.mu.Lock()
@@ -44,7 +43,7 @@ func (a *Adapter) SetDeviceName(ctx context.Context, ieeeAddr [8]byte, name, des
 	znpClient := a.znp
 	a.mu.Unlock()
 
-	if err := znpClient.SetDeviceName(ctx, ieeeAddr, name, description); err != nil {
+	if err := znpClient.SetDeviceName(ctx, ieeeAddr, name, comment); err != nil {
 		return fmt.Errorf("failed to set device name: %w", err)
 	}
 
@@ -73,9 +72,9 @@ func (a *Adapter) GetDeviceName(ctx context.Context, ieeeAddr [8]byte) (*DeviceN
 	}
 
 	return &DeviceNameInfo{
-		IEEEAddr:    entry.IEEEAddr,
-		Name:        entry.Name,
-		Description: entry.Description,
+		IEEEAddr: entry.IEEEAddr,
+		Name:     entry.Name,
+		Comment:  entry.Comment,
 	}, nil
 }
 
@@ -116,9 +115,9 @@ func (a *Adapter) ListDeviceNames(ctx context.Context) ([]DeviceNameInfo, error)
 	for i := range table.Entries {
 		if !table.Entries[i].IsEmpty() {
 			result = append(result, DeviceNameInfo{
-				IEEEAddr:    table.Entries[i].IEEEAddr,
-				Name:        table.Entries[i].Name,
-				Description: table.Entries[i].Description,
+				IEEEAddr: table.Entries[i].IEEEAddr,
+				Name:     table.Entries[i].Name,
+				Comment:  table.Entries[i].Comment,
 			})
 		}
 	}

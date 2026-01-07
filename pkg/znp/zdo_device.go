@@ -95,6 +95,39 @@ func ParseLeaveInd(data []byte) (*DeviceLeave, error) {
 	}, nil
 }
 
+// ParseEndDeviceAnnceInd parses an endDeviceAnnceInd AREQ frame.
+// This is sent when a device announces itself on the network (join or rejoin).
+func ParseEndDeviceAnnceInd(data []byte) (*DeviceAnnounce, error) {
+	buf := NewBuffalo(data)
+
+	srcAddr, err := buf.ReadUint16()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read srcAddr: %w", err)
+	}
+
+	nwkAddr, err := buf.ReadUint16()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read nwkAddr: %w", err)
+	}
+
+	ieeeAddr, err := buf.ReadIEEEAddr()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read ieeeAddr: %w", err)
+	}
+
+	capabilities, err := buf.ReadUint8()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read capabilities: %w", err)
+	}
+
+	return &DeviceAnnounce{
+		SrcAddr:      srcAddr,
+		NwkAddr:      nwkAddr,
+		IEEEAddr:     ieeeAddr,
+		Capabilities: capabilities,
+	}, nil
+}
+
 // WaitForLeaveInd waits for a device leave indication.
 func (z *ZNP) WaitForLeaveInd(ctx context.Context, timeout time.Duration) (*DeviceLeave, error) {
 	matcher := FrameMatcher{
@@ -682,6 +715,160 @@ func (z *ZNP) GetAllNeighbors(ctx context.Context, dstAddr uint16) ([]NeighborEn
 	}
 
 	return allNeighbors, nil
+}
+
+// RoutingEntry represents a single routing table entry.
+type RoutingEntry struct {
+	DstAddr      uint16 // Destination network address
+	Status       uint8  // 0=Active, 1=Discovery Underway, 2=Discovery Failed, 3=Inactive, 4=Validation Underway
+	NextHop      uint16 // Next hop network address
+	Concentrator bool   // True if route is to a concentrator
+	RouteRecord  bool   // True if route record table entry
+	ManyToOne    bool   // True if many-to-one route discovery
+}
+
+// RoutingTable contains the routing table response.
+type RoutingTable struct {
+	SrcAddr         uint16         // Source address that responded
+	Status          uint8          // Status of the response
+	RoutingTableLen uint8          // Total entries in routing table
+	StartIndex      uint8          // Index of first entry returned
+	Entries         []RoutingEntry // Routing table entries
+}
+
+// MgmtRtgReq requests the routing table from a device (ZDO command 0x0032).
+// startIndex specifies which entry to start from (for pagination).
+func (z *ZNP) MgmtRtgReq(ctx context.Context, dstAddr uint16, startIndex uint8) (*RoutingTable, error) {
+	// Build request data
+	writer := NewBuffaloWriter()
+	writer.WriteUint16(dstAddr)
+	writer.WriteUint8(startIndex)
+
+	// Send SREQ
+	resp, err := z.Request(ctx, unpi.ZDO, CmdZdoMgmtRtgReq, writer.Bytes())
+	if err != nil {
+		return nil, fmt.Errorf("mgmt rtg request failed: %w", err)
+	}
+
+	// Parse immediate SREQ response
+	buf := NewBuffalo(resp.Data)
+	status, err := buf.ReadUint8()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read status: %w", err)
+	}
+
+	if status != 0 {
+		return nil, fmt.Errorf("mgmt rtg request returned status %d", status)
+	}
+
+	// Wait for AREQ response
+	matcher := FrameMatcher{
+		Type:      unpi.AREQ,
+		Subsystem: unpi.ZDO,
+		CommandID: CmdZdoMgmtRtgRsp.ID,
+	}
+
+	areqResp, err := z.waiter.WaitFor(ctx, matcher, DefaultSREQTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("waiting for mgmt rtg response: %w", err)
+	}
+
+	// Parse AREQ response
+	areqBuf := NewBuffalo(areqResp.Data)
+
+	srcAddr, err := areqBuf.ReadUint16()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read src addr: %w", err)
+	}
+
+	respStatus, err := areqBuf.ReadUint8()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read status: %w", err)
+	}
+
+	routingTableLen, err := areqBuf.ReadUint8()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read routing table len: %w", err)
+	}
+
+	routingStartIndex, err := areqBuf.ReadUint8()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read start index: %w", err)
+	}
+
+	routingCount, err := areqBuf.ReadUint8()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read routing count: %w", err)
+	}
+
+	// Parse routing entries
+	entries := make([]RoutingEntry, routingCount)
+	for i := uint8(0); i < routingCount; i++ {
+		entry := RoutingEntry{}
+
+		// Destination address (2 bytes)
+		dstAddr, err := areqBuf.ReadUint16()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read dst addr: %w", err)
+		}
+		entry.DstAddr = dstAddr
+
+		// Status (1 byte): Status(3 bits) | MemoryConstrained(1) | ManyToOne(1) | RouteRecordRequired(1) | GroupIdFlag(1) | Reserved(1)
+		statusByte, err := areqBuf.ReadUint8()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read status byte: %w", err)
+		}
+		entry.Status = statusByte & 0x07
+		entry.Concentrator = (statusByte & 0x08) != 0 // bit 3
+		entry.ManyToOne = (statusByte & 0x10) != 0    // bit 4
+		entry.RouteRecord = (statusByte & 0x20) != 0  // bit 5
+
+		// Next hop address (2 bytes)
+		nextHop, err := areqBuf.ReadUint16()
+		if err != nil {
+			return nil, fmt.Errorf("failed to read next hop: %w", err)
+		}
+		entry.NextHop = nextHop
+
+		entries[i] = entry
+	}
+
+	return &RoutingTable{
+		SrcAddr:         srcAddr,
+		Status:          respStatus,
+		RoutingTableLen: routingTableLen,
+		StartIndex:      routingStartIndex,
+		Entries:         entries,
+	}, nil
+}
+
+// GetAllRoutes retrieves the complete routing table from a device.
+// It handles pagination automatically.
+func (z *ZNP) GetAllRoutes(ctx context.Context, dstAddr uint16) ([]RoutingEntry, error) {
+	var allRoutes []RoutingEntry
+	startIndex := uint8(0)
+
+	for {
+		table, err := z.MgmtRtgReq(ctx, dstAddr, startIndex)
+		if err != nil {
+			return nil, err
+		}
+
+		if table.Status != 0 {
+			return nil, fmt.Errorf("routing table request returned status %d", table.Status)
+		}
+
+		allRoutes = append(allRoutes, table.Entries...)
+
+		// Check if we got all entries
+		if uint8(len(allRoutes)) >= table.RoutingTableLen {
+			break
+		}
+
+		startIndex = uint8(len(allRoutes))
+	}
+
+	return allRoutes, nil
 }
 
 // BindingEntry represents a single entry in the binding table.
