@@ -15,7 +15,7 @@ LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)"
 .DEFAULT_GOAL := build
 
 # Phony targets
-.PHONY: all build clean test test-verbose test-coverage fmt vet lint check install help
+.PHONY: all build clean test test-verbose test-coverage test-integration fmt vet lint check install help
 
 ## build: Build the CLI binary
 build:
@@ -52,27 +52,31 @@ test-coverage:
 	$(GO) tool cover -html=$(BINARY_DIR)/coverage.out -o $(BINARY_DIR)/coverage.html
 	@echo "Coverage report: $(BINARY_DIR)/coverage.html"
 
+## test-integration: Run hardware integration tests (requires GOZNP_PORT)
+test-integration:
+ifndef GOZNP_PORT
+	@echo "Error: GOZNP_PORT environment variable is required"
+	@echo "Usage: GOZNP_PORT=/dev/ttyUSB0 make test-integration"
+	@exit 1
+endif
+	@echo "Running integration tests on $(GOZNP_PORT)..."
+	$(GO) test -v -tags=integration ./pkg/adapter/...
+
 ## fmt: Format code
 fmt:
 	@echo "Formatting code..."
 	$(GO) fmt ./...
-	@if command -v goimports >/dev/null 2>&1; then \
-		goimports -w .; \
-	fi
+	$(GO) run golang.org/x/tools/cmd/goimports@latest -w .
 
 ## vet: Run go vet
 vet:
 	@echo "Running go vet..."
 	$(GO) vet ./...
 
-## lint: Run golangci-lint (if installed)
+## lint: Run golangci-lint
 lint:
 	@echo "Running linter..."
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run; \
-	else \
-		echo "golangci-lint not installed, skipping"; \
-	fi
+	$(GO) run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run
 
 ## check: Run fmt, vet, and lint checks
 check: fmt vet lint
@@ -96,7 +100,8 @@ help:
 	@sed -n 's/^##//p' $(MAKEFILE_LIST) | column -t -s ':' | sed -e 's/^/  /'
 	@echo ""
 	@echo "Examples:"
-	@echo "  make              # Build the binary"
-	@echo "  make test         # Run tests"
-	@echo "  make all          # Format, vet, test, and build"
-	@echo "  make clean build  # Clean and rebuild"
+	@echo "  make                                        # Build the binary"
+	@echo "  make test                                   # Run unit tests"
+	@echo "  make all                                    # Format, vet, test, and build"
+	@echo "  make clean build                            # Clean and rebuild"
+	@echo "  GOZNP_PORT=/dev/ttyUSB0 make test-integration  # Run hardware tests"
