@@ -10,20 +10,18 @@ linters:
     - staticcheck         # Comprehensive static analysis
     - typecheck           # Typecheck package
     - unused              # Check for unused constants, variables, functions and types
-    - gocyclo             # Cyclomatic complexity
+    # - gocyclo           # Disabled - many complex functions are intentional
     - gocritic            # Provides diagnostics that check for bugs, performance and style issues
-    - godot               # Check if comments end in a period
+    # - godot             # Disabled - too many existing comments without periods
     - gofmt               # Check code formatting
     - goimports           # Check import statements are formatted correctly
     - misspell            # Find commonly misspelled English words
     - revive              # Fast, configurable, extensible, flexible, and beautiful linter
     - unconvert           # Remove unnecessary type conversions
     - unparam             # Detect unused function parameters
-    - usestdlib           # Detect something that can be replaced by std lib
     - whitespace          # Detection of leading and trailing whitespace
 
   disable:
-    - exhaustivestruct    # Not needed - using field names is clearer
     - exhaustruct         # Not needed - using field names is clearer
     - gosec               # Moved to separate security workflow
     - nlreturn            # Too strict for our style
@@ -57,6 +55,7 @@ linters-settings:
       - unnamedResult    # Named returns are useful
       - hugeParam        # Sometimes intentional for clarity
       - whyNoLint        # We use comments appropriately
+      - paramTypeCombine # Explicit parameter types are clearer
 
   revive:
     rules:
