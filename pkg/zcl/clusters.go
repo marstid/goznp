@@ -38,6 +38,7 @@ const (
 	ClusterSEMessaging             ClusterID = 0x0703
 	ClusterTempMeasurement         ClusterID = 0x0402
 	ClusterPressureMeas            ClusterID = 0x0403
+	ClusterFlowMeasurement         ClusterID = 0x0404
 	ClusterHumidityMeas            ClusterID = 0x0405
 	ClusterIlluminanceMeas         ClusterID = 0x0400
 	ClusterCarbonMonoxide          ClusterID = 0x040C
@@ -118,6 +119,8 @@ func (c ClusterID) String() string {
 		return "TemperatureMeasurement"
 	case ClusterPressureMeas:
 		return "PressureMeasurement"
+	case ClusterFlowMeasurement:
+		return "FlowMeasurement"
 	case ClusterHumidityMeas:
 		return "RelativeHumidityMeasurement"
 	case ClusterIlluminanceMeas:
@@ -544,9 +547,12 @@ const (
 	AttrWindowCoveringCurrentPositionTilt        AttributeID = 0x0004 // uint16
 	AttrWindowCoveringNumActuationsLift          AttributeID = 0x0005 // uint16
 	AttrWindowCoveringNumActuationsTilt          AttributeID = 0x0006 // uint16
-	AttrWindowCoveringConfigStatus               AttributeID = 0x0007 // bitmap8
+	AttrWindowCoveringConfigStatus               AttributeID = 0x0007 // bitmap8: Configuration status
 	AttrWindowCoveringCurrentPositionLiftPercent AttributeID = 0x0008 // uint8 (0-100%)
 	AttrWindowCoveringCurrentPositionTiltPercent AttributeID = 0x0009 // uint8 (0-100%)
+	AttrWindowCoveringOperationalStatus          AttributeID = 0x000A // bitmap8: Current operation status
+	AttrWindowCoveringTargetPositionLiftPct      AttributeID = 0x000B // uint8: Target lift position %
+	AttrWindowCoveringTargetPositionTiltPct      AttributeID = 0x000C // uint8: Target tilt position %
 
 	// Settings Attributes
 	AttrWindowCoveringInstalledOpenLimitLift    AttributeID = 0x0010 // uint16
@@ -556,7 +562,7 @@ const (
 	AttrWindowCoveringVelocityLift              AttributeID = 0x0014 // uint16
 	AttrWindowCoveringAccelerationTimeLift      AttributeID = 0x0015 // uint16
 	AttrWindowCoveringDecelerationTimeLift      AttributeID = 0x0016 // uint16
-	AttrWindowCoveringMode                      AttributeID = 0x0017 // bitmap8
+	AttrWindowCoveringMode                      AttributeID = 0x0017 // bitmap8: Mode
 	AttrWindowCoveringIntermediateSetpointsLift AttributeID = 0x0018 // octet string
 	AttrWindowCoveringIntermediateSetpointsTilt AttributeID = 0x0019 // octet string
 )
@@ -583,6 +589,16 @@ const (
 	AttrColorMode              AttributeID = 0x0008 // 0=HS, 1=XY, 2=ColorTemp
 	AttrColorTempMin           AttributeID = 0x400B // Min color temp in mireds
 	AttrColorTempMax           AttributeID = 0x400C // Max color temp in mireds
+
+	// Enhanced Color Control attributes (ZCL 6+)
+	AttrColorCapabilities               AttributeID = 0x400A // bitmap16: Supported color features (MANDATORY)
+	AttrColorEnhancedCurrentHue         AttributeID = 0x4000 // uint16: Enhanced hue (0-65535)
+	AttrColorEnhancedColorMode          AttributeID = 0x4001 // enum8: Enhanced color mode
+	AttrColorColorLoopActive            AttributeID = 0x4002 // uint8: Color loop active
+	AttrColorColorLoopDirection         AttributeID = 0x4003 // uint8: Color loop direction
+	AttrColorColorLoopTime              AttributeID = 0x4004 // uint16: Color loop time
+	AttrColorColorLoopStartEnhancedHue  AttributeID = 0x4005 // uint16
+	AttrColorColorLoopStoredEnhancedHue AttributeID = 0x4006 // uint16
 )
 
 // Color Control Cluster Commands (0x0300)
@@ -598,9 +614,25 @@ const (
 	CmdColorMoveColor           uint8 = 0x08 // Move color
 	CmdColorStepColor           uint8 = 0x09 // Step color
 	CmdColorMoveToColorTemp     uint8 = 0x0A // Move to color temperature
-	CmdColorMoveColorTemp       uint8 = 0x4B // Move color temperature
-	CmdColorStepColorTemp       uint8 = 0x4C // Step color temperature
-	CmdColorStopMoveStep        uint8 = 0x47 // Stop move/step
+
+	// Enhanced Color Control commands (ZCL 6+)
+	CmdColorEnhancedMoveToHue              uint8 = 0x40
+	CmdColorEnhancedMoveHue                uint8 = 0x41
+	CmdColorEnhancedStepHue                uint8 = 0x42
+	CmdColorEnhancedMoveToHueAndSaturation uint8 = 0x43
+	CmdColorColorLoopSet                   uint8 = 0x44
+	CmdColorStopMoveStep                   uint8 = 0x47 // Stop move/step
+	CmdColorMoveColorTemp                  uint8 = 0x4B // Move color temperature
+	CmdColorStepColorTemp                  uint8 = 0x4C // Step color temperature
+)
+
+// ColorCapabilities bitmap values (attribute 0x400A)
+const (
+	ColorCapabilityHueSaturation uint16 = 1 << 0 // Supports Hue/Saturation
+	ColorCapabilityEnhancedHue   uint16 = 1 << 1 // Supports Enhanced Hue
+	ColorCapabilityColorLoop     uint16 = 1 << 2 // Supports Color Loop
+	ColorCapabilityXY            uint16 = 1 << 3 // Supports XY attributes
+	ColorCapabilityColorTemp     uint16 = 1 << 4 // Supports Color Temperature
 )
 
 // Thermostat Cluster Attributes (0x0201)
@@ -1041,6 +1073,14 @@ const (
 	AttrHumidityMinMeasuredValue AttributeID = 0x0001
 	AttrHumidityMaxMeasuredValue AttributeID = 0x0002
 	AttrHumidityTolerance        AttributeID = 0x0003
+)
+
+// Flow Measurement Cluster Attributes (0x0404)
+const (
+	AttrFlowMeasuredValue    AttributeID = 0x0000 // uint16: Measured flow in 0.1 m³/h
+	AttrFlowMinMeasuredValue AttributeID = 0x0001 // uint16: Min measurable value
+	AttrFlowMaxMeasuredValue AttributeID = 0x0002 // uint16: Max measurable value
+	AttrFlowTolerance        AttributeID = 0x0003 // uint16: Tolerance
 )
 
 // Pressure Measurement Attributes (0x0403)

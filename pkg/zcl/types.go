@@ -515,7 +515,25 @@ func WriteValue(value interface{}, dataType DataType) ([]byte, error) {
 		}
 		return []byte{v}, nil
 
-	case TypeUint16, TypeData16, TypeBitmap16, TypeEnum16:
+	case TypeUint16, TypeData16:
+		v, ok := value.(uint16)
+		if !ok {
+			return nil, fmt.Errorf("expected uint16, got %T", value)
+		}
+		buf := make([]byte, 2)
+		binary.LittleEndian.PutUint16(buf, v)
+		return buf, nil
+
+	case TypeBitmap16:
+		v, ok := value.(uint16)
+		if !ok {
+			return nil, fmt.Errorf("expected uint16, got %T", value)
+		}
+		buf := make([]byte, 2)
+		binary.LittleEndian.PutUint16(buf, v)
+		return buf, nil
+
+	case TypeEnum16:
 		v, ok := value.(uint16)
 		if !ok {
 			return nil, fmt.Errorf("expected uint16, got %T", value)
@@ -531,6 +549,13 @@ func WriteValue(value interface{}, dataType DataType) ([]byte, error) {
 		}
 		return []byte{byte(v), byte(v >> 8), byte(v >> 16)}, nil
 
+	case TypeBitmap24:
+		v, ok := value.(uint32)
+		if !ok {
+			return nil, fmt.Errorf("expected uint32, got %T", value)
+		}
+		return []byte{byte(v), byte(v >> 8), byte(v >> 16)}, nil
+
 	case TypeUint32, TypeData32:
 		v, ok := value.(uint32)
 		if !ok {
@@ -540,12 +565,51 @@ func WriteValue(value interface{}, dataType DataType) ([]byte, error) {
 		binary.LittleEndian.PutUint32(buf, v)
 		return buf, nil
 
+	case TypeBitmap32:
+		v, ok := value.(uint32)
+		if !ok {
+			return nil, fmt.Errorf("expected uint32, got %T", value)
+		}
+		buf := make([]byte, 4)
+		binary.LittleEndian.PutUint32(buf, v)
+		return buf, nil
+
+	case TypeBitmap40:
+		v, ok := value.(uint64)
+		if !ok {
+			return nil, fmt.Errorf("expected uint64, got %T", value)
+		}
+		return []byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24), byte(v >> 32)}, nil
+
 	case TypeUint48:
 		v, ok := value.(uint64)
 		if !ok {
 			return nil, fmt.Errorf("expected uint64 for uint48, got %T", value)
 		}
 		return []byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24), byte(v >> 32), byte(v >> 40)}, nil
+
+	case TypeBitmap48:
+		v, ok := value.(uint64)
+		if !ok {
+			return nil, fmt.Errorf("expected uint64, got %T", value)
+		}
+		return []byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24), byte(v >> 32), byte(v >> 40)}, nil
+
+	case TypeBitmap56:
+		v, ok := value.(uint64)
+		if !ok {
+			return nil, fmt.Errorf("expected uint64, got %T", value)
+		}
+		return []byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24), byte(v >> 32), byte(v >> 40), byte(v >> 48)}, nil
+
+	case TypeBitmap64:
+		v, ok := value.(uint64)
+		if !ok {
+			return nil, fmt.Errorf("expected uint64, got %T", value)
+		}
+		buf := make([]byte, 8)
+		binary.LittleEndian.PutUint64(buf, v)
+		return buf, nil
 
 	case TypeInt8:
 		v, ok := value.(int8)

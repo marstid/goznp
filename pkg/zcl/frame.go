@@ -39,6 +39,14 @@ const (
 	CmdDefaultResponse          GlobalCommand = 0x0B
 	CmdDiscoverAttributes       GlobalCommand = 0x0C
 	CmdDiscoverAttributesResp   GlobalCommand = 0x0D
+
+	// Extended discovery commands (ZCL 6+)
+	CmdDiscoverCommandsReceived       GlobalCommand = 0x11
+	CmdDiscoverCommandsReceivedResp   GlobalCommand = 0x12
+	CmdDiscoverCommandsGenerated      GlobalCommand = 0x13
+	CmdDiscoverCommandsGeneratedResp  GlobalCommand = 0x14
+	CmdDiscoverAttributesExtended     GlobalCommand = 0x15
+	CmdDiscoverAttributesExtendedResp GlobalCommand = 0x16
 )
 
 // On/Off Cluster Commands
@@ -64,18 +72,130 @@ const (
 	CmdLevelMoveToClosestFreq    uint8 = 0x08
 )
 
-// ZCL Status Codes
+// Status defines ZCL status codes.
+type Status uint8
+
+// ZCL Status codes (complete set per ZCL 8 spec)
 const (
-	StatusSuccess           uint8 = 0x00
-	StatusFailure           uint8 = 0x01
-	StatusUnsupportedAttr   uint8 = 0x86
-	StatusInvalidField      uint8 = 0x85
-	StatusInvalidValue      uint8 = 0x87
-	StatusReadOnly          uint8 = 0x88
-	StatusInsufficientSpace uint8 = 0x89
-	StatusNotFound          uint8 = 0x8B
-	StatusTimeout           uint8 = 0x94
+	StatusSuccess                  Status = 0x00
+	StatusFailure                  Status = 0x01
+	StatusNotAuthorized            Status = 0x7E
+	StatusReservedFieldNotZero     Status = 0x7F
+	StatusMalformedCommand         Status = 0x80
+	StatusUnsupClusterCommand      Status = 0x81
+	StatusUnsupGeneralCommand      Status = 0x82
+	StatusUnsupManufClusterCmd     Status = 0x83
+	StatusUnsupManufGeneralCmd     Status = 0x84
+	StatusInvalidField             Status = 0x85
+	StatusUnsupportedAttribute     Status = 0x86
+	StatusInvalidValue             Status = 0x87
+	StatusReadOnly                 Status = 0x88
+	StatusInsufficientSpace        Status = 0x89
+	StatusDuplicateExists          Status = 0x8A
+	StatusNotFound                 Status = 0x8B
+	StatusUnreportableAttribute    Status = 0x8C
+	StatusInvalidDataType          Status = 0x8D
+	StatusInvalidSelector          Status = 0x8E
+	StatusWriteOnly                Status = 0x8F
+	StatusInconsistentStartupState Status = 0x90
+	StatusDefinedOutOfBand         Status = 0x91
+	StatusInconsistent             Status = 0x92
+	StatusActionDenied             Status = 0x93
+	StatusTimeout                  Status = 0x94
+	StatusAbort                    Status = 0x95
+	StatusInvalidImage             Status = 0x96
+	StatusWaitForData              Status = 0x97
+	StatusNoImageAvailable         Status = 0x98
+	StatusRequireMoreImage         Status = 0x99
+	StatusNotificationPending      Status = 0x9A
+	StatusHardwareFailure          Status = 0xC0
+	StatusSoftwareFailure          Status = 0xC1
+	StatusCalibrationError         Status = 0xC2
+	StatusUnsupportedCluster       Status = 0xC3
 )
+
+// Deprecated: Use Status constants instead
+const (
+	StatusUnsupportedAttr = StatusUnsupportedAttribute
+)
+
+// String returns human-readable status name.
+func (s Status) String() string {
+	switch s {
+	case StatusSuccess:
+		return "Success"
+	case StatusFailure:
+		return "Failure"
+	case StatusNotAuthorized:
+		return "NotAuthorized"
+	case StatusReservedFieldNotZero:
+		return "ReservedFieldNotZero"
+	case StatusMalformedCommand:
+		return "MalformedCommand"
+	case StatusUnsupClusterCommand:
+		return "UnsupportedClusterCommand"
+	case StatusUnsupGeneralCommand:
+		return "UnsupportedGeneralCommand"
+	case StatusUnsupManufClusterCmd:
+		return "UnsupportedManufacturerClusterCommand"
+	case StatusUnsupManufGeneralCmd:
+		return "UnsupportedManufacturerGeneralCommand"
+	case StatusInvalidField:
+		return "InvalidField"
+	case StatusUnsupportedAttribute:
+		return "UnsupportedAttribute"
+	case StatusInvalidValue:
+		return "InvalidValue"
+	case StatusReadOnly:
+		return "ReadOnly"
+	case StatusInsufficientSpace:
+		return "InsufficientSpace"
+	case StatusDuplicateExists:
+		return "DuplicateExists"
+	case StatusNotFound:
+		return "NotFound"
+	case StatusUnreportableAttribute:
+		return "UnreportableAttribute"
+	case StatusInvalidDataType:
+		return "InvalidDataType"
+	case StatusInvalidSelector:
+		return "InvalidSelector"
+	case StatusWriteOnly:
+		return "WriteOnly"
+	case StatusInconsistentStartupState:
+		return "InconsistentStartupState"
+	case StatusDefinedOutOfBand:
+		return "DefinedOutOfBand"
+	case StatusInconsistent:
+		return "Inconsistent"
+	case StatusActionDenied:
+		return "ActionDenied"
+	case StatusTimeout:
+		return "Timeout"
+	case StatusAbort:
+		return "Abort"
+	case StatusInvalidImage:
+		return "InvalidImage"
+	case StatusWaitForData:
+		return "WaitForData"
+	case StatusNoImageAvailable:
+		return "NoImageAvailable"
+	case StatusRequireMoreImage:
+		return "RequireMoreImage"
+	case StatusNotificationPending:
+		return "NotificationPending"
+	case StatusHardwareFailure:
+		return "HardwareFailure"
+	case StatusSoftwareFailure:
+		return "SoftwareFailure"
+	case StatusCalibrationError:
+		return "CalibrationError"
+	case StatusUnsupportedCluster:
+		return "UnsupportedCluster"
+	default:
+		return fmt.Sprintf("Unknown(0x%02X)", uint8(s))
+	}
+}
 
 // FrameControl defines the ZCL frame control byte.
 type FrameControl struct {
@@ -254,7 +374,7 @@ func BuildClusterCommand(seqNum uint8, commandID uint8, payload []byte) *Frame {
 // ReadAttributeResult represents a single attribute in a read response.
 type ReadAttributeResult struct {
 	AttributeID AttributeID
-	Status      uint8 // 0 = success
+	Status      Status
 	DataType    DataType
 	Value       interface{}
 }
@@ -272,7 +392,7 @@ func ParseReadAttributesResponse(payload []byte) ([]ReadAttributeResult, error) 
 
 		result := ReadAttributeResult{
 			AttributeID: AttributeID(binary.LittleEndian.Uint16(payload[offset:])),
-			Status:      payload[offset+2],
+			Status:      Status(payload[offset+2]),
 		}
 		offset += 3
 
@@ -301,7 +421,7 @@ func ParseReadAttributesResponse(payload []byte) ([]ReadAttributeResult, error) 
 
 // WriteAttributeResult represents a write result in a write response.
 type WriteAttributeResult struct {
-	Status      uint8
+	Status      Status
 	AttributeID AttributeID // Only present if status != 0
 }
 
@@ -312,7 +432,7 @@ func ParseWriteAttributesResponse(payload []byte) ([]WriteAttributeResult, error
 	offset := 0
 
 	// If the first status is 0x00, it means all writes succeeded
-	if len(payload) > 0 && payload[0] == StatusSuccess {
+	if len(payload) > 0 && Status(payload[0]) == StatusSuccess {
 		results = append(results, WriteAttributeResult{
 			Status: StatusSuccess,
 		})
@@ -325,7 +445,7 @@ func ParseWriteAttributesResponse(payload []byte) ([]WriteAttributeResult, error
 		}
 
 		result := WriteAttributeResult{
-			Status: payload[offset],
+			Status: Status(payload[offset]),
 		}
 		offset++
 
@@ -455,7 +575,7 @@ func BuildConfigureReportingRequest(seqNum uint8, configs []ReportingConfig) (*F
 
 // ConfigureReportingResult represents a single attribute result in a configure reporting response.
 type ConfigureReportingResult struct {
-	Status      uint8       // 0x00 = success
+	Status      Status      // 0x00 = success
 	Direction   uint8       // Only present if status != 0x00
 	AttributeID AttributeID // Only present if status != 0x00
 }
@@ -467,7 +587,7 @@ func ParseConfigureReportingResponse(payload []byte) ([]ConfigureReportingResult
 	offset := 0
 
 	// If first status is 0x00, all configurations succeeded
-	if len(payload) > 0 && payload[0] == StatusSuccess {
+	if len(payload) > 0 && Status(payload[0]) == StatusSuccess {
 		results = append(results, ConfigureReportingResult{
 			Status: StatusSuccess,
 		})
@@ -481,7 +601,7 @@ func ParseConfigureReportingResponse(payload []byte) ([]ConfigureReportingResult
 		}
 
 		result := ConfigureReportingResult{
-			Status: payload[offset],
+			Status: Status(payload[offset]),
 		}
 		offset++
 
@@ -539,8 +659,8 @@ func BuildReadReportingConfigRequest(seqNum uint8, records []ReadReportingConfig
 
 // ReportingConfigRecord represents a single attribute's reporting configuration from the response.
 type ReportingConfigRecord struct {
-	Status           uint8 // 0x00 = success
-	Direction        uint8 // 0x00 = reported, 0x01 = received
+	Status           Status // 0x00 = success
+	Direction        uint8  // 0x00 = reported, 0x01 = received
 	AttributeID      AttributeID
 	DataType         DataType    // Only present if Direction == 0x00 and Status == 0x00
 	MinInterval      uint16      // Only present if Direction == 0x00 and Status == 0x00
@@ -563,7 +683,7 @@ func ParseReadReportingConfigResponse(payload []byte) ([]ReportingConfigRecord, 
 		record := ReportingConfigRecord{}
 
 		// Status (1 byte)
-		record.Status = payload[offset]
+		record.Status = Status(payload[offset])
 		offset++
 
 		// Direction (1 byte)
