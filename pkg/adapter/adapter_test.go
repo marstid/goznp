@@ -331,3 +331,26 @@ func TestDefaultOptions(t *testing.T) {
 		t.Error("default baud rate should be positive")
 	}
 }
+
+// TestRegisteredProfiles tests the RegisteredProfiles method.
+func TestRegisteredProfiles(t *testing.T) {
+	a := New()
+
+	// Before opening, should return default profiles
+	profiles := a.RegisteredProfiles()
+	if len(profiles) == 0 {
+		t.Error("should return at least default profile")
+	}
+
+	// Should include Home Automation profile
+	hasHA := false
+	for _, p := range profiles {
+		if p == 0x0104 { // Home Automation profile
+			hasHA = true
+			break
+		}
+	}
+	if !hasHA {
+		t.Error("should include Home Automation profile")
+	}
+}

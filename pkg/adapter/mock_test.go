@@ -25,9 +25,10 @@ type mockZNP struct {
 	startupErr  error
 
 	// Callback handlers
-	onDeviceJoinHandler  func(*znp.TcDeviceInd)
-	onDeviceLeaveHandler func(*znp.DeviceLeave)
-	onErrorHandler       func(error)
+	onDeviceJoinHandler     func(*znp.TcDeviceInd)
+	onDeviceLeaveHandler    func(*znp.DeviceLeave)
+	onDeviceAnnounceHandler func(*znp.DeviceAnnounce)
+	onHandler               func(error)
 
 	// Track method calls for verification
 	openCalled        bool
@@ -83,7 +84,11 @@ func (m *mockZNP) OnDeviceLeave(handler func(*znp.DeviceLeave)) {
 }
 
 func (m *mockZNP) OnError(handler func(error)) {
-	m.onErrorHandler = handler
+	m.onHandler = handler
+}
+
+func (m *mockZNP) OnDeviceAnnounce(handler func(*znp.DeviceAnnounce)) {
+	m.onDeviceAnnounceHandler = handler
 }
 
 func (m *mockZNP) OnFrame(handler func(*unpi.Frame)) {

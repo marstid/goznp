@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/marstid/goznp/pkg/serial"
@@ -88,14 +89,21 @@ func (c *dedupeCache) isDuplicate(srcAddr, clusterID uint16, transSeqNum uint8) 
 type Adapter struct {
 	options             Options
 	port                serial.Port
-	znp                 *znp.ZNP
+	znp                 ZNPClient
 	version             *znp.VersionInfo
 	deviceMgr           *deviceManager
 	registeredEndpoints *RegisteredEndpoints
 	dedupe              *dedupeCache
+	transactionID       uint32 // Per-adapter ZCL transaction ID counter
 
 	mu     sync.Mutex
 	isOpen bool
+}
+
+// nextTransactionID returns the next ZCL transaction sequence number.
+// This is per-adapter to avoid ID collisions when multiple adapters are used.
+func (a *Adapter) nextTransactionID() uint8 {
+	return uint8(atomic.AddUint32(&a.transactionID, 1))
 }
 
 // Info contains comprehensive adapter information.
@@ -223,6 +231,25 @@ func (a *Adapter) setupDeviceEventCallbacks() {
 			ctx := context.Background()
 			_ = a.DeleteDeviceName(ctx, ind.IEEEAddr)
 		}()
+	})
+
+	// Handle device announcements (join or rejoin with potentially new network address)
+	a.znp.OnDeviceAnnounce(func(ind *znp.DeviceAnnounce) {
+		// Try to update existing device's network address
+		// This handles the case where a device rejoins with a new network address
+		updated := a.deviceMgr.updateDeviceNwkAddr(ind.IEEEAddr, ind.NwkAddr)
+
+		// If device doesn't exist yet, add it
+		// This can happen if we receive an announcement before tcDeviceInd
+		if !updated {
+			dev := &Device{
+				IEEEAddr:     ind.IEEEAddr,
+				NwkAddr:      ind.NwkAddr,
+				Capabilities: ind.Capabilities,
+				LastSeen:     time.Now(),
+			}
+			a.deviceMgr.addDevice(dev)
+		}
 	})
 }
 

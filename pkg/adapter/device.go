@@ -101,6 +101,21 @@ func (dm *deviceManager) getAllDevices() []*Device {
 	return devices
 }
 
+// updateDeviceNwkAddr updates the network address for a device.
+// This is called when a device announces with a new address (e.g., after rejoin).
+// Returns true if the device was found and updated, false otherwise.
+func (dm *deviceManager) updateDeviceNwkAddr(ieeeAddr [8]byte, newNwkAddr uint16) bool {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+
+	if dev, exists := dm.devices[ieeeAddr]; exists {
+		dev.NwkAddr = newNwkAddr
+		dev.LastSeen = time.Now()
+		return true
+	}
+	return false
+}
+
 // setHandler sets the device event handler.
 func (dm *deviceManager) setHandler(h func(DeviceEvent)) {
 	dm.mu.Lock()
@@ -109,15 +124,20 @@ func (dm *deviceManager) setHandler(h func(DeviceEvent)) {
 }
 
 // notifyEvent calls the event handler if set.
-// The event is copied to avoid data races with the handler goroutine.
+// The event is deeply copied to avoid data races with the handler goroutine.
 func (dm *deviceManager) notifyEvent(event DeviceEvent) {
 	dm.mu.RLock()
 	handler := dm.handler
 	dm.mu.RUnlock()
 
 	if handler != nil {
-		// Copy event to avoid potential data races with event data
+		// Deep copy event to avoid potential data races with event data
 		eventCopy := event
+		// Deep copy the Device struct if present to avoid concurrent modification
+		if event.Device != nil {
+			deviceCopy := *event.Device
+			eventCopy.Device = &deviceCopy
+		}
 		// Call handler in a goroutine to avoid blocking
 		go handler(eventCopy)
 	}
@@ -422,7 +442,7 @@ func (a *Adapter) ForceRemoveDevice(ctx context.Context, ieeeAddr [8]byte) error
 	}
 
 	if !deleted {
-		return fmt.Errorf("device not found in NVRAM")
+		return ErrDeviceNotFound
 	}
 
 	// Remove from local device manager
