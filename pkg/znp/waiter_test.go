@@ -85,7 +85,7 @@ func TestWaiterTimeout(t *testing.T) {
 	}
 }
 
-// TestWaiterContextCancellation tests that cancelling context stops waiting.
+// TestWaiterContextCancellation tests that canceling context stops waiting.
 func TestWaiterContextCancellation(t *testing.T) {
 	w := NewWaiter()
 
@@ -170,8 +170,8 @@ func TestWaiterMultiplePending(t *testing.T) {
 		}()
 	}
 
-	// Give waiters time to register
-	time.Sleep(20 * time.Millisecond)
+	// Give waiters time to register (increased for parallel test runs).
+	time.Sleep(100 * time.Millisecond)
 
 	// Resolve each frame in reverse order
 	frame3 := &unpi.Frame{
@@ -306,8 +306,8 @@ func TestWaiterMultipleSameMatch(t *testing.T) {
 		}()
 	}
 
-	// Give waiters time to register
-	time.Sleep(20 * time.Millisecond)
+	// Give waiters time to register (increased for parallel test runs).
+	time.Sleep(100 * time.Millisecond)
 
 	// Send three matching frames (one for each waiter)
 	for i := 0; i < 3; i++ {
@@ -434,6 +434,7 @@ func TestWaiterCleanup(t *testing.T) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
+		//nolint:errcheck // Error intentionally ignored in test
 		w.WaitFor(ctx, matcher, time.Second)
 		close(done)
 	}()
@@ -483,6 +484,7 @@ func TestWaiterConcurrentAccess(t *testing.T) {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 			defer cancel()
+			//nolint:errcheck // Error intentionally ignored in test
 			w.WaitFor(ctx, matcher, 200*time.Millisecond)
 		}(i)
 	}
