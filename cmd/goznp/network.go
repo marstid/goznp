@@ -704,6 +704,237 @@ func runNetworkRoutes(ctx context.Context, args []string) error {
 	return nil
 }
 
+var networkTreeCmd = &cobra.Command{
+	Use:   "tree",
+	Short: "Display network topology as a tree",
+	Long: `Display the Zigbee network topology as an ASCII tree showing
+parent-child relationships with LQI quality indicators.
+
+Example output:
+  0x0000 [Coordinator] 00:12:4b:00:xx:xx:xx:xx
+  ├── 0x1234 [Router] aa:bb:cc:... (Living Room) - LQI: 85% Good
+  │   └── 0x5678 [EndDevice] 11:22:33:... (Motion Sensor) - LQI: 92% Excellent
+  └── 0xDEF0 [EndDevice] 44:55:66:... - LQI: 45% Poor`,
+	Run: func(_ *cobra.Command, _ []string) {
+		ctx := setupSignalHandler()
+		if err := runNetworkTree(ctx); err != nil {
+			fmt.Fprintln(os.Stderr, "Error:", err)
+			os.Exit(1)
+		}
+	},
+}
+
+func runNetworkTree(ctx context.Context) error {
+	port, err := getPortPath()
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
+	defer cancel()
+
+	a := adapter.New(
+		adapter.WithSerialPath(port),
+		adapter.WithBaudRate(baudRate),
+	)
+
+	if err := a.Open(ctx); err != nil {
+		return fmt.Errorf("failed to open adapter: %w", err)
+	}
+	defer a.Close()
+
+	fmt.Println("Scanning network topology...")
+	fmt.Println()
+
+	health, err := a.GetNetworkHealth(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get network health: %w", err)
+	}
+
+	// Fetch custom device names.
+	//nolint:errcheck // Names are optional, errors intentionally ignored
+	deviceNames, _ := a.ListDeviceNames(ctx)
+	namesByIEEE := make(map[[8]byte]string)
+	for _, dn := range deviceNames {
+		namesByIEEE[dn.IEEEAddr] = dn.Name
+	}
+
+	// Build a map of nodes by network address for quick lookup.
+	nodeMap := make(map[uint16]*adapter.TopologyNode)
+	for i := range health.Topology {
+		nodeMap[health.Topology[i].NwkAddr] = &health.Topology[i]
+	}
+
+	// Find the coordinator (root of the tree).
+	// The coordinator may not be in the Topology list - it's implied as 0x0000.
+	var root *adapter.TopologyNode
+	for i := range health.Topology {
+		if health.Topology[i].DeviceType == 0 {
+			root = &health.Topology[i]
+			break
+		}
+	}
+
+	// If coordinator not in topology, create a synthetic root node.
+	if root == nil {
+		// Get coordinator info from network info.
+		netInfo, err := a.GetNetworkInfo(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get network info: %w", err)
+		}
+
+		// Build children list - only devices with parent 0x0000.
+		var children []uint16
+		for i := range health.Topology {
+			node := &health.Topology[i]
+			if node.ParentAddr == 0x0000 {
+				children = append(children, node.NwkAddr)
+			}
+		}
+
+		root = &adapter.TopologyNode{
+			NwkAddr:    0x0000,
+			IEEEAddr:   netInfo.IEEEAddr,
+			DeviceType: 0, // Coordinator.
+			ParentAddr: 0xFFFF,
+			Depth:      0,
+			LQI:        0,
+			Children:   children,
+		}
+		nodeMap[0x0000] = root
+	}
+
+	// Track which devices have been printed (to find orphans).
+	printed := make(map[uint16]bool)
+
+	// Print header.
+	fmt.Printf("Network Tree (Channel %d, PAN: 0x%04X)\n", health.Channel, health.PanID)
+	fmt.Println("======================================")
+
+	// Print the tree starting from the coordinator.
+	printTreeNode(root, "", true, true, nodeMap, namesByIEEE, printed)
+
+	// Find and print orphan devices (those with unknown parents).
+	var orphans []*adapter.TopologyNode
+	for i := range health.Topology {
+		node := &health.Topology[i]
+		if !printed[node.NwkAddr] {
+			orphans = append(orphans, node)
+		}
+	}
+
+	if len(orphans) > 0 {
+		fmt.Println()
+		fmt.Println("Orphan Devices (parent unknown)")
+		fmt.Println("================================")
+		for _, node := range orphans {
+			nodeType := "EndDevice"
+			if node.DeviceType == 1 {
+				nodeType = "Router"
+			}
+			name := namesByIEEE[node.IEEEAddr]
+			nameStr := ""
+			if name != "" {
+				nameStr = fmt.Sprintf(" (%s)", name)
+			}
+			fmt.Printf("  0x%04X [%s] %s%s\n", node.NwkAddr, nodeType, znp.FormatIEEEAddr(node.IEEEAddr), nameStr)
+		}
+	}
+
+	fmt.Println()
+	fmt.Printf("Total: %d devices (%d routers, %d end devices)\n",
+		health.DeviceCount, health.RouterCount, health.EndDeviceCount)
+
+	return nil
+}
+
+// printTreeNode recursively prints a node and its children in tree format.
+func printTreeNode(node *adapter.TopologyNode, prefix string, isLast bool, isRoot bool, nodeMap map[uint16]*adapter.TopologyNode, names map[[8]byte]string, printed map[uint16]bool) {
+	// Mark this node as printed.
+	printed[node.NwkAddr] = true
+
+	// Determine the connector for this node.
+	connector := "├── "
+	if isLast {
+		connector = "└── "
+	}
+
+	// For the root node, don't use any connector.
+	if isRoot {
+		connector = ""
+	}
+
+	// Format device type.
+	nodeType := "EndDevice"
+	if node.DeviceType == 0 {
+		nodeType = "Coordinator"
+	} else if node.DeviceType == 1 {
+		nodeType = "Router"
+	}
+
+	// Format device name.
+	name := names[node.IEEEAddr]
+	nameStr := ""
+	if name != "" {
+		nameStr = fmt.Sprintf(" (%s)", name)
+	}
+
+	// Format LQI (skip for coordinator as it has no parent).
+	lqiStr := ""
+	if node.DeviceType != 0 && node.ParentAddr != 0xFFFF {
+		lqiStr = " - " + formatLQIWithQuality(node.LQI)
+	}
+
+	// Print this node.
+	fmt.Printf("%s%s0x%04X [%s] %s%s%s\n",
+		prefix, connector, node.NwkAddr, nodeType,
+		znp.FormatIEEEAddr(node.IEEEAddr), nameStr, lqiStr)
+
+	// Determine the prefix for children.
+	var childPrefix string
+	switch {
+	case isRoot:
+		childPrefix = ""
+	case isLast:
+		childPrefix = prefix + "    "
+	default:
+		childPrefix = prefix + "│   "
+	}
+
+	// Print children.
+	for i, childAddr := range node.Children {
+		childNode := nodeMap[childAddr]
+		if childNode == nil {
+			// Child not found in topology, print as unknown.
+			childConnector := "├── "
+			if i == len(node.Children)-1 {
+				childConnector = "└── "
+			}
+			fmt.Printf("%s%s0x%04X [Unknown]\n", childPrefix, childConnector, childAddr)
+			continue
+		}
+		isLastChild := i == len(node.Children)-1
+		printTreeNode(childNode, childPrefix, isLastChild, false, nodeMap, names, printed)
+	}
+}
+
+// formatLQIWithQuality formats LQI as percentage with quality label.
+func formatLQIWithQuality(lqi uint8) string {
+	percent := int(lqi) * 100 / 255
+	var quality string
+	switch {
+	case lqi >= 200:
+		quality = "Excellent"
+	case lqi >= 150:
+		quality = "Good"
+	case lqi >= 100:
+		quality = "Fair"
+	default:
+		quality = "Poor"
+	}
+	return fmt.Sprintf("LQI: %d%% %s", percent, quality)
+}
+
 func formatRouteStatus(status uint8) string {
 	switch status {
 	case 0:
@@ -757,7 +988,7 @@ func init() {
 	networkProfileCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 
 	// Add port/baud flags to network commands (except profile which has special handling)
-	for _, cmd := range []*cobra.Command{networkFormCmd, networkChannelCmd, networkPowerCmd, resetFactoryCmd, networkTopologyCmd, networkHealthCmd, networkRoutesCmd} {
+	for _, cmd := range []*cobra.Command{networkFormCmd, networkChannelCmd, networkPowerCmd, resetFactoryCmd, networkTopologyCmd, networkHealthCmd, networkRoutesCmd, networkTreeCmd} {
 		cmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
 		cmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 	}
@@ -770,4 +1001,5 @@ func init() {
 	networkCmd.AddCommand(networkTopologyCmd)
 	networkCmd.AddCommand(networkHealthCmd)
 	networkCmd.AddCommand(networkRoutesCmd)
+	networkCmd.AddCommand(networkTreeCmd)
 }
