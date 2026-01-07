@@ -176,3 +176,154 @@ func formatIEEE(addr [8]byte) string {
 		addr[7], addr[6], addr[5], addr[4],
 		addr[3], addr[2], addr[1], addr[0])
 }
+
+// =============================================================================
+// NVRAM Integration Tests
+// =============================================================================
+
+// TestIntegration_NvReadNIB reads the Network Information Base from NVRAM.
+func TestIntegration_NvReadNIB(t *testing.T) {
+	a := getTestAdapter(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Read the NIB (Network Information Base) - a core NVRAM item.
+	data, err := a.znp.NvReadAll(ctx, 0x0021) // NvNIB
+	if err != nil {
+		t.Fatalf("NvReadAll(NIB) failed: %v", err)
+	}
+
+	t.Logf("NIB data length: %d bytes", len(data))
+	if len(data) > 0 {
+		t.Logf("NIB first 16 bytes: %x", data[:min(16, len(data))])
+	}
+}
+
+// TestIntegration_NvReadExtAddr reads the coordinator's extended address from NVRAM.
+func TestIntegration_NvReadExtAddr(t *testing.T) {
+	a := getTestAdapter(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Read the extended address (IEEE address) from NVRAM.
+	data, err := a.znp.NvReadAll(ctx, 0x0001) // NvExtAddr
+	if err != nil {
+		t.Fatalf("NvReadAll(ExtAddr) failed: %v", err)
+	}
+
+	if len(data) != 8 {
+		t.Fatalf("ExtAddr should be 8 bytes, got %d", len(data))
+	}
+
+	var addr [8]byte
+	copy(addr[:], data)
+	t.Logf("Coordinator IEEE Address: %s", formatIEEE(addr))
+}
+
+// TestIntegration_NvLength tests reading NVRAM item lengths.
+func TestIntegration_NvLength(t *testing.T) {
+	a := getTestAdapter(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Test a few known NVRAM items.
+	items := []struct {
+		name string
+		id   uint16
+	}{
+		{"ExtAddr", 0x0001},
+		{"NIB", 0x0021},
+		{"NwkActiveKeyInfo", 0x003F},
+	}
+
+	for _, item := range items {
+		length, err := a.znp.NvLength(ctx, item.id)
+		if err != nil {
+			t.Errorf("NvLength(%s) failed: %v", item.name, err)
+			continue
+		}
+		t.Logf("NVRAM item %s (0x%04X): %d bytes", item.name, item.id, length)
+	}
+}
+
+// TestIntegration_DeviceNames tests device name storage in NVRAM.
+func TestIntegration_DeviceNames(t *testing.T) {
+	a := getTestAdapter(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// List existing device names.
+	names, err := a.ListDeviceNames(ctx)
+	if err != nil {
+		t.Fatalf("ListDeviceNames failed: %v", err)
+	}
+
+	t.Logf("Found %d device name(s)", len(names))
+	for _, n := range names {
+		t.Logf("  %s: %q (comment: %q)", formatIEEE(n.IEEEAddr), n.Name, n.Comment)
+	}
+}
+
+// TestIntegration_DeviceNameRoundTrip tests writing and reading back a device name.
+func TestIntegration_DeviceNameRoundTrip(t *testing.T) {
+	a := getTestAdapter(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	// Get a device to test with.
+	devices, err := a.GetDevices(ctx)
+	if err != nil {
+		t.Fatalf("GetDevices failed: %v", err)
+	}
+
+	if len(devices) == 0 {
+		t.Skip("No devices paired, skipping device name round-trip test")
+	}
+
+	// Use the first device for testing.
+	testDevice := devices[0]
+	testName := fmt.Sprintf("IntTest_%d", time.Now().Unix()%10000)
+	testComment := "Integration test"
+
+	t.Logf("Testing device name round-trip on %s", formatIEEE(testDevice.IEEEAddr))
+
+	// Save current name (if any) to restore later.
+	originalName, _ := a.GetDeviceName(ctx, testDevice.IEEEAddr)
+
+	// Set a new name.
+	err = a.SetDeviceName(ctx, testDevice.IEEEAddr, testName, testComment)
+	if err != nil {
+		t.Fatalf("SetDeviceName failed: %v", err)
+	}
+	t.Logf("Set device name to %q", testName)
+
+	// Read it back.
+	retrieved, err := a.GetDeviceName(ctx, testDevice.IEEEAddr)
+	if err != nil {
+		t.Fatalf("GetDeviceName failed: %v", err)
+	}
+
+	if retrieved.Name != testName {
+		t.Errorf("Name mismatch: got %q, want %q", retrieved.Name, testName)
+	}
+	if retrieved.Comment != testComment {
+		t.Errorf("Comment mismatch: got %q, want %q", retrieved.Comment, testComment)
+	}
+	t.Logf("Verified name round-trip: %q", retrieved.Name)
+
+	// Restore original name or clear if there wasn't one.
+	if originalName != nil && originalName.Name != "" {
+		//nolint:errcheck // Best effort cleanup
+		_ = a.SetDeviceName(ctx, testDevice.IEEEAddr, originalName.Name, originalName.Comment)
+		t.Logf("Restored original name: %q", originalName.Name)
+	} else {
+		//nolint:errcheck // Best effort cleanup
+		_ = a.DeleteDeviceName(ctx, testDevice.IEEEAddr)
+		t.Log("Cleared test name")
+	}
+}
