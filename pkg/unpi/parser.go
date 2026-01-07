@@ -31,9 +31,23 @@ func NewParser() *Parser {
 // If the buffer exceeds MaxBufferSize, it is cleared to prevent memory exhaustion.
 func (p *Parser) Feed(data []byte) {
 	if len(p.buffer)+len(data) > MaxBufferSize {
-		p.errors <- fmt.Errorf("buffer overflow: size %d exceeds limit %d, clearing buffer",
+		p.errors <- fmt.Errorf("buffer overflow: size %d exceeds limit %d, searching for next frame",
 			len(p.buffer)+len(data), MaxBufferSize)
-		p.buffer = p.buffer[:0]
+
+		// Search for next SOF to preserve potential valid frame
+		foundSOF := false
+		for i := 1; i < len(p.buffer); i++ {
+			if p.buffer[i] == SOF {
+				p.buffer = p.buffer[i:]
+				foundSOF = true
+				break
+			}
+		}
+
+		// If no SOF found or still too large, clear completely
+		if !foundSOF || len(p.buffer) > MaxBufferSize/2 {
+			p.buffer = p.buffer[:0]
+		}
 	}
 	p.buffer = append(p.buffer, data...)
 	p.parseNext()
