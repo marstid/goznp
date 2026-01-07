@@ -94,7 +94,7 @@ linters-settings:
     local-prefixes: github.com/marstid/goznp
 
 run:
-  go: '1.23'
+  go: '1.25'
   timeout: 5m
   tests: true
   modules-download-mode: readonly
