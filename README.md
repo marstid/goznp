@@ -1,6 +1,6 @@
 # goznp
 
-A Go library and CLI tool for managing Zigbee networks using Texas Instruments CC2652 coordinators with Z-Stack firmware.
+A Go library and CLI tool for managing Zigbee networks using Texas Instruments CC2652 coordinators with Z-Stack firmware.  
 SONOFF ZBDongle-P has been used as the reference hardware.
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/marstid/goznp.svg)](https://pkg.go.dev/github.com/marstid/goznp)
@@ -23,6 +23,20 @@ SONOFF ZBDongle-P has been used as the reference hardware.
 The `goznp` command-line tool provides a complete interface for managing Zigbee networks.
 
 ## Installation
+
+### Pre-built Binaries
+
+Download pre-built binaries from [GitHub Releases](https://github.com/marstid/goznp/releases):
+
+| Platform | Architecture | Download |
+|----------|--------------|----------|
+| Linux | amd64 | `goznp_*_linux_amd64.tar.gz` |
+| Linux | arm64 | `goznp_*_linux_arm64.tar.gz` |
+| macOS | Intel | `goznp_*_darwin_amd64.tar.gz` |
+| macOS | Apple Silicon | `goznp_*_darwin_arm64.tar.gz` |
+| Windows | amd64 | `goznp_*_windows_amd64.zip` |
+
+### From Source
 
 ```bash
 go install github.com/marstid/goznp/cmd/goznp@latest
