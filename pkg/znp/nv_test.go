@@ -366,27 +366,26 @@ func TestNvReadAll(t *testing.T) {
 			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
-			// Mock NvLength response
+			// Calculate expected number of chunks.
+			numChunks := (int(tt.totalLen) + MaxNvReadSize - 1) / MaxNvReadSize
+
+			// Mock responses in a goroutine that polls until waiter is ready.
 			go func() {
-				time.Sleep(5 * time.Millisecond)
-				buf := NewBuffaloWriter()
-				buf.WriteUint16(tt.totalLen)
-				responseFrame := &unpi.Frame{
+				// First, send NvLength response.
+				lengthFrame := &unpi.Frame{
 					Type:      unpi.SRSP,
 					Subsystem: unpi.SYS,
 					CommandID: CmdSysOsalNvLength.ID,
-					Data:      buf.Bytes(),
+					Data:      func() []byte { buf := NewBuffaloWriter(); buf.WriteUint16(tt.totalLen); return buf.Bytes() }(),
 				}
-				z.waiter.Resolve(responseFrame)
-			}()
+				// Poll until resolved (waiter is ready).
+				for !z.waiter.Resolve(lengthFrame) {
+					time.Sleep(1 * time.Millisecond)
+				}
 
-			// Mock NvRead responses
-			go func() {
-				time.Sleep(15 * time.Millisecond)
-				offset := uint8(0)
+				// Then send NvRead responses for each chunk.
 				bytesRead := 0
-
-				for bytesRead < int(tt.totalLen) {
+				for i := 0; i < numChunks; i++ {
 					remaining := int(tt.totalLen) - bytesRead
 					chunkSize := remaining
 					if chunkSize > MaxNvReadSize {
@@ -400,17 +399,18 @@ func TestNvReadAll(t *testing.T) {
 					buf.WriteUint8(uint8(chunkSize))
 					buf.WriteBytes(chunk)
 
-					responseFrame := &unpi.Frame{
+					readFrame := &unpi.Frame{
 						Type:      unpi.SRSP,
 						Subsystem: unpi.SYS,
 						CommandID: CmdSysOsalNvRead.ID,
 						Data:      buf.Bytes(),
 					}
-					z.waiter.Resolve(responseFrame)
+					// Poll until resolved.
+					for !z.waiter.Resolve(readFrame) {
+						time.Sleep(1 * time.Millisecond)
+					}
 
 					bytesRead += chunkSize
-					offset += uint8(chunkSize)
-					time.Sleep(5 * time.Millisecond)
 				}
 			}()
 
@@ -418,8 +418,7 @@ func TestNvReadAll(t *testing.T) {
 			data, err := z.NvReadAll(ctx, tt.id)
 
 			if (err != nil) != tt.wantErr {
-				t.Logf("NvReadAll() error = %v, wantErr %v", err, tt.wantErr)
-				// Don't fail here as timing may vary
+				t.Errorf("NvReadAll() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if err == nil {
@@ -472,33 +471,25 @@ func TestNvWriteAll(t *testing.T) {
 			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
-			// Mock NvWrite responses
+			// Calculate expected number of chunks.
+			numChunks := (len(tt.data) + MaxNvWriteSize - 1) / MaxNvWriteSize
+
+			// Mock NvWrite responses in a goroutine that polls until waiter is ready.
 			go func() {
-				time.Sleep(10 * time.Millisecond)
-				offset := uint8(0)
-				bytesWritten := 0
-				totalLength := len(tt.data)
-
-				for bytesWritten < totalLength {
-					remaining := totalLength - bytesWritten
-					chunkSize := remaining
-					if chunkSize > MaxNvWriteSize {
-						chunkSize = MaxNvWriteSize
-					}
-
+				for i := 0; i < numChunks; i++ {
 					buf := NewBuffaloWriter()
 					buf.WriteUint8(NvStatusSuccess)
 
-					responseFrame := &unpi.Frame{
+					writeFrame := &unpi.Frame{
 						Type:      unpi.SRSP,
 						Subsystem: unpi.SYS,
 						CommandID: CmdSysOsalNvWrite.ID,
 						Data:      buf.Bytes(),
 					}
-					z.waiter.Resolve(responseFrame)
-
-					bytesWritten += chunkSize
-					offset += uint8(chunkSize)
+					// Poll until resolved.
+					for !z.waiter.Resolve(writeFrame) {
+						time.Sleep(1 * time.Millisecond)
+					}
 				}
 			}()
 
@@ -506,7 +497,7 @@ func TestNvWriteAll(t *testing.T) {
 			err := z.NvWriteAll(ctx, tt.id, tt.data)
 
 			if (err != nil) != tt.wantErr {
-				t.Logf("NvWriteAll() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NvWriteAll() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -691,35 +682,36 @@ func TestNvReadExAll(t *testing.T) {
 			//nolint:errcheck // Test setup
 			z.Open(context.Background())
 
-			// Mock NvLengthEx response
+			// Mock responses in a goroutine that polls until waiter is ready.
 			go func() {
-				time.Sleep(5 * time.Millisecond)
-				buf := NewBuffaloWriter()
-				buf.WriteUint8(tt.length)
-				responseFrame := &unpi.Frame{
+				// First, send NvLengthEx response.
+				lengthFrame := &unpi.Frame{
 					Type:      unpi.SRSP,
 					Subsystem: unpi.SYS,
 					CommandID: CmdSysNvLength.ID,
-					Data:      buf.Bytes(),
+					Data:      func() []byte { buf := NewBuffaloWriter(); buf.WriteUint8(tt.length); return buf.Bytes() }(),
 				}
-				z.waiter.Resolve(responseFrame)
-			}()
+				// Poll until resolved.
+				for !z.waiter.Resolve(lengthFrame) {
+					time.Sleep(1 * time.Millisecond)
+				}
 
-			// Mock NvReadEx response
-			go func() {
-				time.Sleep(15 * time.Millisecond)
+				// Then send NvReadEx response if length > 0.
 				if tt.length > 0 {
 					buf := NewBuffaloWriter()
 					buf.WriteUint8(NvStatusSuccess)
 					buf.WriteUint8(tt.length)
 					buf.WriteBytes(tt.value)
-					responseFrame := &unpi.Frame{
+					readFrame := &unpi.Frame{
 						Type:      unpi.SRSP,
 						Subsystem: unpi.SYS,
 						CommandID: CmdSysNvRead.ID,
 						Data:      buf.Bytes(),
 					}
-					z.waiter.Resolve(responseFrame)
+					// Poll until resolved.
+					for !z.waiter.Resolve(readFrame) {
+						time.Sleep(1 * time.Millisecond)
+					}
 				}
 			}()
 
@@ -727,7 +719,7 @@ func TestNvReadExAll(t *testing.T) {
 			value, err := z.NvReadExAll(ctx, tt.sysID, tt.itemID, tt.subID)
 
 			if (err != nil) != tt.wantErr {
-				t.Logf("NvReadExAll() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NvReadExAll() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if err == nil && tt.length > 0 {
