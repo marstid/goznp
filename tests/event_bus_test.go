@@ -197,8 +197,9 @@ func TestBusClose(t *testing.T) {
 	defer cancel()
 
 	ch, unsubscribe := bus.Subscribe(ctx, nil)
-	defer unsubscribe()
 
+	// Unsubscribe before Close to allow WaitGroup to complete
+	unsubscribe()
 	bus.Close()
 
 	select {
