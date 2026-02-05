@@ -99,7 +99,7 @@ func (w *Waiter) WaitFor(ctx context.Context, matcher FrameMatcher, timeout time
 }
 
 // Resolve tries to match the incoming frame to a pending waiter.
-// Returns true if the frame was matched and delivered to a waiter.
+// Returns true if the frame was matched and delivered to at least one waiter.
 // Returns false if no matching waiter was found.
 // Uses O(1) lookup by FrameMatcher index.
 func (w *Waiter) Resolve(frame *unpi.Frame) bool {
@@ -119,29 +119,32 @@ func (w *Waiter) Resolve(frame *unpi.Frame) bool {
 		return false
 	}
 
-	// Try to deliver to one of the matching waiters
+	// Try to deliver to one of the matching waiters (first available)
+	delivered := false
 	for id, req := range requests {
 		select {
 		case req.response <- frame:
 			// Successfully delivered
 			delete(requests, id)
+			delivered = true
 			// Clean up empty matcher entry
 			if len(requests) == 0 {
 				delete(w.waiters, matcher)
 			}
-			return true
+			goto done // Only deliver to one waiter per frame
 		case <-req.done:
 			// Waiter already completed, remove it
 			delete(requests, id)
 		}
 	}
+done:
 
 	// Clean up empty matcher entry
 	if len(requests) == 0 {
 		delete(w.waiters, matcher)
 	}
 
-	return false
+	return delivered
 }
 
 // removeWaiter removes a waiter by its matcher and ID.
