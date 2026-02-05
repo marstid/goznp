@@ -15,7 +15,7 @@ LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)"
 .DEFAULT_GOAL := build
 
 # Phony targets
-.PHONY: all build clean test test-verbose test-coverage test-integration fmt vet lint check install help
+.PHONY: all build build-daemon clean test test-verbose test-coverage test-integration fmt vet lint check install help
 
 ## build: Build the CLI binary
 build:
@@ -23,6 +23,16 @@ build:
 	@mkdir -p $(BINARY_DIR)
 	$(GO) build $(LDFLAGS) -o $(BINARY_DIR)/$(BINARY_NAME) $(CMD_DIR)
 	@echo "Built $(BINARY_DIR)/$(BINARY_NAME)"
+
+## build-daemon: Build the goznpd daemon binary
+build-daemon:
+	@echo "Building goznpd..."
+	@mkdir -p $(BINARY_DIR)
+	$(GO) build $(LDFLAGS) -o $(BINARY_DIR)/goznpd ./cmd/goznpd
+	@echo "Built $(BINARY_DIR)/goznpd"
+
+## build-all: Build CLI and daemon binaries
+build-all: build build-daemon
 
 ## all: Run fmt, vet, test, and build
 all: fmt vet test build
@@ -86,6 +96,16 @@ install:
 	@echo "Installing $(BINARY_NAME)..."
 	$(GO) install $(LDFLAGS) $(CMD_DIR)
 	@echo "Installed to $(shell go env GOPATH)/bin/$(BINARY_NAME)"
+
+## run-daemon: Run the daemon
+run-daemon:
+	@if [ -z "$(GOZNP_PORT)" ]; then \
+		echo "Error: GOZNP_PORT environment variable is required"; \
+		echo "Usage: GOZNP_PORT=/dev/ttyUSB0 make run-daemon"; \
+		exit 1; \
+	fi
+	@echo "Running goznpd..."
+	@$(GO) run ./cmd/goznpd
 
 ## deps: Download and tidy dependencies
 deps:
