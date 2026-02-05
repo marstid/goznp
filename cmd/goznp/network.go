@@ -40,7 +40,36 @@ var networkCmd = &cobra.Command{
 var networkFormCmd = &cobra.Command{
 	Use:   "form",
 	Short: "Form a new Zigbee network",
-	Long:  "Form a new Zigbee network as coordinator. Generates random PAN ID and network key.",
+	Long: `Form a new Zigbee network as coordinator.
+
+This command creates a new Zigbee network with the adapter acting as the coordinator.
+A random PAN ID and network key are automatically generated for security.
+
+Default values:
+  Channel: 15
+  PAN ID:   Random (0x0001-0xFFFE)
+  Profile:  HA (Home Automation)
+
+Channels:
+  11-26 are available. Channels 11, 15, 20, 25, 26 are commonly used.
+  Channel 15 is the default and recommended for most use cases.
+  Lower channels (11-15) have better range but more congestion.
+  Higher channels (20-26) have less congestion but slightly shorter range.
+
+Examples:
+  # Form network with defaults (channel 15, random PAN ID)
+  goznp network form
+
+  # Form network on channel 20
+  goznp network form --channel 20
+
+  # Form network with specific PAN ID
+  goznp network form --channel 15 --pan-id 0x1234
+
+  # Form network for Smart Energy profile
+  goznp network form --channel 14 --profile se
+
+Note: This will clear any existing network configuration on the adapter.`,
 	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runNetworkForm(ctx); err != nil {
@@ -107,7 +136,33 @@ func runNetworkForm(ctx context.Context) error {
 var networkChannelCmd = &cobra.Command{
 	Use:   "channel",
 	Short: "Show or change network channel",
-	Long:  "Show current channel or change to a new channel. Use --set to change, --force for forced (non-seamless) change.",
+	Long: `Show current network channel or change to a new channel.
+
+To simply view the current channel, run without any flags.
+
+To change the channel:
+  - Regular change (--set): Uses seamless migration that allows devices to
+    discover and join the new channel. This takes ~10 minutes for all devices.
+
+  - Forced change (--force): Immediately changes the channel. Devices will lose
+    connection and need to manually re-pair or power cycle. Only use this as
+    a last resort.
+
+Channel recommendations:
+  - 11, 15, 20, 25, 26 are commonly used
+  - Channel 15 is default and recommended
+  - Lower channels (11-15): Better range, more congestion
+  - Higher channels (20-26): Less congestion, shorter range
+
+Examples:
+  # Show current channel
+  goznp network channel
+
+  # Change to channel 20 (seamless migration)
+  goznp network channel --set 20
+
+  # Force change to channel 25 (devices will lose connection)
+  goznp network channel --set 25 --force`,
 	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runNetworkChannel(ctx); err != nil {
@@ -183,7 +238,34 @@ func runNetworkChannel(ctx context.Context) error {
 var networkPowerCmd = &cobra.Command{
 	Use:   "power",
 	Short: "Show or set TX power",
-	Long:  "Show current TX power or set a new power level in dBm",
+	Long: `Show current transmitter (TX) power or set to a new level.
+
+Power levels (dBm):
+  22  - Maximum (longest range, highest power consumption)
+  19  - High (recommended for most routers)
+  14  - Medium (recommended for coordinators)
+  10  - Low (good for reducing interference)
+  5   - Very low
+  0   - Minimum
+  -5  - Even lower
+
+Higher values = longer range but more power and potential for interference.
+Lower values = shorter range but less interference and power consumption.
+
+Note: Some adapter firmware has TX power compiled in and may ignore this setting.
+
+Examples:
+  # Show current power level
+  goznp network power
+
+  # Set to maximum power (22 dBm)
+  goznp network power --set 22
+
+  # Set to recommended coordinator level (14 dBm)
+  goznp network power --set 14
+
+  # Set to low power for reduced interference (5 dBm)
+  goznp network power --set 5`,
 	Run: func(cmd *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		setRequested := cmd.Flags().Changed("set")
@@ -984,13 +1066,13 @@ func init() {
 
 	// Network profile flags
 	networkProfileCmd.Flags().BoolVar(&profileList, "list", false, "List all supported profiles")
-	networkProfileCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	networkProfileCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 
-	// Add port/baud flags to network commands (except profile which has special handling)
-	for _, cmd := range []*cobra.Command{networkFormCmd, networkChannelCmd, networkPowerCmd, resetFactoryCmd, networkTopologyCmd, networkHealthCmd, networkRoutesCmd, networkTreeCmd} {
-		cmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-		cmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
+	// Add port/baud flags to all network commands
+	for _, cmd := range []*cobra.Command{
+		networkFormCmd, networkChannelCmd, networkPowerCmd, networkProfileCmd,
+		networkTopologyCmd, networkHealthCmd, networkRoutesCmd, networkTreeCmd,
+	} {
+		AddConnectionFlags(cmd)
 	}
 
 	// Build network command hierarchy

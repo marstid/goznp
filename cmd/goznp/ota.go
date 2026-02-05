@@ -132,13 +132,11 @@ func init() {
 	otaServerCmd.Flags().Uint8VarP(&otaMaxSizeFlag, "max-size", "m", 64, "Maximum block size (16-64)")
 	otaServerCmd.Flags().StringVarP(&otaImageFile, "image", "i", "", "Specific image file to trigger update")
 
-	// OTA server needs port flag
-	otaServerCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	otaServerCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
+	// OTA server needs connection flags
+	AddConnectionFlags(otaServerCmd)
 
-	// OTA image needs port, address and endpoint flags
-	otaImageCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	otaImageCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
+	// OTA image needs connection flags
+	AddConnectionFlags(otaImageCmd)
 	otaImageCmd.Flags().Uint16VarP(&otaImageAddrFlag, "addr", "a", 0, "Device network address")
 	otaImageCmd.Flags().Uint8VarP(&otaImageEndpointFlag, "endpoint", "e", 0, "Device endpoint (OTA cluster)")
 

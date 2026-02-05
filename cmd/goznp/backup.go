@@ -79,24 +79,19 @@ var backupDebugCmd = &cobra.Command{
 
 func init() {
 	// Add flags to backup create.
-	backupCreateCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	backupCreateCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
+	AddConnectionFlags(backupCreateCmd)
 	backupCreateCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Output file path (required)")
-	//nolint:errcheck // Required flag in init
-	_ = backupCreateCmd.MarkFlagRequired("output")
+	backupCreateCmd.MarkFlagRequired("output")
 
 	// Add flags to backup restore.
-	backupRestoreCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	backupRestoreCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
+	AddConnectionFlags(backupRestoreCmd)
 	backupRestoreCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Input file path (required)")
 	backupRestoreCmd.Flags().BoolVarP(&forceRestore, "force", "f", false, "Skip confirmation prompt")
-	//nolint:errcheck // Required flag in init
-	_ = backupRestoreCmd.MarkFlagRequired("input")
+	backupRestoreCmd.MarkFlagRequired("input")
 
 	// Add flags to backup show.
 	backupShowCmd.Flags().StringVarP(&inputFile, "input", "i", "", "Input file path (required)")
-	//nolint:errcheck // Required flag in init
-	_ = backupShowCmd.MarkFlagRequired("input")
+	backupShowCmd.MarkFlagRequired("input")
 
 	// Add flags to backup debug.
 	backupDebugCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")

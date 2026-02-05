@@ -17,7 +17,17 @@ import (
 var deviceInfoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Query device capabilities",
-	Long:  "Query device endpoints and supported clusters (capabilities)",
+	Long: `Query device endpoints and supported clusters (capabilities).
+
+Shows all endpoints on the device, their device IDs, profiles, and their supported
+input and output clusters. This helps understand what a device can do.
+
+Examples:
+  # Query device by name
+  goznp device info --name "Living Room Light"
+
+  # Query device by network address
+  goznp device info --addr 0x1234`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceInfo(ctx)
@@ -28,7 +38,17 @@ var deviceInfoCmd = &cobra.Command{
 var devicePowerCmd = &cobra.Command{
 	Use:   "power",
 	Short: "Read power consumption",
-	Long:  "Read power consumption data from a smart plug (voltage, current, power, energy)",
+	Long: `Read power consumption data from a smart plug or power meter.
+
+Displays voltage, current, active power, power factor, and total energy consumption.
+Works with smart plugs and devices that support ElectricalMeasurement or SimpleMetering clusters.
+
+Examples:
+  # Read power from named device
+  goznp device power --name "Smart Plug"
+
+  # Read power by network address
+  goznp device power --addr 0x1234`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDevicePower(ctx)
@@ -52,11 +72,6 @@ func runDeviceResetEnergy(ctx context.Context) error {
 		return err
 	}
 
-	nwkAddr, err := parseNetworkAddr(deviceAddr)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -66,9 +81,14 @@ func runDeviceResetEnergy(ctx context.Context) error {
 	)
 
 	if err := a.Open(ctx); err != nil {
-		return fmt.Errorf("failed to open adapter: %w", err)
+		return fmt.Errorf("failed to connect to adapter: %w", err)
 	}
 	defer a.Close()
+
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceName, deviceIEEE, deviceAddr)
+	if err != nil {
+		return err
+	}
 
 	fmt.Printf("Attempting to reset energy counter on device 0x%04X endpoint %d...\n", nwkAddr, deviceEndpoint)
 
@@ -88,11 +108,6 @@ func runDevicePower(ctx context.Context) error {
 		return err
 	}
 
-	nwkAddr, err := parseNetworkAddr(deviceAddr)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -102,9 +117,14 @@ func runDevicePower(ctx context.Context) error {
 	)
 
 	if err := a.Open(ctx); err != nil {
-		return fmt.Errorf("failed to open adapter: %w", err)
+		return fmt.Errorf("failed to connect to adapter: %w", err)
 	}
 	defer a.Close()
+
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceName, deviceIEEE, deviceAddr)
+	if err != nil {
+		return err
+	}
 
 	fmt.Printf("Reading power data from device 0x%04X endpoint %d...\n\n", nwkAddr, deviceEndpoint)
 
@@ -168,11 +188,6 @@ func runDeviceInfo(ctx context.Context) error {
 		return err
 	}
 
-	nwkAddr, err := parseNetworkAddr(deviceAddr)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -182,9 +197,14 @@ func runDeviceInfo(ctx context.Context) error {
 	)
 
 	if err := a.Open(ctx); err != nil {
-		return fmt.Errorf("failed to open adapter: %w", err)
+		return fmt.Errorf("failed to connect to adapter: %w", err)
 	}
 	defer a.Close()
+
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceName, deviceIEEE, deviceAddr)
+	if err != nil {
+		return err
+	}
 
 	fmt.Printf("Querying device 0x%04X capabilities...\n\n", nwkAddr)
 
@@ -258,28 +278,18 @@ func formatProfileID(profileID uint16) string {
 }
 
 func init() {
-	// Device info flags
-	deviceInfoCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-	//nolint:errcheck // Required flag in init
+	AddConnectionFlags(deviceInfoCmd)
+	AddConnectionFlags(devicePowerCmd)
+	AddConnectionFlags(deviceResetEnergyCmd)
+
+	AddDeviceFlags(deviceInfoCmd)
 	deviceInfoCmd.MarkFlagRequired("addr")
-	deviceInfoCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	deviceInfoCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 
-	// Device power flags
-	devicePowerCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-	//nolint:errcheck // Required flag in init
+	AddDeviceFlags(devicePowerCmd)
 	devicePowerCmd.MarkFlagRequired("addr")
-	devicePowerCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
-	devicePowerCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	devicePowerCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 
-	// Device reset-energy flags
-	deviceResetEnergyCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-	//nolint:errcheck // Required flag in init
+	AddDeviceFlags(deviceResetEnergyCmd)
 	deviceResetEnergyCmd.MarkFlagRequired("addr")
-	deviceResetEnergyCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
-	deviceResetEnergyCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	deviceResetEnergyCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 
 	// Register commands with device parent command
 	deviceCmd.AddCommand(deviceInfoCmd)

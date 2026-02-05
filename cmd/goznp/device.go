@@ -59,7 +59,30 @@ var deviceCmd = &cobra.Command{
 var devicePermitCmd = &cobra.Command{
 	Use:   "permit",
 	Short: "Open network for device pairing",
-	Long:  "Open the network for devices to join (default 60 seconds)",
+	Long: `Open the network for devices to join.
+
+This opens the network for the specified duration (default: 60 seconds) allowing
+devices to join. Put your device in pairing mode (usually by pressing and holding
+a button for 3-5 seconds) before running this command.
+
+Special values for --duration:
+  0   - Close network for pairing
+  255 - Open network permanently (not recommended for security)
+
+For automated pairing with device interviews, use 'device pair' instead.
+
+Examples:
+  # Open network for 60 seconds (default)
+  goznp device permit
+
+  # Open network for 5 minutes
+  goznp device permit --duration 300
+
+  # Open network permanently
+  goznp device permit --duration 255
+
+  # Close network for pairing
+  goznp device permit --duration 0`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDevicePermit(ctx)
@@ -112,16 +135,34 @@ func runDevicePermit(ctx context.Context) error {
 var devicePairCmd = &cobra.Command{
 	Use:   "pair",
 	Short: "Pair a new device",
-	Long: `Open network for pairing, watch for device joins, then close.
+	Long: `Open network for pairing, watch for device joins, interview, and bind.
 
 This command opens the network for device pairing for the specified timeout
-(default 180 seconds), actively monitors for joining devices, and then
+(default: 180 seconds), actively monitors for joining devices, and then
 automatically closes the network when done.
 
-After pairing, each device is automatically interviewed and its clusters are
-bound to the coordinator so it can send reports. Use --nobind to skip binding.
+What happens during pairing:
+  1. Network opens for devices to join
+  2. When a device joins, it's automatically interviewed
+  3. Device clusters are bound to the coordinator for automatic reporting
+  4. Network closes after timeout or when done
 
-Put your device in pairing mode before running this command.`,
+Use --nobind to skip automatic binding (useful if you want to manually configure bindings).
+
+Examples:
+  # Pair a device with defaults (3 minute timeout, auto-bind)
+  goznp device pair
+
+  # Pair with 10 minute timeout
+  goznp device pair --timeout 600
+
+  # Pair without automatic binding
+  goznp device pair --nobind
+
+  # Pair for 5 minutes without binding
+  goznp device pair --timeout 300 --nobind
+
+Note: Put your device in pairing mode (usually hold button for 3-5 seconds) before running.`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDevicePair(ctx)
@@ -450,8 +491,16 @@ var deviceListCmd = &cobra.Command{
 	Short: "List paired devices",
 	Long: `Display all devices currently paired to the network.
 
+Shows basic information by default (network address, IEEE address, name).
 Use --interview to perform full device discovery including manufacturer,
-model, power source, and supported clusters for each device.`,
+model, power source, and supported clusters for each device (slower but more detailed).
+
+Examples:
+  # List all devices (basic info)
+  goznp device list
+
+  # List devices with full interview details
+  goznp device list --interview`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceList(ctx)
@@ -932,13 +981,24 @@ This sends a ZDO Management Leave Request to the device, which tells it
 to gracefully leave the network. The device will be unpaired and will
 need to be re-paired to rejoin.
 
-You can specify the device by either:
-  --addr   Network address (hex, e.g., 0x1234)
+You can specify the device by:
+  --name   Custom name set on the device
   --ieee   IEEE address (e.g., 00:11:22:33:44:55:66:77)
+  --addr   Network address (hex, e.g., 0x1234)
 
 Note: Battery-powered devices may be asleep and not respond immediately.
 For sleepy devices, you may need to wake them up (e.g., press a button)
-or use --force to remove them from the coordinator's device list.`,
+before removing, or use --force to remove them from the coordinator's device list.
+
+Examples:
+  # Remove device by name
+  goznp device remove --name "Kitchen Light"
+
+  # Remove device by network address
+  goznp device remove --addr 0x1234
+
+  # Force remove a sleeping sensor
+  goznp device remove --name "Motion Sensor" --force`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceRemove(ctx)

@@ -14,7 +14,21 @@ import (
 var deviceSensorCmd = &cobra.Command{
 	Use:   "sensor",
 	Short: "Read sensor data",
-	Long:  "Read temperature, humidity, and battery from a sensor device",
+	Long: `Read temperature, humidity, and battery from a sensor device.
+
+Actively queries the device for current sensor readings. Works with most
+multisensor devices that support TemperatureMeasurement, RelativeHumidity,
+and PowerConfiguration clusters.
+
+Note: Battery-powered devices may be asleep and not respond immediately.
+Wake the device (press a button) if needed.
+
+Examples:
+  # Read sensor data by name
+  goznp device sensor --name "Temperature Sensor"
+
+  # Read sensor data by address
+  goznp device sensor --addr 0x1234`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceSensor(ctx)
@@ -25,7 +39,25 @@ var deviceSensorCmd = &cobra.Command{
 var deviceListenCmd = &cobra.Command{
 	Use:   "listen",
 	Short: "Listen for sensor reports",
-	Long:  "Listen for incoming sensor reports (temperature, humidity, etc.) from all devices",
+	Long: `Listen for incoming sensor reports from all devices.
+
+Monitors the network for unsolicited sensor reports and displays them in real-time.
+Works with devices that send automatic reports (must be bound to coordinator first).
+
+Receives reports for:
+  - Temperature, humidity, battery
+  - On/off state changes
+  - Power consumption data
+  - Other attribute reports
+
+Use Ctrl+C to stop listening.
+
+Examples:
+  # Listen for sensor reports (uses GOZNP_PORT env var or --port flag)
+  goznp device listen --port /dev/tty.usbserial-110
+
+  # Listen with environment variable set
+  export GOZNP_PORT=/dev/tty.usbserial-110 && goznp device listen`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceListen(ctx)
@@ -135,11 +167,6 @@ func runDeviceSensor(ctx context.Context) error {
 		return err
 	}
 
-	nwkAddr, err := parseNetworkAddr(deviceAddr)
-	if err != nil {
-		return err
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -149,9 +176,14 @@ func runDeviceSensor(ctx context.Context) error {
 	)
 
 	if err := a.Open(ctx); err != nil {
-		return fmt.Errorf("failed to open adapter: %w", err)
+		return fmt.Errorf("failed to connect to adapter: %w", err)
 	}
 	defer a.Close()
+
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceName, deviceIEEE, deviceAddr)
+	if err != nil {
+		return err
+	}
 
 	fmt.Printf("Reading sensor data from device 0x%04X endpoint %d...\n", nwkAddr, deviceEndpoint)
 	fmt.Println("(Note: Battery sensors may be asleep and not respond immediately)")
@@ -185,17 +217,11 @@ func runDeviceSensor(ctx context.Context) error {
 }
 
 func init() {
-	// Device sensor flags
-	deviceSensorCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-	//nolint:errcheck // Required flag in init
-	deviceSensorCmd.MarkFlagRequired("addr")
-	deviceSensorCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
+	AddConnectionFlags(deviceSensorCmd)
+	AddConnectionFlags(deviceListenCmd)
 
-	// Add port/baud flags to sensor commands
-	for _, cmd := range []*cobra.Command{deviceSensorCmd, deviceListenCmd} {
-		cmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-		cmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
-	}
+	AddDeviceFlags(deviceSensorCmd)
+	deviceSensorCmd.MarkFlagRequired("addr")
 
 	// Register sensor commands to device command
 	deviceCmd.AddCommand(deviceSensorCmd)

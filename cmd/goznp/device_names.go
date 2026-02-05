@@ -270,19 +270,18 @@ func runDeviceNameDelete(ctx context.Context) error {
 func init() {
 	// Device name flags
 	deviceNameSetCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
-	//nolint:errcheck // Required flag in init
 	deviceNameSetCmd.MarkFlagRequired("ieee")
 	deviceNameSetCmd.Flags().StringVar(&deviceName, "name", "", "Custom device name")
-	//nolint:errcheck // Required flag in init
 	deviceNameSetCmd.MarkFlagRequired("name")
 	deviceNameSetCmd.Flags().StringVar(&deviceComment, "comment", "", "Optional device comment")
 
 	deviceNameGetCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
-	//nolint:errcheck // Required flag in init
 	deviceNameGetCmd.MarkFlagRequired("ieee")
 
+	deviceNameListCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
+	deviceNameListCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
+
 	deviceNameDeleteCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
-	//nolint:errcheck // Required flag in init
 	deviceNameDeleteCmd.MarkFlagRequired("ieee")
 
 	// Build name subcommand hierarchy

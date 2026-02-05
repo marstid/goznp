@@ -34,8 +34,10 @@ The device saves its current attribute values (brightness, color, on/off state, 
 to the specified scene ID within the group.
 
 Note: The device must be a member of the group before storing a scene.
+Set the device to your desired state before running this command.
 
 Examples:
+  goznp device scene store --name "Living Room" --group 1 --scene 1
   goznp device scene store --addr 0xBE87 --endpoint 11 --group 1 --scene 1`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
@@ -87,8 +89,9 @@ var deviceSceneRecallCmd = &cobra.Command{
 The device transitions to the saved attribute values for the specified scene.
 
 Examples:
+  goznp device scene recall --name "Living Room" --group 1 --scene 1
   goznp device scene recall --addr 0xBE87 --endpoint 11 --group 1 --scene 1
-  goznp device scene recall --addr 0xBE87 --endpoint 11 --group 1 --scene 1 --transition 1000`,
+  goznp device scene recall --name "Living Room" --group 1 --scene 1 --transition 2000`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceSceneRecall(ctx)
@@ -147,8 +150,9 @@ var deviceSceneRemoveCmd = &cobra.Command{
 Use --scene to remove a specific scene, or --all to remove all scenes for the group.
 
 Examples:
-  goznp device scene remove --addr 0xBE87 --endpoint 11 --group 1 --scene 1
-  goznp device scene remove --addr 0xBE87 --endpoint 11 --group 1 --all`,
+  goznp device scene remove --name "Living Room" --group 1 --scene 1
+  goznp device scene remove --addr 0xBE87 --endpoint 11 --group 1 --all
+  goznp device scene remove --name "Living Room" --group 1 --all`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceSceneRemove(ctx)
@@ -206,7 +210,10 @@ var deviceSceneListCmd = &cobra.Command{
 	Short: "List scenes for a group",
 	Long: `Query which scenes are stored on the device for a group.
 
-Example:
+Shows all scene IDs stored for the specified group and remaining capacity.
+
+Examples:
+  goznp device scene list --name "Living Room" --group 1
   goznp device scene list --addr 0xBE87 --endpoint 11 --group 1`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()

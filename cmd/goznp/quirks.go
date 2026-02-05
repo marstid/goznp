@@ -232,9 +232,7 @@ func runQuirksMatch(manufacturer, model string) {
 }
 
 func init() {
-	// Add port/baud flags
-	quirksDeviceCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	quirksDeviceCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
+	AddConnectionFlags(quirksDeviceCmd)
 
 	quirksCmd.AddCommand(quirksListCmd)
 	quirksCmd.AddCommand(quirksDeviceCmd)

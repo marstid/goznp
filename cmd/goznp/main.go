@@ -26,7 +26,7 @@ var (
 	baudRate int
 )
 
-// getPortPath returns the serial port path from flag or environment variable.
+// getPortPath returns the serial port path from flag or environment variable
 // Priority: -p flag > GOZNP_PORT env var
 func getPortPath() (string, error) {
 	if portPath != "" {
@@ -35,7 +35,19 @@ func getPortPath() (string, error) {
 	if envPort := os.Getenv("GOZNP_PORT"); envPort != "" {
 		return envPort, nil
 	}
-	return "", fmt.Errorf("serial port not specified (use -p flag or set GOZNP_PORT environment variable)")
+	return "", fmt.Errorf("serial port not specified\n\n" +
+		"Usage:\n" +
+		"  goznp [command] --port <path>\n\n" +
+		"Flags:\n" +
+		"  -p, --port string   Serial port path\n" +
+		"\n" +
+		"Environment:\n" +
+		"  GOZNP_PORT          Set this to avoid using --port flag\n\n" +
+		"Examples:\n" +
+		"  goznp connect --port /dev/tty.usbserial-110\n" +
+		"  goznp scan\n" +
+		"  export GOZNP_PORT=/dev/tty.usbserial-110\n" +
+		"  goznp devices list")
 }
 
 func main() {
@@ -60,10 +72,9 @@ var versionCmd = &cobra.Command{
 }
 
 func init() {
-	// Add global flags to commands that need them
+	// Add global flags to commands that need them (using centralized helper)
 	for _, cmd := range []*cobra.Command{infoCmd, pingCmd, resetCmd} {
-		cmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-		cmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
+		AddConnectionFlags(cmd)
 	}
 
 	// Add all commands to root
@@ -75,6 +86,8 @@ func init() {
 	rootCmd.AddCommand(backupCmd)
 	rootCmd.AddCommand(networkCmd)
 	rootCmd.AddCommand(deviceCmd)
+	rootCmd.AddCommand(groupsCmd)
+	rootCmd.AddCommand(colorCmd)
 	rootCmd.AddCommand(quirksCmd)
 
 	// Add factory-reset as subcommand of reset
@@ -96,8 +109,8 @@ func setupSignalHandler() context.Context {
 }
 
 var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List available serial ports",
+	Use:   "scan",
+	Short: "Scan for available Zigbee adapters",
 	Long:  "Shows USB ports with VID/PID info and highlights detected CC2652/SONOFF adapters",
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := runList(); err != nil {
@@ -147,9 +160,24 @@ func runList() error {
 }
 
 var infoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "Display adapter information",
-	Long:  "Connect to adapter and display firmware version, capabilities, and device info",
+	Use:   "connect",
+	Short: "Connect to adapter and display information",
+	Long: `Connect to adapter and display firmware version, capabilities, and network status.
+
+This command establishes a connection to the Zigbee adapter and retrieves:
+  - Z-Stack firmware version information
+  - Adapter capabilities
+  - Network configuration (if formed)
+
+The connection will be closed automatically after displaying information.
+
+Examples:
+  # Connect and view adapter info
+  goznp connect --port /dev/tty.usbserial-110
+
+  # Use environment variable
+  export GOZNP_PORT=/dev/tty.usbserial-110
+  goznp connect`,
 	Run: func(_ *cobra.Command, _ []string) {
 		ctx := setupSignalHandler()
 		if err := runInfo(ctx); err != nil {

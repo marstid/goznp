@@ -33,9 +33,14 @@ Effects:
   stop     - Stop immediately
 
 Examples:
-  goznp device identify --addr 0xBE87 --endpoint 11              # Identify for 5s
-  goznp device identify --addr 0xBE87 --endpoint 11 --duration 10 # Identify for 10s
-  goznp device identify --addr 0xBE87 --endpoint 11 --effect blink # Trigger blink effect`,
+  # Identify by name for 5 seconds (default)
+  goznp device identify --name "Living Room Light"
+
+  # Identify by address for 10 seconds
+  goznp device identify --addr 0xBE87 --duration 10
+
+  # Trigger blink effect
+  goznp device identify --name "Bedroom Light" --effect blink`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceIdentify(ctx)
@@ -57,11 +62,15 @@ func runDeviceIdentify(ctx context.Context) error {
 	)
 
 	if err := a.Open(ctx); err != nil {
-		return fmt.Errorf("failed to open adapter: %w", err)
+		return fmt.Errorf("failed to connect to adapter: %w\n\n"+
+			"Troubleshooting:\n"+
+			"  - Check serial port connection\n"+
+			"  - Try 'goznp connect' to verify adapter availability",
+			err)
 	}
 	defer a.Close()
 
-	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceNameLookup, deviceIEEE, deviceAddr)
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceName, deviceIEEE, deviceAddr)
 	if err != nil {
 		return err
 	}
@@ -116,15 +125,11 @@ func parseIdentifyEffect(effect string) (uint8, error) {
 }
 
 func init() {
-	// Device identify flags
-	deviceIdentifyCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-	deviceIdentifyCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
-	deviceIdentifyCmd.Flags().StringVar(&deviceNameLookup, "name", "", "Device name (alternative to --addr)")
-	deviceIdentifyCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
+	AddConnectionFlags(deviceIdentifyCmd)
+	AddDeviceFlags(deviceIdentifyCmd)
+
 	deviceIdentifyCmd.Flags().Uint16Var(&identifyDuration, "duration", 0, "Identify duration in seconds (default: 5)")
 	deviceIdentifyCmd.Flags().StringVar(&identifyEffect, "effect", "", "Trigger effect (blink, breathe, okay, channel, stop)")
-	deviceIdentifyCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	deviceIdentifyCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
 
 	// Register as subcommand of deviceCmd
 	deviceCmd.AddCommand(deviceIdentifyCmd)

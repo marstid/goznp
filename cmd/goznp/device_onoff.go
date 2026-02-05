@@ -14,7 +14,16 @@ import (
 var deviceOnCmd = &cobra.Command{
 	Use:   "on",
 	Short: "Turn device on",
-	Long:  "Send On command to device (On/Off cluster)",
+	Long: `Send On command to a Zigbee device.
+
+The device can be specified by:
+  - Custom name: --name "Kitchen Light"
+  - IEEE address: --ieee 00:11:22:33:44:55:66:77
+  - Network address: --addr 0x1234
+
+Examples:
+  goznp devices on --name "Kitchen Light"
+  goznp devices on --addr 0x1234`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceControl(ctx, "on")
@@ -25,7 +34,16 @@ var deviceOnCmd = &cobra.Command{
 var deviceOffCmd = &cobra.Command{
 	Use:   "off",
 	Short: "Turn device off",
-	Long:  "Send Off command to device (On/Off cluster)",
+	Long: `Send Off command to a Zigbee device.
+
+The device can be specified by:
+  - Custom name: --name "Kitchen Light"
+  - IEEE address: --ieee 00:11:22:33:44:55:66:77
+  - Network address: --addr 0x1234
+
+Examples:
+  goznp devices off --name "Kitchen Light"
+  goznp devices off --addr 0x1234`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceControl(ctx, "off")
@@ -36,7 +54,16 @@ var deviceOffCmd = &cobra.Command{
 var deviceToggleCmd = &cobra.Command{
 	Use:   "toggle",
 	Short: "Toggle device state",
-	Long:  "Send Toggle command to device (On/Off cluster)",
+	Long: `Send Toggle command to a Zigbee device.
+
+The device can be specified by:
+  - Custom name: --name "Kitchen Light"
+  - IEEE address: --ieee 00:11:22:33:44:55:66:77
+  - Network address: --addr 0x1234
+
+Examples:
+  goznp devices toggle --name "Kitchen Light"
+  goznp devices toggle --addr 0x1234`,
 	RunE: func(_ *cobra.Command, _ []string) error {
 		ctx := setupSignalHandler()
 		return runDeviceControl(ctx, "toggle")
@@ -58,16 +85,23 @@ func runDeviceControl(ctx context.Context, action string) error {
 	)
 
 	if err := a.Open(ctx); err != nil {
-		return fmt.Errorf("failed to open adapter: %w", err)
+		return fmt.Errorf("failed to connect to adapter: %w\n\n"+
+			"Troubleshooting:\n"+
+			"  - Check that the adapter is connected\n"+
+			"  - Verify the port path is correct\n"+
+			"  - Try running 'goznp scan' to see available ports\n"+
+			"  - Check for permission to access the port",
+			err)
 	}
 	defer a.Close()
 
-	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceNameLookup, deviceIEEE, deviceAddr)
+	// Resolve device address (supports --name, ieee, --addr)
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceName, deviceIEEE, deviceAddr)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Sending %s command to device 0x%04X endpoint %d...\n", action, nwkAddr, deviceEndpoint)
+	fmt.Printf("Sending %s command to device at 0x%04X endpoint %d...\n", action, nwkAddr, deviceEndpoint)
 
 	switch action {
 	case "on":
@@ -81,7 +115,12 @@ func runDeviceControl(ctx context.Context, action string) error {
 	}
 
 	if err != nil {
-		return fmt.Errorf("command failed: %w", err)
+		return fmt.Errorf("device command failed: %w\n\n"+
+			"Troubleshooting:\n"+
+			"  - Check if device is still connected to the network\n"+
+			"  - Try using 'goznp devices status --name \"<name>\"' to verify device status\n"+
+			"  - The device may be offline or out of range",
+			err)
 	}
 
 	fmt.Printf("Command sent successfully\n")
@@ -131,22 +170,28 @@ func runDeviceBrightness(ctx context.Context) error {
 	)
 
 	if err := a.Open(ctx); err != nil {
-		return fmt.Errorf("failed to open adapter: %w", err)
+		return fmt.Errorf("failed to connect to adapter: %w", err)
 	}
 	defer a.Close()
 
-	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceNameLookup, deviceIEEE, deviceAddr)
+	// Resolve device address (supports --name, ieee, --addr)
+	nwkAddr, err := resolveDeviceAddr(ctx, a, deviceName, deviceIEEE, deviceAddr)
 	if err != nil {
 		return err
 	}
 
 	// If no level specified, read current brightness
 	if brightnessLevel == 0 && transitionTime == 0 {
-		fmt.Printf("Reading brightness from device 0x%04X endpoint %d...\n", nwkAddr, deviceEndpoint)
+		fmt.Printf("Reading brightness from device at 0x%04X endpoint %d...\n", nwkAddr, deviceEndpoint)
 
 		level, err := a.GetBrightness(ctx, nwkAddr, deviceEndpoint)
 		if err != nil {
-			return fmt.Errorf("failed to read brightness: %w", err)
+			return fmt.Errorf("failed to read brightness: %w\n\n"+
+				"Troubleshooting:\n"+
+				"  - Device may not support brightness control (check endpoints)\n"+
+				"  - Try endpoint 1 for devices with multiple endpoints\n"+
+				"  - Use 'goznp device info' to see device capabilities",
+				err)
 		}
 
 		percent := int(level) * 100 / 254
@@ -158,14 +203,19 @@ func runDeviceBrightness(ctx context.Context) error {
 	// Convert milliseconds to tenths of second for ZCL
 	transitionTenths := transitionTime / 100
 
-	fmt.Printf("Setting brightness on device 0x%04X endpoint %d to %d", nwkAddr, deviceEndpoint, brightnessLevel)
+	fmt.Printf("Setting brightness on device at 0x%04X endpoint %d to %d", nwkAddr, deviceEndpoint, brightnessLevel)
 	if transitionTime > 0 {
 		fmt.Printf(" (transition: %dms)", transitionTime)
 	}
 	fmt.Println("...")
 
 	if err := a.SetBrightness(ctx, nwkAddr, deviceEndpoint, brightnessLevel, transitionTenths); err != nil {
-		return fmt.Errorf("failed to set brightness: %w", err)
+		return fmt.Errorf("failed to set brightness: %w\n\n"+
+			"Troubleshooting:\n"+
+			"  - Brightness must be 0-254 (0=off, 1-254=dimmable range)\n"+
+			"  - Device may not support brightness control\n"+
+			"  - Check if device has power and is online",
+			err)
 	}
 
 	percent := int(brightnessLevel) * 100 / 254
@@ -175,23 +225,15 @@ func runDeviceBrightness(ctx context.Context) error {
 }
 
 func init() {
-	// Add flags to control commands
+	// Add flags to control commands using centralized helpers
 	for _, cmd := range []*cobra.Command{deviceOnCmd, deviceOffCmd, deviceToggleCmd} {
-		cmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-		cmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
-		cmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-		cmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
-		cmd.Flags().StringVar(&deviceNameLookup, "name", "", "Device name (alternative to --addr)")
-		cmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
+		AddConnectionFlags(cmd)
+		AddDeviceFlags(cmd)
 	}
 
 	// Device brightness flags
-	deviceBrightnessCmd.Flags().StringVarP(&portPath, "port", "p", "", "Serial port path (or set GOZNP_PORT)")
-	deviceBrightnessCmd.Flags().IntVarP(&baudRate, "baud", "b", 115200, "Baud rate")
-	deviceBrightnessCmd.Flags().StringVar(&deviceAddr, "addr", "", "Device network address (hex, e.g., 0x1234)")
-	deviceBrightnessCmd.Flags().StringVar(&deviceIEEE, "ieee", "", "Device IEEE address (e.g., 00:11:22:33:44:55:66:77)")
-	deviceBrightnessCmd.Flags().StringVar(&deviceNameLookup, "name", "", "Device name (alternative to --addr)")
-	deviceBrightnessCmd.Flags().Uint8Var(&deviceEndpoint, "endpoint", 1, "Device endpoint")
+	AddConnectionFlags(deviceBrightnessCmd)
+	AddDeviceFlags(deviceBrightnessCmd)
 	deviceBrightnessCmd.Flags().Uint8Var(&brightnessLevel, "level", 0, "Brightness level (0-254, 0=off, 254=max)")
 	deviceBrightnessCmd.Flags().Uint16Var(&transitionTime, "transition", 0, "Transition time in milliseconds")
 
