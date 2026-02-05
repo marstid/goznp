@@ -44,6 +44,7 @@ type ZNP struct {
 	// mu protects the isOpen flag and callbacks.
 	mu     sync.Mutex
 	isOpen bool
+	ctx    context.Context // Stores the context from Open()
 
 	// onFrame is an optional callback for frames not matched to pending requests.
 	onFrame func(*unpi.Frame)
@@ -89,6 +90,7 @@ func (z *ZNP) Open(ctx context.Context) error {
 		return nil
 	}
 	z.isOpen = true
+	z.ctx = ctx
 	z.mu.Unlock()
 
 	z.wg.Add(1)
@@ -109,6 +111,7 @@ func (z *ZNP) Close() error {
 		return nil
 	}
 	z.isOpen = false
+	z.ctx = nil
 	z.mu.Unlock()
 
 	close(z.stopReader)
@@ -324,6 +327,7 @@ func (z *ZNP) handleDeviceEvents(frame *unpi.Frame) {
 	}
 
 	z.mu.Lock()
+	ctx := z.ctx
 	joinHandler := z.onDeviceJoin
 	leaveHandler := z.onDeviceLeave
 	announceHandler := z.onDeviceAnnounce
@@ -333,19 +337,52 @@ func (z *ZNP) handleDeviceEvents(frame *unpi.Frame) {
 	case CmdZdoTcDevInd.ID:
 		if joinHandler != nil {
 			if ind, err := ParseTcDeviceInd(frame.Data); err == nil {
-				go joinHandler(ind)
+				z.wg.Add(1)
+				go func(ind *TcDeviceInd) {
+					defer z.wg.Done()
+					if ctx != nil {
+						select {
+						case <-ctx.Done():
+							return
+						default:
+						}
+					}
+					joinHandler(ind)
+				}(ind)
 			}
 		}
 	case CmdZdoLeaveInd.ID:
 		if leaveHandler != nil {
 			if ind, err := ParseLeaveInd(frame.Data); err == nil {
-				go leaveHandler(ind)
+				z.wg.Add(1)
+				go func(ind *DeviceLeave) {
+					defer z.wg.Done()
+					if ctx != nil {
+						select {
+						case <-ctx.Done():
+							return
+						default:
+						}
+					}
+					leaveHandler(ind)
+				}(ind)
 			}
 		}
 	case CmdZdoEndDeviceAnnceInd.ID:
 		if announceHandler != nil {
 			if ind, err := ParseEndDeviceAnnceInd(frame.Data); err == nil {
-				go announceHandler(ind)
+				z.wg.Add(1)
+				go func(ind *DeviceAnnounce) {
+					defer z.wg.Done()
+					if ctx != nil {
+						select {
+						case <-ctx.Done():
+							return
+						default:
+						}
+					}
+					announceHandler(ind)
+				}(ind)
 			}
 		}
 	}

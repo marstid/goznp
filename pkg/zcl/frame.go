@@ -320,7 +320,8 @@ type AttributeValue struct {
 
 // BuildWriteAttributesRequest creates a write attributes request.
 // values is a map of attribute ID to AttributeValue pairs.
-func BuildWriteAttributesRequest(seqNum uint8, values map[AttributeID]AttributeValue) *Frame {
+// Returns an error if any attribute value cannot be encoded.
+func BuildWriteAttributesRequest(seqNum uint8, values map[AttributeID]AttributeValue) (*Frame, error) {
 	payload := make([]byte, 0)
 
 	for attrID, attrVal := range values {
@@ -335,9 +336,7 @@ func BuildWriteAttributesRequest(seqNum uint8, values map[AttributeID]AttributeV
 		// Value
 		valueBytes, err := WriteValue(attrVal.Value, attrVal.Type)
 		if err != nil {
-			// In production code, you'd want to handle this error properly
-			// For now, skip this attribute
-			continue
+			return nil, fmt.Errorf("failed to encode attribute 0x%04X: %w", attrID, err)
 		}
 		payload = append(payload, valueBytes...)
 	}
@@ -352,7 +351,7 @@ func BuildWriteAttributesRequest(seqNum uint8, values map[AttributeID]AttributeV
 		TransSeqNum: seqNum,
 		CommandID:   uint8(CmdWriteAttributes),
 		Payload:     payload,
-	}
+	}, nil
 }
 
 // BuildClusterCommand creates a cluster-specific command frame.

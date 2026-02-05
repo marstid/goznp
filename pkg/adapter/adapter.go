@@ -86,6 +86,31 @@ func (c *dedupeCache) isDuplicate(srcAddr, clusterID uint16, transSeqNum uint8) 
 }
 
 // Adapter represents a Z-Stack Zigbee adapter.
+//
+// The Adapter provides a high-level API for managing a Zigbee network coordinator,
+// including device pairing, ZCL messaging, and network management. It sits on top
+// of the ZNP (Zigbee Network Processor) protocol layer, handling the low-level
+// communication details.
+//
+// Thread Safety: All public methods are thread-safe and safe for concurrent
+// use from multiple goroutines.
+//
+// Lifecycle:
+//  1. Create adapter with New() and configuration options
+//  2. Call Open() to connect to the adapter
+//  3. Use adapter methods for device/network operations
+//  4. Call Close() when done to release resources
+//
+// Example:
+//
+//	adapter := adapter.New(
+//	    adapter.WithSerialPath("/dev/tty.usbserial-110"),
+//	    adapter.WithBaudRate(115200),
+//	)
+//	if err := adapter.Open(ctx); err != nil {
+//	    log.Fatal(err)
+//	}
+//	defer adapter.Close()
 type Adapter struct {
 	options             Options
 	port                serial.Port
@@ -94,10 +119,12 @@ type Adapter struct {
 	deviceMgr           *deviceManager
 	registeredEndpoints *RegisteredEndpoints
 	dedupe              *dedupeCache
-	transactionID       uint32 // Per-adapter ZCL transaction ID counter.
+	transactionID       uint32          // Per-adapter ZCL transaction ID counter.
+	ctx                 context.Context // Stores the context from Open()
 
 	mu     sync.Mutex
 	isOpen bool
+	wg     sync.WaitGroup // Tracks event handler goroutines for clean shutdown
 }
 
 // nextTransactionID returns the next ZCL transaction sequence number.
@@ -118,6 +145,23 @@ type Info struct {
 const DedupeWindow = 2 * time.Second
 
 // New creates a new adapter with the given options.
+//
+// Use functional options to configure the adapter. Common options include:
+//   - WithSerialPath: Set the serial port path (e.g., "/dev/tty.usbserial-110")
+//   - WithBaudRate: Set baud rate (e.g., 115200)
+//   - WithLogger: Set a logger for debug output
+//   - WithZCLRetryAttempts: Set retry attempts for ZCL requests
+//
+// The adapter is not opened until Open() is called.
+//
+// Example:
+//
+//	adapter := adapter.New(
+//	    adapter.WithSerialPath("/dev/tty.usbserial-110"),
+//	    adapter.WithBaudRate(115200),
+//	    adapter.WithLogger(myLogger),
+//	    adapter.WithZCLRetryAttempts(3),
+//	)
 func New(opts ...Option) *Adapter {
 	options := DefaultOptions()
 	for _, opt := range opts {
@@ -131,8 +175,28 @@ func New(opts ...Option) *Adapter {
 }
 
 // Open opens the adapter and establishes communication with the Z-Stack coordinator.
-// It opens the serial port, initializes the ZNP protocol layer, verifies connectivity,
-// registers coordinator endpoints, and starts the Zigbee network.
+//
+// This method performs the following initialization steps:
+//  1. Opens the serial port specified in SerialConfig
+//  2. Initializes the ZNP protocol layer
+//  3. Sends handshake pings to verify communication
+//  4. Retrieves version information from the adapter
+//  5. Registers coordinator endpoints for different profiles (HA, SE, GP, ZLL)
+//  6. Starts the Zigbee network from NV memory
+//  7. Sets up device event callbacks for join/leave notifications
+//
+// The adapter must be opened before performing any device or network operations.
+// Call Close() when done to release all resources.
+//
+// If the network has not been configured, Open() will return an error indicating
+// that FormNetwork() must be called first.
+//
+// Example:
+//
+//	if err := adapter.Open(ctx); err != nil {
+//	    return fmt.Errorf("failed to open adapter: %w", err)
+//	}
+//	defer adapter.Close()
 func (a *Adapter) Open(ctx context.Context) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -140,6 +204,8 @@ func (a *Adapter) Open(ctx context.Context) error {
 	if a.isOpen {
 		return nil
 	}
+
+	a.ctx = ctx
 
 	port, err := serial.Open(a.options.SerialConfig)
 	if err != nil {
@@ -173,7 +239,7 @@ func (a *Adapter) Open(ctx context.Context) error {
 	}
 	a.version = version
 
-	a.deviceMgr = newDeviceManager()
+	a.deviceMgr = newDeviceManager(&a.wg)
 	a.setupDeviceEventCallbacks()
 
 	if err := a.registerCoordinatorEndpoints(ctx); err != nil {
@@ -187,10 +253,15 @@ func (a *Adapter) Open(ctx context.Context) error {
 
 	// Start ZDO layer and restore network from NVRAM.
 	status, err := a.znp.StartupFromApp(ctx, 100)
-	//nolint:revive // Empty block is intentional - error is non-fatal and can be ignored.
 	if err != nil {
-		// Non-fatal - coordinator might already be started, error can be ignored.
-	} else if status == 2 {
+		a.znp.Close()
+		a.port.Close()
+		a.port = nil
+		a.znp = nil
+		a.deviceMgr = nil
+		return fmt.Errorf("adapter: network startup failed: %w", err)
+	}
+	if status == 2 {
 		a.znp.Close()
 		a.port.Close()
 		a.port = nil
@@ -200,7 +271,11 @@ func (a *Adapter) Open(ctx context.Context) error {
 	}
 
 	// Brief delay for ZDO layer initialization.
-	time.Sleep(200 * time.Millisecond)
+	// This gives the Z-Stack ZDO layer time to initialize before we start
+	// sending ZDO commands. The delay is configurable via WithZDOInitDelay.
+	if a.options.ZDOInitDelay > 0 {
+		time.Sleep(a.options.ZDOInitDelay)
+	}
 
 	a.isOpen = true
 	return nil
@@ -227,22 +302,19 @@ func (a *Adapter) setupDeviceEventCallbacks() {
 			IEEEAddr: ind.IEEEAddr,
 		})
 
-		// Clean up device name in background (non-fatal, best-effort).
-		go func() {
-			ctx := context.Background()
+		a.wg.Add(1)
+		go func(ieeeAddr [8]byte) {
+			defer a.wg.Done()
+			if a.ctx == nil {
+				return
+			}
 			//nolint:errcheck // Device name cleanup is best-effort, errors intentionally ignored.
-			_ = a.DeleteDeviceName(ctx, ind.IEEEAddr)
-		}()
+			_ = a.DeleteDeviceName(a.ctx, ieeeAddr)
+		}(ind.IEEEAddr)
 	})
 
-	// Handle device announcements (join or rejoin with potentially new network address).
 	a.znp.OnDeviceAnnounce(func(ind *znp.DeviceAnnounce) {
-		// Try to update existing device's network address.
-		// This handles the case where a device rejoins with a new network address.
 		updated := a.deviceMgr.updateDeviceNwkAddr(ind.IEEEAddr, ind.NwkAddr)
-
-		// If device doesn't exist yet, add it.
-		// This can happen if we receive an announcement before tcDeviceInd.
 		if !updated {
 			dev := &Device{
 				IEEEAddr:     ind.IEEEAddr,
@@ -280,7 +352,11 @@ func (a *Adapter) Close() error {
 		a.port = nil
 	}
 
+	// Wait for all event handler goroutines to complete.
+	a.wg.Wait()
+
 	a.isOpen = false
+	a.ctx = nil
 	a.version = nil
 	a.deviceMgr = nil
 	a.registeredEndpoints = nil
@@ -295,6 +371,34 @@ func (a *Adapter) IsOpen() bool {
 	return a.isOpen
 }
 
+// GetZNP returns the underlying ZNP client.
+// This provides access to the ZNP layer for advanced operations like
+// listening for incoming messages. The returned ZNPClient is only
+// valid while the adapter is open.
+func (a *Adapter) GetZNP() ZNPClient {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.znp
+}
+
+// checkOpen verifies that the adapter is open and the context is valid.
+// Returns an error if the adapter is not open or the context is canceled.
+func (a *Adapter) checkOpen(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if !a.isOpen {
+		return ErrNotOpen
+	}
+	return nil
+}
+
 // Version returns the cached version information.
 // Returns nil if the adapter is not open.
 func (a *Adapter) Version() *znp.VersionInfo {
@@ -305,11 +409,11 @@ func (a *Adapter) Version() *znp.VersionInfo {
 
 // Ping sends a ping request to the adapter and returns capabilities.
 func (a *Adapter) Ping(ctx context.Context) (*znp.PingCapabilities, error) {
-	a.mu.Lock()
-	if !a.isOpen {
-		a.mu.Unlock()
-		return nil, ErrNotOpen
+	if err := a.checkOpen(ctx); err != nil {
+		return nil, err
 	}
+
+	a.mu.Lock()
 	znpClient := a.znp
 	a.mu.Unlock()
 
@@ -429,12 +533,11 @@ func (a *Adapter) registerCoordinatorEndpoints(ctx context.Context) error {
 
 		status, err := a.znp.AfRegister(ctx, config)
 		if err != nil {
-			// Log warning but continue - some endpoints may fail.
-			fmt.Printf("Warning: failed to register endpoint %d: %v\n", epDef.Endpoint, err)
+			a.options.Logger.Warnf("failed to register endpoint %d: %v", epDef.Endpoint, err)
 			continue
 		}
 		if status != StatusSuccess && status != StatusAlreadyRegistered {
-			fmt.Printf("Warning: endpoint %d registration returned status 0x%02X\n", epDef.Endpoint, status)
+			a.options.Logger.Warnf("endpoint %d registration returned status 0x%02X", epDef.Endpoint, status)
 			continue
 		}
 

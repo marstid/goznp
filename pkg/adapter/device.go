@@ -48,12 +48,14 @@ type deviceManager struct {
 	mu      sync.RWMutex
 	devices map[[8]byte]*Device
 	handler func(DeviceEvent)
+	wg      *sync.WaitGroup // Tracks event handler goroutines
 }
 
 // newDeviceManager creates a new device manager.
-func newDeviceManager() *deviceManager {
+func newDeviceManager(wg *sync.WaitGroup) *deviceManager {
 	return &deviceManager{
 		devices: make(map[[8]byte]*Device),
+		wg:      wg,
 	}
 }
 
@@ -125,10 +127,23 @@ func (dm *deviceManager) notifyEvent(event DeviceEvent) {
 		// Deep copy the Device struct if present to avoid concurrent modification.
 		if event.Device != nil {
 			deviceCopy := *event.Device
+			// Deep copy the Endpoints slice to avoid concurrent modification.
+			if len(deviceCopy.Endpoints) > 0 {
+				deviceCopy.Endpoints = make([]uint8, len(event.Device.Endpoints))
+				copy(deviceCopy.Endpoints, event.Device.Endpoints)
+			}
 			eventCopy.Device = &deviceCopy
 		}
 		// Call handler in a goroutine to avoid blocking.
-		go handler(eventCopy)
+		if dm.wg != nil {
+			dm.wg.Add(1)
+			go func(e DeviceEvent) {
+				defer dm.wg.Done()
+				handler(e)
+			}(eventCopy)
+		} else {
+			go handler(eventCopy)
+		}
 	}
 }
 
@@ -174,7 +189,7 @@ func (a *Adapter) GetDevices(ctx context.Context) ([]*Device, error) {
 	devices := make([]*Device, 0, len(entries))
 	for _, entry := range entries {
 		// Skip coordinator (address 0x0000).
-		if entry.NwkAddr == 0x0000 {
+		if entry.NwkAddr == CoordinatorAddressNwk {
 			continue
 		}
 

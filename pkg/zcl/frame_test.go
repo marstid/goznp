@@ -263,7 +263,10 @@ func TestBuildWriteAttributesRequest(t *testing.T) {
 			AttributeID(0x0000): {Type: TypeUint8, Value: uint8(100)},
 		}
 
-		frame := BuildWriteAttributesRequest(0x10, values)
+		frame, err := BuildWriteAttributesRequest(0x10, values)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		data := frame.ToBytes()
 
 		// Verify frame header
@@ -305,7 +308,10 @@ func TestBuildWriteAttributesRequest(t *testing.T) {
 			AttributeID(0x0001): {Type: TypeUint16, Value: uint16(0x1234)},
 		}
 
-		frame := BuildWriteAttributesRequest(0x20, values)
+		frame, err := BuildWriteAttributesRequest(0x20, values)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		data := frame.ToBytes()
 
 		// Verify frame header
@@ -366,7 +372,10 @@ func TestBuildWriteAttributesRequest(t *testing.T) {
 			AttributeID(0x0010): {Type: TypeCharString, Value: "test"},
 		}
 
-		frame := BuildWriteAttributesRequest(0x30, values)
+		frame, err := BuildWriteAttributesRequest(0x30, values)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 		data := frame.ToBytes()
 
 		// Verify command
@@ -407,7 +416,10 @@ func TestBuildWriteAttributesRequest(t *testing.T) {
 			AttributeID(0x0000): {Type: TypeUint8, Value: uint8(1)},
 		}
 
-		frame := BuildWriteAttributesRequest(0x99, values)
+		frame, err := BuildWriteAttributesRequest(0x99, values)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
 
 		// Verify frame control fields
 		if frame.Control.FrameType != FrameTypeGlobal {
@@ -428,6 +440,17 @@ func TestBuildWriteAttributesRequest(t *testing.T) {
 		// Verify sequence number
 		if frame.TransSeqNum != 0x99 {
 			t.Errorf("wrong seq num: got 0x%02X", frame.TransSeqNum)
+		}
+	})
+
+	t.Run("error on invalid value type", func(t *testing.T) {
+		values := map[AttributeID]AttributeValue{
+			AttributeID(0x0000): {Type: TypeUint8, Value: struct{}{}},
+		}
+
+		_, err := BuildWriteAttributesRequest(0x01, values)
+		if err == nil {
+			t.Error("expected error for invalid value type, got nil")
 		}
 	})
 }

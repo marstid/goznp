@@ -135,13 +135,13 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 	var lqiCount int
 
 	// Query coordinator's neighbor table first.
-	coordNeighbors, err := a.GetNeighborTable(ctx, 0x0000)
+	coordNeighbors, err := a.GetNeighborTable(ctx, CoordinatorAddressNwk)
 	if err == nil {
 		coordNode := TopologyNode{
-			NwkAddr:    0x0000,
+			NwkAddr:    CoordinatorAddressNwk,
 			IEEEAddr:   netInfo.IEEEAddr,
 			DeviceType: 0, // Coordinator.
-			ParentAddr: 0xFFFF,
+			ParentAddr: BroadcastAddressNwk,
 			Depth:      0,
 			LQI:        255,
 			Children:   make([]uint16, 0),
@@ -161,7 +161,7 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 
 			if n.LQI < 100 {
 				health.WeakLinks = append(health.WeakLinks, WeakLink{
-					FromAddr: 0x0000,
+					FromAddr: CoordinatorAddressNwk,
 					ToAddr:   n.NwkAddr,
 					LQI:      n.LQI,
 				})
@@ -197,7 +197,7 @@ func (a *Adapter) GetNetworkHealth(ctx context.Context) (*NetworkHealth, error) 
 			NwkAddr:    dev.NwkAddr,
 			IEEEAddr:   dev.IEEEAddr,
 			DeviceType: deviceType,
-			ParentAddr: 0xFFFF, // Unknown by default.
+			ParentAddr: BroadcastAddressNwk, // Unknown by default.
 			Depth:      0,
 			LQI:        0,
 			Children:   make([]uint16, 0),
@@ -277,7 +277,7 @@ func (a *Adapter) GetDeviceHealth(ctx context.Context, nwkAddr uint16) (*DeviceH
 		}
 	}
 
-	if foundDevice == nil && nwkAddr != 0x0000 {
+	if foundDevice == nil && nwkAddr != CoordinatorAddressNwk {
 		return nil, fmt.Errorf("device 0x%04X not found", nwkAddr)
 	}
 
@@ -289,7 +289,7 @@ func (a *Adapter) GetDeviceHealth(ctx context.Context, nwkAddr uint16) (*DeviceH
 
 	if foundDevice != nil {
 		health.IEEEAddr = foundDevice.IEEEAddr
-	} else if nwkAddr == 0x0000 {
+	} else if nwkAddr == CoordinatorAddressNwk {
 		// Special case for coordinator.
 		netInfo, err := a.GetNetworkInfo(ctx)
 		if err == nil {

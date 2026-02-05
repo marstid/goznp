@@ -55,18 +55,18 @@ func (a *Adapter) FormNetwork(ctx context.Context, config NetworkFormConfig) err
 		}
 	}
 
-	fmt.Printf("Forming network on channel %d with PAN ID 0x%04X...\n", channel, panID)
+	a.options.Logger.Infof("Forming network on channel %d with PAN ID 0x%04X...", channel, panID)
 
 	// Step 1: Write startup option to clear state and config
 	// This is critical - without this, the device may retain previous network state
-	fmt.Println("Writing startup option to clear state...")
-	if err := znpClient.NvWrite(ctx, znp.NvStartupOption, 0, []byte{0x03}); err != nil {
+	a.options.Logger.Infof("Writing startup option to clear state...")
+	if err := znpClient.NvWrite(ctx, znp.NvStartupOption, 0, []byte{StartupOptionClearState}); err != nil {
 		return fmt.Errorf("failed to set startup option: %w", err)
 	}
 
 	// Step 2: Configure coordinator logical type
-	fmt.Println("Configuring as coordinator...")
-	if err := znpClient.NvWrite(ctx, znp.NvLogicalType, 0, []byte{0x00}); err != nil {
+	a.options.Logger.Infof("Configuring as coordinator...")
+	if err := znpClient.NvWrite(ctx, znp.NvLogicalType, 0, []byte{LogicalTypeCoordinator}); err != nil {
 		return fmt.Errorf("failed to set logical type: %w", err)
 	}
 
@@ -81,36 +81,37 @@ func (a *Adapter) FormNetwork(ctx context.Context, config NetworkFormConfig) err
 	if err != nil {
 		return fmt.Errorf("unknown profile: %s (supported: ha, se, gp, zll)", profile)
 	}
-	fmt.Printf("Configuring for %s profile...\n", appProfile)
+	a.options.Logger.Infof("Configuring for %s profile...", appProfile)
 
 	// Initialize and store profile preference in NV for later retrieval
 	profileData := make([]byte, 2)
 	binary.LittleEndian.PutUint16(profileData, uint16(appProfile))
 	if initErr := znpClient.NvItemInit(ctx, znp.NvZStackProfile, 2, profileData); initErr != nil {
 		// Non-fatal, continue
-		fmt.Printf("Warning: could not initialize profile NV item: %v\n", initErr)
-	} else if writeErr := znpClient.NvWrite(ctx, znp.NvZStackProfile, 0, profileData); writeErr != nil {
+		a.options.Logger.Warnf("could not initialize profile NV item: %v", initErr)
+	}
+	if writeErr := znpClient.NvWrite(ctx, znp.NvZStackProfile, 0, profileData); writeErr != nil {
 		// Non-fatal, continue
-		fmt.Printf("Warning: could not store profile preference: %v\n", writeErr)
+		a.options.Logger.Warnf("could not store profile preference: %v", writeErr)
 	}
 
 	// Step 3: Enable ZDO callbacks to receive state change indications
-	fmt.Println("Enabling ZDO callbacks...")
-	if err := znpClient.NvWrite(ctx, znp.NvZdoDirectCb, 0, []byte{0x01}); err != nil {
+	a.options.Logger.Infof("Enabling ZDO callbacks...")
+	if err := znpClient.NvWrite(ctx, znp.NvZdoDirectCb, 0, []byte{ZdoDirectCbEnabled}); err != nil {
 		return fmt.Errorf("failed to enable ZDO callbacks: %w", err)
 	}
 
 	// Step 4: Reset the device to apply NV changes
 	// The device must be reset after writing NV items for them to take effect
-	fmt.Println("Resetting device to apply configuration...")
+	a.options.Logger.Infof("Resetting device to apply configuration...")
 	_, resetErr := znpClient.Reset(ctx, znp.ResetTypeSoft)
 	if resetErr != nil {
 		return fmt.Errorf("failed to reset device: %w", resetErr)
 	}
-	fmt.Println("Device reset complete")
+	a.options.Logger.Infof("Device reset complete")
 
 	// Step 5: Set channel mask for network formation
-	fmt.Printf("Setting channel mask for channel %d...\n", channel)
+	a.options.Logger.Infof("Setting channel mask for channel %d...", channel)
 	channelMask := znp.ChannelToMask(channel)
 	status, err := znpClient.BdbSetChannel(ctx, true, channelMask)
 	if err != nil {
@@ -127,7 +128,7 @@ func (a *Adapter) FormNetwork(ctx context.Context, config NetworkFormConfig) err
 	}
 
 	// Step 6: Start network formation commissioning
-	fmt.Println("Starting network formation commissioning...")
+	a.options.Logger.Infof("Starting network formation commissioning...")
 	status, err = znpClient.BdbStartCommissioning(ctx, znp.BdbCommissioningModeNetworkFormation)
 	if err != nil {
 		return fmt.Errorf("failed to start commissioning: %w", err)
@@ -137,7 +138,7 @@ func (a *Adapter) FormNetwork(ctx context.Context, config NetworkFormConfig) err
 	}
 
 	// Step 7: Wait for coordinator state (40 second timeout)
-	fmt.Println("Waiting for network formation to complete...")
+	a.options.Logger.Infof("Waiting for network formation to complete...")
 	formationCtx, cancel := context.WithTimeout(ctx, 40*time.Second)
 	defer cancel()
 
@@ -152,11 +153,11 @@ func (a *Adapter) FormNetwork(ctx context.Context, config NetworkFormConfig) err
 			continue
 		}
 
-		fmt.Printf("Device state changed to: %s\n", state)
+		a.options.Logger.Infof("Device state changed to: %s", state)
 
 		if state == znp.DevStateZbCoord {
 			// Successfully formed network
-			fmt.Println("Network formation successful!")
+			a.options.Logger.Infof("Network formation successful!")
 			return nil
 		}
 		// Continue waiting for coordinator state
@@ -184,9 +185,8 @@ func (a *Adapter) ChangeChannel(ctx context.Context, channel uint8, seamless boo
 
 	if seamless {
 		// Seamless channel change using MgmtNwkUpdateReq
-		// 0xFFFF = broadcast, 0x0F = broadcast address mode
-		// 0xFE = channel change (special scan duration value)
-		status, err := znpClient.MgmtNwkUpdateReq(ctx, 0xFFFF, 0x0F, channelMask, 0xFE, 0, 0x0000)
+		// Broadcast address mode 0x0F, scan duration 0xFE for channel change
+		status, err := znpClient.MgmtNwkUpdateReq(ctx, BroadcastAddressNwk, 0x0F, channelMask, 0xFE, 0, 0x0000)
 		if err != nil {
 			return fmt.Errorf("channel change request failed: %w", err)
 		}
