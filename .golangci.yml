@@ -3,7 +3,6 @@
 
 linters:
   enable:
-    - errcheck            # Check for unchecked errors
     - gosimple            # Simplify code
     - govet               # Vet examines Go source code and reports suspicious constructs
     - ineffassign         # Find ineffectual assignments
@@ -28,6 +27,7 @@ linters:
     - prealloc            # Can hurt readability for little gain
     - testpackage         # We use _test.go naming convention successfully
     - wsl                 # Too strict
+    - errcheck
 
 linters-settings:
   errcheck:

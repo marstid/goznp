@@ -65,7 +65,7 @@ func (p *Parser) Parse(msg *znp.IncomingMessage) *ParsedMessage {
 }
 
 // parseReportAttributes parses a Report Attributes command.
-func (p *Parser) parseReportAttributes(result *ParsedMessage, msg *znp.IncomingMessage, frame *zcl.Frame) *ParsedMessage {
+func (p *Parser) parseReportAttributes(result *ParsedMessage, _ *znp.IncomingMessage, frame *zcl.Frame) *ParsedMessage {
 	attrs, err := zcl.ParseReportAttributesPayload(frame.Payload)
 	if err != nil {
 		result.Error = err
@@ -84,7 +84,7 @@ func (p *Parser) parseReportAttributes(result *ParsedMessage, msg *znp.IncomingM
 }
 
 // parseReadResponse parses a Read Attributes Response command.
-func (p *Parser) parseReadResponse(result *ParsedMessage, msg *znp.IncomingMessage, frame *zcl.Frame) *ParsedMessage {
+func (p *Parser) parseReadResponse(result *ParsedMessage, _ *znp.IncomingMessage, frame *zcl.Frame) *ParsedMessage {
 	attrs, err := zcl.ParseReadAttributesResponse(frame.Payload)
 	if err != nil {
 		result.Error = err
@@ -103,7 +103,7 @@ func (p *Parser) parseReadResponse(result *ParsedMessage, msg *znp.IncomingMessa
 }
 
 // parseWriteResponse parses a Write Attributes Response command.
-func (p *Parser) parseWriteResponse(result *ParsedMessage, msg *znp.IncomingMessage, frame *zcl.Frame) *ParsedMessage {
+func (p *Parser) parseWriteResponse(result *ParsedMessage, _ *znp.IncomingMessage, frame *zcl.Frame) *ParsedMessage {
 	results, err := zcl.ParseWriteAttributesResponse(frame.Payload)
 	if err != nil {
 		result.Error = err
@@ -125,7 +125,7 @@ func (p *Parser) parseWriteResponse(result *ParsedMessage, msg *znp.IncomingMess
 }
 
 // parseDefaultResponse parses a Default Response command.
-func (p *Parser) parseDefaultResponse(result *ParsedMessage, msg *znp.IncomingMessage, frame *zcl.Frame) *ParsedMessage {
+func (p *Parser) parseDefaultResponse(result *ParsedMessage, _ *znp.IncomingMessage, _ *zcl.Frame) *ParsedMessage {
 	// Default response contains a status code
 	// We don't need to extract attributes, just acknowledge it was received
 	return result

@@ -29,7 +29,7 @@ func (l *TestLogger) Infof(format string, args ...interface{})  { l.info.Writef(
 func (l *TestLogger) Warnf(format string, args ...interface{})  { l.warn.Writef(format, args...) }
 func (l *TestLogger) Errorf(format string, args ...interface{}) { l.error.Writef(format, args...) }
 
-func TestDefaultLogger(t *testing.T) {
+func TestDefaultLogger(_ *testing.T) {
 	logger := &DefaultLogger{}
 
 	// Should not panic

@@ -10,3 +10,4 @@ dist/
 
 # Test coverage
 coverage.out
+.env

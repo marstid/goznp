@@ -77,7 +77,7 @@ type NetworkChangedEvent struct {
 
 // Event represents a generic event.
 type Event struct {
-	Type      EventType   `json:"type"`
+	Type      Type        `json:"type"`
 	Timestamp time.Time   `json:"timestamp"`
 	Data      interface{} `json:"data"`
 }

@@ -26,10 +26,10 @@ type Logger interface {
 // This is used when no logger is configured.
 type DefaultLogger struct{}
 
-func (l *DefaultLogger) Debugf(format string, args ...interface{}) {}
-func (l *DefaultLogger) Infof(format string, args ...interface{})  {}
-func (l *DefaultLogger) Warnf(format string, args ...interface{})  {}
-func (l *DefaultLogger) Errorf(format string, args ...interface{}) {}
+func (l *DefaultLogger) Debugf(_ string, _ ...interface{}) {}
+func (l *DefaultLogger) Infof(_ string, _ ...interface{})  {}
+func (l *DefaultLogger) Warnf(_ string, _ ...interface{})  {}
+func (l *DefaultLogger) Errorf(_ string, _ ...interface{}) {}
 
 // Ensure DefaultLogger implements Logger interface.
 var _ Logger = (*DefaultLogger)(nil)

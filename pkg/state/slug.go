@@ -36,13 +36,14 @@ func SlugFormat(name string) string {
 	// Replace non-alphanumeric characters (except hyphens) with spaces
 	var builder strings.Builder
 	for _, r := range result {
-		if r == '-' {
+		switch {
+		case r == '-':
 			builder.WriteByte('-')
-		} else if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+		case (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'):
 			builder.WriteRune(r)
-		} else if unicode.IsSpace(r) || r == '_' || r == '.' || r == '/' {
+		case unicode.IsSpace(r) || r == '_' || r == '.' || r == '/':
 			builder.WriteByte('-')
-		} else {
+		default:
 			// Other characters become hyphens (including emojis)
 			builder.WriteByte('-')
 		}
@@ -69,7 +70,7 @@ func SlugFormat(name string) string {
 // IsValidSlug checks if a slug is valid.
 // Valid: lowercase alphanumeric + hyphens, not empty, max 64 chars
 func IsValidSlug(slug string) bool {
-	if len(slug) == 0 || len(slug) > 64 {
+	if slug == "" || len(slug) > 64 {
 		return false
 	}
 

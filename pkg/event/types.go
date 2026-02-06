@@ -1,24 +1,24 @@
 package event
 
-// EventType represents the type of event.
-type EventType string
+// Type represents the type of event.
+type Type string
 
 const (
 	// DeviceLifecycle events
-	EventDeviceJoined  EventType = "device.joined"
-	EventDeviceLeft    EventType = "device.left"
-	EventDeviceUpdated EventType = "device.updated"
+	EventDeviceJoined  Type = "device.joined"
+	EventDeviceLeft    Type = "device.left"
+	EventDeviceUpdated Type = "device.updated"
 
 	// State events
-	EventDeviceStateChange EventType = "device.state_change"
+	EventDeviceStateChange Type = "device.state_change"
 
 	// Sensor events
-	EventSensorReport EventType = "sensor.report"
+	EventSensorReport Type = "sensor.report"
 
 	// Adapter events
-	EventAdapterOnline  EventType = "adapter.online"
-	EventAdapterOffline EventType = "adapter.offline"
+	EventAdapterOnline  Type = "adapter.online"
+	EventAdapterOffline Type = "adapter.offline"
 
 	// Network events
-	EventNetworkChanged EventType = "network.changed"
+	EventNetworkChanged Type = "network.changed"
 )

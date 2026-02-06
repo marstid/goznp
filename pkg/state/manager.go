@@ -32,7 +32,7 @@ type EventBus interface {
 }
 
 // NewManager creates a new state manager.
-func NewManager(ctx context.Context, adapter *adapter.Adapter, eventBus EventBus, pollInterval time.Duration, logger *slog.Logger) *Manager {
+func NewManager(_ context.Context, adapter *adapter.Adapter, eventBus EventBus, pollInterval time.Duration, logger *slog.Logger) *Manager {
 	mgr := &Manager{
 		adapter:   adapter,
 		devices:   make(map[[8]byte]*DeviceState),
@@ -147,18 +147,19 @@ func (mgr *Manager) PopulateDevices(devices []*adapter.Device) {
 	defer mgr.mu.Unlock()
 
 	for _, dev := range devices {
-		if _, exists := mgr.devices[dev.IEEEAddr]; !exists {
-			newDev := NewDeviceState(dev.IEEEAddr, dev.NwkAddr, dev.Capabilities)
-			mgr.devices[dev.IEEEAddr] = newDev
-
-			defaultSlug := GetDefaultSlugForIEEE(dev.IEEEAddr)
-			mgr.slugIndex[defaultSlug] = dev.IEEEAddr
-
-			mgr.logger.Debug("Device populated",
-				"ieeeAddr", FormatIEEEAddr(dev.IEEEAddr),
-				"nwkAddr", fmt.Sprintf("0x%04X", dev.NwkAddr),
-				"slug", defaultSlug)
+		if _, exists := mgr.devices[dev.IEEEAddr]; exists {
+			continue
 		}
+		newDev := NewDeviceState(dev.IEEEAddr, dev.NwkAddr, dev.Capabilities)
+		mgr.devices[dev.IEEEAddr] = newDev
+
+		defaultSlug := GetDefaultSlugForIEEE(dev.IEEEAddr)
+		mgr.slugIndex[defaultSlug] = dev.IEEEAddr
+
+		mgr.logger.Debug("Device populated",
+			"ieeeAddr", FormatIEEEAddr(dev.IEEEAddr),
+			"nwkAddr", fmt.Sprintf("0x%04X", dev.NwkAddr),
+			"slug", defaultSlug)
 	}
 }
 
@@ -267,7 +268,7 @@ func (mgr *Manager) UpdateState(ieeeAddr [8]byte, clusterID uint16, attrs []adap
 	// Update state values
 	changed := false
 	for _, attr := range attrs {
-		if dev.SetState(clusterID, uint16(attr.ID), attr.Value) {
+		if dev.SetState(clusterID, attr.ID, attr.Value) {
 			changed = true
 		}
 	}

@@ -45,7 +45,7 @@ func NewListener(adapter ZNPClient, manager *state.Manager, eventBus EventBus, t
 }
 
 // Start begins listening for incoming messages.
-// This blocks until the context is cancelled.
+// This blocks until the context is canceled.
 func (l *Listener) Start(ctx context.Context) error {
 	l.logger.Info("Starting message listener")
 	defer l.logger.Info("Message listener stopped")
@@ -94,7 +94,7 @@ func (l *Listener) handleMessage(ctx context.Context, msg *znp.IncomingMessage) 
 
 	// Handle based on command type
 	switch parsed.CommandID {
-	case uint8(parsed.CommandID): // ReportAttributes
+	case 0x0A: // ReportAttributes
 		l.handleReportAttributes(ctx, parsed, dev, msg)
 	default:
 		l.logger.Debug("Unhandled ZCL command", "commandID", parsed.CommandID, "nwkAddr", msg.SrcAddr, "clusterID", msg.ClusterID)
@@ -102,7 +102,7 @@ func (l *Listener) handleMessage(ctx context.Context, msg *znp.IncomingMessage) 
 }
 
 // handleReportAttributes processes attribute reports from a device.
-func (l *Listener) handleReportAttributes(ctx context.Context, parsed *ParsedMessage, dev *state.DeviceState, msg *znp.IncomingMessage) {
+func (l *Listener) handleReportAttributes(_ context.Context, parsed *ParsedMessage, dev *state.DeviceState, msg *znp.IncomingMessage) {
 	if parsed.Error != nil {
 		l.logger.Warn("Failed to parse report attributes",
 			"ieeeAddr", state.FormatIEEEAddr(dev.IEEEAddr),
@@ -130,13 +130,12 @@ func (l *Listener) handleReportAttributes(ctx context.Context, parsed *ParsedMes
 	dev.LastSeen = time.Now()
 
 	// Publish event for state change if this is a report attributes command
-	if changed && l.eventBus != nil {
-		// Note: A more sophisticated implementation would publish individual attribute changes
-	}
+	_ = changed // TODO: Publish event to event bus when implemented
 }
 
 // handleReadResponse processes attribute read responses.
-func (l *Listener) handleReadResponse(ctx context.Context, parsed *ParsedMessage, dev *state.DeviceState, msg *znp.IncomingMessage) {
+// nolint:unused // Reserved for future use when handling read attribute responses
+func (l *Listener) handleReadResponse(_ context.Context, parsed *ParsedMessage, dev *state.DeviceState, msg *znp.IncomingMessage) {
 	if parsed.Error != nil {
 		l.logger.Warn("Failed to parse read response",
 			"ieeeAddr", state.FormatIEEEAddr(dev.IEEEAddr),
@@ -157,7 +156,8 @@ func (l *Listener) handleReadResponse(ctx context.Context, parsed *ParsedMessage
 }
 
 // handleWriteResponse processes attribute write responses.
-func (l *Listener) handleWriteResponse(ctx context.Context, parsed *ParsedMessage, dev *state.DeviceState, msg *znp.IncomingMessage) {
+// nolint:unused // Reserved for future use when handling write attribute responses
+func (l *Listener) handleWriteResponse(_ context.Context, parsed *ParsedMessage, dev *state.DeviceState, msg *znp.IncomingMessage) {
 	if parsed.Error != nil {
 		l.logger.Warn("Failed to parse write response",
 			"ieeeAddr", state.FormatIEEEAddr(dev.IEEEAddr),

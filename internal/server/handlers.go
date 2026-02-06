@@ -51,7 +51,7 @@ func (h *Handlers) HealthCheck(w http.ResponseWriter, r *http.Request) {
 
 // ListDevices returns all devices.
 // GET /api/v1/devices
-func (h *Handlers) ListDevices(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) ListDevices(w http.ResponseWriter, _ *http.Request) {
 	devices := h.manager.GetDevices()
 
 	response := DeviceListResponse{
@@ -162,11 +162,12 @@ func (h *Handlers) SetDeviceName(w http.ResponseWriter, r *http.Request) {
 
 	slug, err := h.manager.SetDeviceNameByIdentifier(identifier, req.Name)
 	if err != nil {
-		if err == state.ErrDeviceNotFound {
+		switch err {
+		case state.ErrDeviceNotFound:
 			writeErrorResponse(w, http.StatusNotFound, err)
-		} else if err == state.ErrNameInUse {
+		case state.ErrNameInUse:
 			writeErrorResponse(w, http.StatusConflict, err)
-		} else {
+		default:
 			writeErrorResponse(w, http.StatusInternalServerError, err)
 		}
 		return
@@ -423,7 +424,7 @@ func (h *Handlers) Identify(w http.ResponseWriter, r *http.Request) {
 // Helper methods
 
 // getEndpointForCluster returns the first endpoint that supports the given cluster.
-func (h *Handlers) getEndpointForCluster(dev *state.DeviceState, clusterID zcl.ClusterID) uint8 {
+func (h *Handlers) getEndpointForCluster(dev *state.DeviceState, _ zcl.ClusterID) uint8 {
 	// For now, just return endpoint 1 if it exists
 	// A real implementation would check interview data
 	for _, ep := range dev.Endpoints {

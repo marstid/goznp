@@ -19,7 +19,7 @@ const (
 // It allows multiple components to subscribe to events and publish events asynchronously.
 type Bus struct {
 	mu     sync.RWMutex
-	subs   map[EventType][]*subscription
+	subs   map[Type][]*subscription
 	logger *slog.Logger
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -37,7 +37,7 @@ type subscription struct {
 func NewBus(logger *slog.Logger) *Bus {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Bus{
-		subs:   make(map[EventType][]*subscription),
+		subs:   make(map[Type][]*subscription),
 		logger: logger,
 		ctx:    ctx,
 		cancel: cancel,
@@ -51,7 +51,7 @@ func (b *Bus) Close() {
 }
 
 // Publish sends an event to all matching subscribers.
-// Returns an error if the context is cancelled.
+// Returns an error if the context is canceled.
 func (b *Bus) Publish(ctx context.Context, evt Event) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
@@ -119,7 +119,7 @@ func (b *Bus) Publish(ctx context.Context, evt Event) error {
 //	    stateChange := evt.Data.(DeviceStateChangeEvent)
 //	    // Handle event
 //	}
-func (b *Bus) Subscribe(ctx context.Context, filter func(Event) bool) (<-chan Event, func()) {
+func (b *Bus) Subscribe(_ context.Context, filter func(Event) bool) (<-chan Event, func()) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -131,15 +131,8 @@ func (b *Bus) Subscribe(ctx context.Context, filter func(Event) bool) (<-chan Ev
 	}
 
 	// Determine which event types to subscribe to
-	var eventTypes []EventType
-	if filter == nil {
-		// Subscribe to all event types (wildcard)
-		eventTypes = []EventType{""}
-	} else {
-		// Don't know the filter's intent, subscribe to all for now
-		// The filter will be applied during publish
-		eventTypes = []EventType{""}
-	}
+	// Subscribe to all event types (wildcard) - filter will be applied during publish
+	eventTypes := []Type{""}
 
 	for _, eventType := range eventTypes {
 		b.subs[eventType] = append(b.subs[eventType], sub)
@@ -172,7 +165,7 @@ func (b *Bus) Subscribe(ctx context.Context, filter func(Event) bool) (<-chan Ev
 }
 
 // SubscribeTo returns a channel for receiving specific event types.
-func (b *Bus) SubscribeTo(ctx context.Context, eventTypes ...EventType) (<-chan Event, func()) {
+func (b *Bus) SubscribeTo(ctx context.Context, eventTypes ...Type) (<-chan Event, func()) {
 	if len(eventTypes) == 0 {
 		return b.Subscribe(ctx, nil)
 	}
@@ -191,16 +184,16 @@ func (b *Bus) SubscribeTo(ctx context.Context, eventTypes ...EventType) (<-chan 
 }
 
 // closeSubscriber handles cleanup for a subscription.
-func (b *Bus) closeSubscriber(sub *subscription) {
+func (b *Bus) closeSubscriber(_ *subscription) {
 	// Any additional cleanup can be done here
 }
 
 // SubscribersCount returns the number of active subscribers for each event type.
-func (b *Bus) SubscribersCount() map[EventType]int {
+func (b *Bus) SubscribersCount() map[Type]int {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 
-	counts := make(map[EventType]int)
+	counts := make(map[Type]int)
 	for eventType, subs := range b.subs {
 		if eventType == "" {
 			counts["*"] = len(subs)
