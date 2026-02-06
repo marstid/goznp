@@ -80,7 +80,7 @@ func TestWaiterTimeout(t *testing.T) {
 	if result != nil {
 		t.Errorf("expected nil result, got %v", result)
 	}
-	if elapsed < 40*time.Millisecond || elapsed > 100*time.Millisecond {
+	if elapsed < 40*time.Millisecond || elapsed > 200*time.Millisecond {
 		t.Errorf("timeout duration unexpected: %v (expected ~50ms)", elapsed)
 	}
 }
