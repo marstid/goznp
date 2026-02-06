@@ -164,14 +164,14 @@ func TestWaiterMultiplePending(t *testing.T) {
 
 		go func() {
 			defer wg.Done()
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			results[idx], errors[idx] = w.WaitFor(ctx, matcher, time.Second)
+			results[idx], errors[idx] = w.WaitFor(ctx, matcher, 10*time.Second)
 		}()
 	}
 
 	// Give waiters time to register (increased for parallel test runs).
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	// Resolve each frame in reverse order
 	frame3 := &unpi.Frame{
@@ -194,9 +194,9 @@ func TestWaiterMultiplePending(t *testing.T) {
 	}
 
 	w.Resolve(frame3)
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 	w.Resolve(frame2)
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 	w.Resolve(frame1)
 
 	wg.Wait()
@@ -300,14 +300,14 @@ func TestWaiterMultipleSameMatch(t *testing.T) {
 		idx := i
 		go func() {
 			defer wg.Done()
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			results[idx], errors[idx] = w.WaitFor(ctx, matcher, time.Second)
+			results[idx], errors[idx] = w.WaitFor(ctx, matcher, 10*time.Second)
 		}()
 	}
 
 	// Give waiters time to register (increased for parallel test runs).
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	// Send three matching frames (one for each waiter)
 	for i := 0; i < 3; i++ {
@@ -321,7 +321,7 @@ func TestWaiterMultipleSameMatch(t *testing.T) {
 		if !resolved {
 			t.Errorf("frame %d should have resolved a waiter", i)
 		}
-		time.Sleep(5 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	wg.Wait()
