@@ -56,6 +56,7 @@ type ZNPClient interface {
 	GetAllRoutes(ctx context.Context, dstAddr uint16) ([]znp.RoutingEntry, error)
 
 	// NVRAM operations provide persistent storage access.
+	NvLength(ctx context.Context, id znp.NvItemID) (uint16, error)
 	NvRead(ctx context.Context, id znp.NvItemID, offset uint8) ([]byte, error)
 	NvWrite(ctx context.Context, id znp.NvItemID, offset uint8, data []byte) error
 	NvReadAll(ctx context.Context, id znp.NvItemID) ([]byte, error)

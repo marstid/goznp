@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/marstid/goznp/pkg/znp"
 )
 
 // testAdapter is a shared adapter instance for integration tests.
@@ -240,7 +242,7 @@ func TestIntegration_NvLength(t *testing.T) {
 	}
 
 	for _, item := range items {
-		length, err := a.znp.NvLength(ctx, item.id)
+		length, err := a.znp.NvLength(ctx, znp.NvItemID(item.id))
 		if err != nil {
 			t.Errorf("NvLength(%s) failed: %v", item.name, err)
 			continue

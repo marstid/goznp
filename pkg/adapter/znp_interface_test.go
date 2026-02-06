@@ -140,7 +140,10 @@ func (m *mockZNPClient) GetAllRoutes(_ context.Context, _ uint16) ([]znp.Routing
 	return []znp.RoutingEntry{}, nil
 }
 
-// NVRAM operations.
+func (m *mockZNPClient) NvLength(_ context.Context, _ znp.NvItemID) (uint16, error) {
+	return 0, nil
+}
+
 func (m *mockZNPClient) NvRead(_ context.Context, _ znp.NvItemID, _ uint8) ([]byte, error) {
 	return []byte{}, nil
 }
