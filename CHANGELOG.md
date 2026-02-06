@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.4.0] - 2026-02-06
+
+### Added
+- Auto-load .env file in Makefile for easier configuration (cec2914)
+
+### Fixed
+- Add NvLength to ZNPClient interface for integration tests (2dcc7c1)
+- Resolve deadlock in TestBusClose (a78bb91)
+- Resolve waiter delivery bug in concurrent scenarios (a4e3ce5)
+
+### Changed
+- Fix linting issues across codebase (89c3d67)
+
+## [v0.3.0] - 2026-01-15
+
+### Added
+- Add REST API daemon for device management (5ca4e4e)
+- Add device state management system (d4656ed)
+- Add message parsing infrastructure (75204da)
+- Add event bus system for device events (741a4e4)
+- Add network tree command for topology visualization (2092070)
+- Add adapter validation, constants, and logging (9e1f55f)
+- Add NVRAM hardware integration tests (9d38ef1)
+- Add integration test infrastructure (339d9b9)
+- Add comprehensive documentation (ca71297)
+
+### Changed
+- Modernize CLI with improved UX and error messages (6872695)
+- Enhance adapter with retry logic and improved error handling (47c8a6e)
+- Extract shared flags and reorganize CLI commands (e5693e1)
+- Update Go version to 1.25 (163004d)
+- Update build configuration and documentation (32d61a2)
+
+### Fixed
+- Resolve NVRAM test timing issues (0e165da)
+- Remove invalid errcheck config property (c3967c2)
+
+### Removed
+- Remove security workflow (fac1294)
+
 ## [v0.2.1] - 2026-01-07
 
 ### Added
