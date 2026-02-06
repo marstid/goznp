@@ -171,7 +171,7 @@ func TestWaiterMultiplePending(t *testing.T) {
 	}
 
 	// Give waiters time to register (increased for parallel test runs).
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
 	// Resolve each frame in reverse order
 	frame3 := &unpi.Frame{
@@ -307,7 +307,7 @@ func TestWaiterMultipleSameMatch(t *testing.T) {
 	}
 
 	// Give waiters time to register (increased for parallel test runs).
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
 	// Send three matching frames (one for each waiter)
 	for i := 0; i < 3; i++ {
