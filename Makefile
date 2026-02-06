@@ -21,7 +21,7 @@ endif
 .DEFAULT_GOAL := build
 
 # Phony targets
-.PHONY: all build build-daemon clean test test-verbose test-coverage test-integration fmt vet lint check install help
+.PHONY: all build build-daemon clean test test-verbose test-coverage test-integration fmt vet lint check install help update
 
 ## build: Build the CLI binary
 build:
@@ -29,6 +29,12 @@ build:
 	@mkdir -p $(BINARY_DIR)
 	$(GO) build $(LDFLAGS) -o $(BINARY_DIR)/$(BINARY_NAME) $(CMD_DIR)
 	@echo "Built $(BINARY_DIR)/$(BINARY_NAME)"
+
+update:
+	@echo "Updating dependencies..."
+	$(GO) get -u ./...
+	$(GO) mod tidy
+	@echo "Dependencies updated"
 
 ## build-daemon: Build the goznpd daemon binary
 build-daemon:
