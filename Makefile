@@ -11,6 +11,12 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 BUILD_TIME := $(shell date -u '+%Y-%m-%d_%H:%M:%S')
 LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)"
 
+# Load .env file if present (optional)
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
+
 # Default target
 .DEFAULT_GOAL := build
 
@@ -67,6 +73,7 @@ test-integration:
 ifndef GOZNP_PORT
 	@echo "Error: GOZNP_PORT environment variable is required"
 	@echo "Usage: GOZNP_PORT=/dev/ttyUSB0 make test-integration"
+	@echo "       or create a .env file with GOZNP_PORT=/dev/ttyUSB0"
 	@exit 1
 endif
 	@echo "Running integration tests on $(GOZNP_PORT)..."
@@ -102,6 +109,7 @@ run-daemon:
 	@if [ -z "$(GOZNP_PORT)" ]; then \
 		echo "Error: GOZNP_PORT environment variable is required"; \
 		echo "Usage: GOZNP_PORT=/dev/ttyUSB0 make run-daemon"; \
+		echo "       or create a .env file with GOZNP_PORT=/dev/ttyUSB0"; \
 		exit 1; \
 	fi
 	@echo "Running goznpd..."
@@ -125,3 +133,4 @@ help:
 	@echo "  make all                                    # Format, vet, test, and build"
 	@echo "  make clean build                            # Clean and rebuild"
 	@echo "  GOZNP_PORT=/dev/ttyUSB0 make test-integration  # Run hardware tests"
+	@echo "  make test-integration                       # Run hardware tests (with .env file)"
